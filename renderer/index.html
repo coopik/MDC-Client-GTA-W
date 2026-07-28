@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MDC Client</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="menubar" class="menubar">
+  <div class="menu" data-menu="file"><span class="menu-label"><u>F</u>ile</span>
+    <div class="menu-popup">
+      <div class="menu-item" data-action="home">Go to MDC Home</div>
+      <div class="menu-item" data-action="reload">Reload<span class="accel">F5</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="print">Print...<span class="accel">Ctrl+P</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="signout">Clear Session / Sign Out</div>
+      <div class="menu-item" data-action="exit">Exit</div>
+    </div>
+  </div>
+
+  <div class="menu" data-menu="view"><span class="menu-label"><u>V</u>iew</span>
+    <div class="menu-popup">
+      <div class="menu-item" data-action="back">Back<span class="accel">Alt+Left</span></div>
+      <div class="menu-item" data-action="forward">Forward<span class="accel">Alt+Right</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="themelight" id="mi-theme-light">Classic Light Skin<span class="accel">F8</span></div>
+      <div class="menu-item" data-action="themedark" id="mi-theme-dark">Classic Dark Skin</div>
+      <div class="menu-item" data-action="themelapd" id="mi-theme-lapd">LAPD Mobile Skin</div>
+      <div class="menu-item" data-action="themeoff" id="mi-theme-off">Original MDC Skin</div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="zoomin">Zoom In<span class="accel">Ctrl++</span></div>
+      <div class="menu-item" data-action="zoomout">Zoom Out<span class="accel">Ctrl+-</span></div>
+      <div class="menu-item" data-action="zoomreset">Actual Size<span class="accel">Ctrl+0</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="toggletoolbar" id="mi-toolbar">Toolbar</div>
+      <div class="menu-item" data-action="togglelookup" id="mi-lookup">Lookup Fields</div>
+      <div class="menu-item" data-action="toggleaddr" id="mi-addr">Address Bar</div>
+      <div class="menu-item" data-action="togglestatus" id="mi-status">Status Bar</div>
+      <div class="menu-item" data-action="togglesidebar" id="mi-sidebar">MDC Side Panel<span class="accel">F10</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="tabmdc">Mobile Data Computer<span class="accel">Ctrl+1</span></div>
+      <div class="menu-item" data-action="tabpenal">San Andreas Penal Code<span class="accel">Ctrl+2</span></div>
+    </div>
+  </div>
+
+  <div class="menu" data-menu="tools"><span class="menu-label"><u>T</u>ools</span>
+    <div class="menu-popup">
+      <div class="menu-item" data-action="focusname">Name Check...<span class="accel">Ctrl+N</span></div>
+      <div class="menu-item" data-action="focusplate">Plate Check...<span class="accel">Ctrl+L</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="find">Find on Page...<span class="accel">Ctrl+F</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="copyurl">Copy Current Address</div>
+      <div class="menu-item" data-action="devtools">Page Diagnostics...</div>
+      <div class="menu-item" data-action="layoutreport">Layout Report...</div>
+      <div class="menu-sep"></div>
+      <div class="menu-item disabled">Printer Setup...</div>
+      <div class="menu-item" data-action="options">Options...</div>
+    </div>
+  </div>
+
+  <div class="menu" data-menu="help"><span class="menu-label"><u>H</u>elp</span>
+    <div class="menu-popup">
+      <div class="menu-item disabled">Contents<span class="accel">F1</span></div>
+      <div class="menu-item" data-action="opensite">GTA World Web Site</div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" data-action="about">About MDC Client</div>
+    </div>
+  </div>
+  <span class="hdrctl hidden" id="hdr-ctl">
+    <button class="hbtn" id="hb-history" title="Search history">&#8635; History</button>
+    <button class="hbtn" id="hb-bell" title="Notifications">&#9993; Alerts</button>
+    <button class="hbtn" id="hb-menu" title="Account menu">&#9776; Menu</button>
+    <div class="hdrpop" id="hdr-popup"></div>
+  </span>
+</div>
+
+<div id="toolbar" class="toolbar">
+  <button class="tbtn" id="btn-back" title="Back">&#9664;</button>
+  <button class="tbtn" id="btn-forward" title="Forward">&#9654;</button>
+  <button class="tbtn" id="btn-refresh" title="Refresh">&#8635;</button>
+  <button class="tbtn" id="btn-stop" title="Stop">&#10006;</button>
+  <span class="tsep"></span>
+  <button class="tbtn" id="btn-home" title="MDC Home">&#8962;</button>
+  <button class="tbtn" id="btn-print" title="Print">&#128424;</button>
+  <span class="tsep"></span>
+  <button class="tbtn tbtn-text" id="btn-sidebar" title="Show or hide the MDC side panel (F10)">Side Panel</button>
+  <button class="tbtn" id="btn-settings" title="Options">&#9881;</button>
+  <span class="lookup-group hidden" id="lookup-group">
+    <span class="tsep"></span>
+    <label class="fld-label" for="q-name">Name:</label>
+    <input type="text" id="q-name" class="fld" size="18" placeholder="Firstname Lastname">
+    <button class="btn-sm" id="go-name">Run</button>
+    <label class="fld-label" for="q-plate">Plate:</label>
+    <input type="text" id="q-plate" class="fld fld-plate" size="9" placeholder="ULX103">
+    <button class="btn-sm" id="go-plate">Run</button>
+  </span>
+  <span class="addr-group hidden" id="addr-group">
+    <span class="tsep"></span>
+    <span class="fld-label">Address:</span>
+    <input type="text" id="address" class="addr" readonly value="https://mdc.gta.world/">
+  </span>
+  <span class="tspacer"></span>
+</div>
+
+<div id="findbar" class="findbar hidden">
+  <label class="fld-label" for="find-input">Find what:</label>
+  <input type="text" id="find-input" class="fld" size="24">
+  <button class="btn-sm" id="find-prev" title="Find Previous">Previous</button>
+  <button class="btn-sm" id="find-next" title="Find Next">Next</button>
+  <label class="fld-check"><input type="checkbox" id="find-case"> Match case</label>
+  <span class="find-count" id="find-count"></span>
+  <span class="tspacer"></span>
+  <button class="btn-sm" id="find-close" title="Close">Close</button>
+</div>
+
+<div id="tabs" class="tabs">
+  <button class="tab active" id="tab-mdc" title="Mobile Data Computer (Ctrl+1)">Mobile Data Computer</button>
+  <button class="tab" id="tab-penal" title="San Andreas Penal Code (Ctrl+2)">Penal Code</button>
+  <span id="tab-nav" class="tabnav hidden"></span>
+</div>
+
+<div id="page-bar" class="pagebar"></div>
+
+<div id="quick-bar" class="quickbar hidden"></div>
+
+<div id="pc-bar" class="pcbar hidden">
+  <label class="fld-label" for="pc-search">Search penal code:</label>
+  <input type="text" id="pc-search" class="fld" size="32" placeholder="Offence, section or code">
+  <button class="btn-sm" id="pc-clear" title="Show all sections">Clear</button>
+  <span class="tspacer"></span>
+  <button class="btn-sm" id="pc-signout" title="Sign out of the GTA World forums">Sign Out of Forums</button>
+</div>
+
+<div class="content">
+  <webview
+    id="mdc"
+    src="https://mdc.gta.world/"
+    partition="persist:gtaw-mdc"
+    preload="../webview-preload.js"
+    allowpopups>
+  </webview>
+  <webview
+    id="penal"
+    src="about:blank"
+    partition="persist:gtaw-mdc"
+    preload="../forum-preload.js"
+    class="wv-off"
+    allowpopups>
+  </webview>
+</div>
+
+<div id="statusbar" class="statusbar">
+  <div class="sb-cell sb-grow" id="sb-status">Ready</div>
+  <div class="sb-cell" id="sb-theme">Skin: Classic Light</div>
+  <div class="sb-cell" id="sb-clock">--:--:--</div>
+</div>
+
+<div id="modal-backdrop" class="modal-backdrop hidden">
+  <div class="dialog">
+    <div class="dialog-title">
+      <span id="dialog-title-text">Options</span>
+      <button class="dialog-close" id="dialog-close">&#10006;</button>
+    </div>
+    <div class="dialog-body" id="dialog-body"></div>
+    <div class="dialog-buttons">
+      <button class="btn" id="dialog-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
