@@ -1,9 +1,9 @@
 {
   "name": "mdc-client",
-  "version": "1.0.0",
-  "description": "MDC Client - desktop shell for the GTA World Web MDC",
+  "version": "1.0.1",
+  "description": "PatrolOne Mobile Client - desktop shell for the GTA World Web MDC",
   "main": "main.js",
-  "author": "MDC Client",
+  "author": "PatrolOne Mobile Client",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -19,7 +19,7 @@
   },
   "build": {
     "appId": "world.gta.mdcclient",
-    "productName": "MDC Client",
+    "productName": "PatrolOne Mobile Client",
     "files": [
       "main.js",
       "preload.js",
@@ -47,7 +47,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "MDC Client"
+      "shortcutName": "PatrolOne Mobile Client"
     }
   }
 }

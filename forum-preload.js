@@ -50,8 +50,26 @@ const PALETTES = {
     scrollTrack: '#0B1C52',
     scrollThumb: '#33569E',
     highlight: '#7A6400'
+  },
+  aero: {
+    panel: '#F1F6FB',
+    panelAlt: '#E6F0FA',
+    header: '#D3E5F5',
+    border: '#8CAFCF',
+    field: '#FFFFFF',
+    fieldBorder: '#7DA2C4',
+    text: '#10222E',
+    textMuted: '#44586B',
+    link: '#0B4C8C',
+    zebra: '#F5F9FD',
+    scrollTrack: '#EFF5FA',
+    scrollThumb: '#B9D2E6',
+    highlight: '#FFF3A8'
   }
 }
+
+PALETTES.aerolapd = Object.assign({}, PALETTES.lapd)
+PALETTES.aerodark = Object.assign({}, PALETTES.dark)
 
 let theme = 'light'
 let paintedMode = ''
@@ -101,12 +119,37 @@ header, #elSearch, #elSearchWrapper, #elUserNav, #elNotificationsBrowser,
 .ipsQuote_citation, .ipsQuote_open, .ipsQuote_close {
   display: none !important;
 }
+.ipsPagination, .ipsPagination li, .ipsPagination a, .ipsPagination .ipsPagination_page,
+.ipsPagination .ipsPagination_pageJump, .ipsPagination .ipsPagination_prev,
+.ipsPagination .ipsPagination_next, .ipsPagination .ipsPagination_first,
+.ipsPagination .ipsPagination_last, .ipsPagination_mobile, .ipsPagination_pageJump a {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
 html, body {
   background: ${p.panel} !important;
   color: ${p.text} !important;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
   font-size: 12px !important;
   line-height: 16px !important;
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+body, #ipsLayout_body, #ipsLayout_contentArea, #ipsLayout_contentWrapper,
+#ipsLayout_mainArea, .ipsLayout_container, .ipsAreaBackground_reset,
+.cPost, .cPost_contentWrap, .ipsType_richText, [data-role="commentContent"] {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.ipsType_richText table, .ipsType_richText pre, .ipsType_richText img,
+[data-role="commentContent"] table, [data-role="commentContent"] pre {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
 }
 body * {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
@@ -193,9 +236,6 @@ article.cPost, .ipsBox, .cPost_contentWrap {
   padding: 3px 6px !important;
   margin: 3px 0 !important;
 }
-/* Quote and spoiler widgets carried fixed heights and absolute positioning, so
-   section text ran straight through their borders. Put them back in the normal
-   flow and let them size to their contents. */
 #elPostFeed blockquote, #elPostFeed .ipsQuote, #elPostFeed [data-ipsquote],
 #elPostFeed .ipsSpoiler, #elPostFeed .ipsStyle_spoiler {
   display: block !important;
@@ -248,8 +288,6 @@ article.cPost, .ipsBox, .cPost_contentWrap {
   background: ${p.highlight} !important;
   color: ${p.text} !important;
 }
-/* Forum content ships hard-coded light backgrounds; neutralise them so the
-   dark skin does not leave white slabs behind the penal code text. */
 #elPostFeed, #elPostFeed *, .ipsPageHeader, .ipsPageHeader * {
   background-image: none !important;
 }
@@ -296,9 +334,6 @@ function applyTheme(next) {
     restorePenal()
     return
   }
-  // paintText caches its work per element, so a light -> dark switch used to
-  // keep the old palette on already painted nodes. Clear it when the mode
-  // actually changes and repaint from scratch.
   if (paintedMode && paintedMode !== mode) restorePenal()
   paintedMode = mode
   el.textContent = buildCss(PALETTES[mode])
@@ -384,9 +419,6 @@ function reportPage() {
 ipcRenderer.on('mdt:set-skin', (_e, next) => applyTheme(next))
 ipcRenderer.on('mdt:penal-filter', (_e, query) => filterPenal(query))
 
-/* Keyboard focus sits inside this view whenever the Penal Code tab is open, so
-   the shell never sees the keypress. The forum view forwards the same hotkeys
-   the MDC view does, which is what makes F8 cycle the skin from here. */
 const HOTKEYS = {
   F3: 'findnext',
   F5: 'reload',
@@ -449,8 +481,6 @@ const NOISE_RES = [
   /now closed to further replies/i,
   /^edited\s.{0,60}\sby\s/i,
   /^\s*edited\s+(on\s+)?[a-z]+\s+\d{1,2}/i,
-  // Topic event log: "Phased changed the title to San Andreas Penal Code",
-  // "Phased pinned this topic", "locked this topic", "featured this topic".
   /changed the title to/i,
   /\b(un)?(pinned|locked|featured|hid|archived|merged|moved)\s+this\s+topic\b/i
 ]
@@ -462,9 +492,6 @@ function isNoise(t) {
   return false
 }
 
-// Out-of-character editor notes such as "(( fixed duplicate 803 ))" are part of
-// the forum post text, so they have to be stripped from the DOM rather than
-// hidden with CSS.
 const OOC_RE = /\(\(\s*(?:[^()]|\([^()]*\))*?\s*\)\)/g
 
 function scrubOoc() {
@@ -491,8 +518,6 @@ function scrubOoc() {
       .replace(OOC_RE, '')
       .replace(/[ \t]{2,}/g, ' ')
   })
-  // A paragraph that held nothing but an OOC note is now empty: drop it so the
-  // penal code does not gain blank gaps between sections.
   document.querySelectorAll('[data-mdt-ooc="1"]').forEach((el) => {
     if (!el.style) return
     if (flatText(el)) {
@@ -557,7 +582,25 @@ function paintText(p, mode) {
   })
 }
 
+function hideFooter() {
+  const parts = [
+    document.getElementById('ipsLayout_footer'),
+    document.getElementById('elFooterLinks'),
+    document.getElementById('elCopyright'),
+    document.getElementById('elNavTheme'),
+    document.getElementById('elNavTheme_menu')
+  ]
+  for (let i = 0; i < parts.length; i++) {
+    const el = parts[i]
+    if (!el || !el.style || !el.dataset) continue
+    if (el.dataset.mdtGone === '1') continue
+    el.dataset.mdtGone = '1'
+    el.style.setProperty('display', 'none', 'important')
+  }
+}
+
 function hideClosedNotice() {
+  hideFooter()
   const nodes = document.querySelectorAll('div, p, section, li, span, h2, h3, strong')
   const limit = nodes.length > 5000 ? 5000 : nodes.length
   for (let i = 0; i < limit; i++) {

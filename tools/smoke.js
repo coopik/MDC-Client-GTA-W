@@ -47,7 +47,7 @@ function makeNode(desc) {
   const node = {
     id: typeof desc === 'string' ? desc : '',
     tagName: 'DIV',
-    style: { setProperty() { }, getPropertyValue: () => '' },
+    style: { setProperty() {}, getPropertyValue: () => '' },
     dataset: {},
     textContent: '',
     innerHTML: '',
@@ -57,11 +57,11 @@ function makeNode(desc) {
     listeners: {},
     children: [],
     addEventListener(ev, fn) {
-      ; (this.listeners[ev] = this.listeners[ev] || []).push(fn)
+      ;(this.listeners[ev] = this.listeners[ev] || []).push(fn)
     },
-    removeEventListener() { },
+    removeEventListener() {},
     dispatch(ev, payload) {
-      ; (this.listeners[ev] || []).forEach((fn) => fn(Object.assign({ stopPropagation() { }, preventDefault() { } }, payload)))
+      ;(this.listeners[ev] || []).forEach((fn) => fn(Object.assign({ stopPropagation() {}, preventDefault() {} }, payload)))
     },
     getAttribute(name) { return this.attrs && this.attrs[name] !== undefined ? this.attrs[name] : null },
     setAttribute(name, v) { this.attrs = this.attrs || {}; this.attrs[name] = v },
@@ -71,7 +71,7 @@ function makeNode(desc) {
     canGoForward: () => false
   }
   node.classList = classList(node)
-  WEBVIEW_METHODS.forEach((m) => { if (!node[m]) node[m] = () => { } })
+  WEBVIEW_METHODS.forEach((m) => { if (!node[m]) node[m] = () => {} })
   return node
 }
 
@@ -132,7 +132,7 @@ const sandbox = {
   },
   setInterval: () => 0,
   dispatchEvent: () => true,
-  clearInterval: () => { },
+  clearInterval: () => {},
   setTimeout: () => 0,
   Promise,
   Date,
@@ -144,16 +144,16 @@ const sandbox = {
   Array
 }
 sandbox.window = sandbox
-sandbox.addEventListener = () => { }
-sandbox.removeEventListener = () => { }
+sandbox.addEventListener = () => {}
+sandbox.removeEventListener = () => {}
 sandbox.Event = function Event(type) { this.type = type }
 sandbox.innerWidth = 1280
 sandbox.innerHeight = 860
 sandbox.mdt = {
   getInfo: () => Promise.resolve({ version: '1.0.0', electron: '31.0.0', chrome: '126' }),
   clearSession: () => Promise.resolve(),
-  openExternal: () => { },
-  quit: () => { },
+  openExternal: () => {},
+  quit: () => {},
   messageBox: () => Promise.resolve(1)
 }
 
@@ -188,7 +188,7 @@ if (!(documentListeners.click || []).length) failures.push('no global click hand
 if (menuNodes.length) {
   menuNodes[0]._label.dispatch('click')
   if (!menuNodes[0].classList.contains('open')) failures.push('clicking a menu label did not open the menu')
-    ; (documentListeners.click || []).forEach((fn) => fn({}))
+  ;(documentListeners.click || []).forEach((fn) => fn({}))
   if (menuNodes[0].classList.contains('open')) failures.push('clicking elsewhere did not close the menu')
 }
 

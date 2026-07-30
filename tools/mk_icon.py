@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Build a realistic, flat, 2008-era application icon for the MDC Client.
+
+Subject: a ruggedized in-car mobile data terminal, front on. Deliberately
+boring - flat fills, no gradients, no glow, dark outlines, geometry snapped to
+even coordinates so the downsampled 16px version stays legible.
+"""
+
 import os
 from PIL import Image, ImageDraw
 

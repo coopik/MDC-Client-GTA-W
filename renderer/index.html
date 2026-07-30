@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>MDC Client</title>
+<title>PatrolOne Mobile Client</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,7 +13,6 @@
       <div class="menu-item" data-action="home">Go to MDC Home</div>
       <div class="menu-item" data-action="reload">Reload<span class="accel">F5</span></div>
       <div class="menu-sep"></div>
-      <div class="menu-item" data-action="print">Print...<span class="accel">Ctrl+P</span></div>
       <div class="menu-sep"></div>
       <div class="menu-item" data-action="signout">Clear Session / Sign Out</div>
       <div class="menu-item" data-action="exit">Exit</div>
@@ -28,6 +27,9 @@
       <div class="menu-item" data-action="themelight" id="mi-theme-light">Classic Light Skin<span class="accel">F8</span></div>
       <div class="menu-item" data-action="themedark" id="mi-theme-dark">Classic Dark Skin</div>
       <div class="menu-item" data-action="themelapd" id="mi-theme-lapd">LAPD Mobile Skin</div>
+      <div class="menu-item" data-action="themeaero" id="mi-theme-aero">Windows 7 Aero Skin</div>
+      <div class="menu-item" data-action="themeaerolapd" id="mi-theme-aerolapd">Windows 7 Aero LAPD Skin</div>
+      <div class="menu-item" data-action="themeaerodark" id="mi-theme-aerodark">Windows 7 Aero Dark Skin</div>
       <div class="menu-item" data-action="themeoff" id="mi-theme-off">Original MDC Skin</div>
       <div class="menu-sep"></div>
       <div class="menu-item" data-action="zoomin">Zoom In<span class="accel">Ctrl++</span></div>
@@ -52,21 +54,24 @@
       <div class="menu-sep"></div>
       <div class="menu-item" data-action="find">Find on Page...<span class="accel">Ctrl+F</span></div>
       <div class="menu-sep"></div>
+      <div class="menu-item" data-action="history">History...<span class="accel">Ctrl+H</span></div>
+      <div class="menu-sep"></div>
       <div class="menu-item" data-action="copyurl">Copy Current Address</div>
       <div class="menu-item" data-action="devtools">Page Diagnostics...</div>
       <div class="menu-item" data-action="layoutreport">Layout Report...</div>
       <div class="menu-sep"></div>
-      <div class="menu-item disabled">Printer Setup...</div>
       <div class="menu-item" data-action="options">Options...</div>
     </div>
   </div>
 
   <div class="menu" data-menu="help"><span class="menu-label"><u>H</u>elp</span>
     <div class="menu-popup">
-      <div class="menu-item disabled">Contents<span class="accel">F1</span></div>
+      <div class="menu-item" data-action="keyhelp">Keyboard Shortcuts...<span class="accel">F1</span></div>
       <div class="menu-item" data-action="opensite">GTA World Web Site</div>
+      <div class="menu-item" data-action="openrepo">Project Page on GitHub</div>
       <div class="menu-sep"></div>
-      <div class="menu-item" data-action="about">About MDC Client</div>
+      <div class="menu-item" data-action="checkupdates">Check for Updates...</div>
+      <div class="menu-item" data-action="about">About PatrolOne Mobile Client</div>
     </div>
   </div>
   <span class="hdrctl hidden" id="hdr-ctl">
@@ -84,7 +89,11 @@
   <button class="tbtn" id="btn-stop" title="Stop">&#10006;</button>
   <span class="tsep"></span>
   <button class="tbtn" id="btn-home" title="MDC Home">&#8962;</button>
-  <button class="tbtn" id="btn-print" title="Print">&#128424;</button>
+  <span class="tsep"></span>
+  <button class="tbtn tbtn-text" id="btn-namecheck" title="Run a name against records (Ctrl+N)"><span class="tico">&#9786;</span> Name</button>
+  <button class="tbtn tbtn-text" id="btn-platecheck" title="Run a plate against the DMV database (Ctrl+L)"><span class="tico">&#9740;</span> Plate</button>
+  <button class="tbtn tbtn-text" id="btn-history" title="Search history (Ctrl+H)"><span class="tico">&#8635;</span> History</button>
+  <button class="tbtn tbtn-text" id="btn-newpage" title="Open another page (Ctrl+T)"><span class="tico">&#43;</span> Page</button>
   <span class="tsep"></span>
   <button class="tbtn tbtn-text" id="btn-sidebar" title="Show or hide the MDC side panel (F10)">Side Panel</button>
   <button class="tbtn" id="btn-settings" title="Options">&#9881;</button>

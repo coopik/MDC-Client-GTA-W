@@ -1,4 +1,4 @@
-# MDC Client
+# PatrolOne Mobile Client
 
 A plain desktop shell around the real GTA World Web MDC
 (<https://mdc.gta.world/>). The site itself loads in an embedded browser view;
@@ -42,6 +42,31 @@ Each entry is named after what it holds — its navigation entry, or the record
 number — rather than the site's own page title, which is "Mobile Data Computer"
 on nearly every screen.
 
+### History
+
+Tools > History, or Ctrl+H. Every page and record opened in the client is
+logged with the time it was opened and what it was: a record and the subject's
+name, a plate check, a warrant, an incident, a map. The list has its own search
+box, which matches on name, plate, record number, address, page name and date,
+so "which records did I run, and when" is answerable after the fact.
+
+Left-click an entry to open it in the page in front, right-click to open it as a
+new page. The log is held on this computer only, in the client's own storage,
+and is never sent anywhere. Clear Session does not touch it; use Clear History
+in that window, or turn logging off entirely under Tools > Options.
+
+**Only log subjects and vehicles** sits under the History switch. With it on,
+only records, name checks, plate checks, vehicles and warrants are kept;
+dashboards, lists, maps and the penal code are skipped. It is greyed out while
+history logging is off, since there would be nothing to narrow down.
+
+### Sounds
+
+Off by default, under Tools > Options. Nine tones: click, navigation, opening a
+page, closing a dialog or going back, a confirmation on copy, a notification
+tone, a warning tone for restricted actions, an error tone for failures and MDC
+error messages, and a start-up tone.
+
 ---
 
 ## 1. Running from source
@@ -74,7 +99,7 @@ load silently kills the entire menu bar, which is exactly how it shipped once.
 
 ## 2. Packaging
 
-`npm run pack` writes `dist/win-unpacked/`, containing `MDC Client.exe` plus the
+`npm run pack` writes `dist/win-unpacked/`, containing `PatrolOne Mobile Client.exe` plus the
 Electron runtime and a `resources/` folder. That folder is the input for an
 installer; `installer/mdc-client.iss` is a ready Inno Setup script that packages
 it. Keep `AppVersion` in the script in step with `version` in `package.json`.
@@ -128,6 +153,10 @@ out completely.
 | --- | --- |
 | Classic Light | Grey panels, square corners, the default |
 | Classic Dark | Same geometry, dark palette |
+| LAPD Mobile | PremierOne navy livery across the client, the MDC and the penal code tab |
+| Windows 7 Aero | Glass gradients, rounded panels, blue focus glows and light highlights, Windows 7 era |
+| Windows 7 Aero LAPD | The navy livery under Windows 7 glass |
+| Windows 7 Aero Dark | Graphite glass for night shifts |
 | Original MDC | No styling at all; the site as it ships |
 
 Switch from View, from Tools > Options, or press F8 to cycle. **Sign-in pages are
@@ -297,3 +326,83 @@ longer carries comments.
 23. Never force `overflow: visible` on dialog containers. It looks harmless, but a container that scrolls natively will then let its rows spill out and be painted over by the block below it.
 24. Prefer content-driven matching over element ids for optional UI. Field labels survive page changes; ids do not.
 25. Some parts of the MDC must be left alone entirely. Add Arrest Report and Charges lays its rows out with Bootstrap's grid and absolute positioning; any change to button display or row alignment inside it breaks the charge rows. Recolour it, never re-layout it.
+
+---
+
+## Keyboard shortcuts and remapping
+
+Help > Keyboard Shortcuts (F1) lists every shortcut in one table. Press **Change**
+on a row and then the combination you want; Escape cancels the capture. If the
+combination is already used, it is taken from the other action and the window
+says so. **Reset to defaults** clears every remap.
+
+Remaps are stored on this computer, and the map is also pushed into the embedded
+MDC pages, so a key pressed while the page has focus does the same thing as one
+pressed on the client chrome. Only plain function keys and single-letter Ctrl
+combinations can reach inside a page; anything more elaborate works on the client
+itself. Escape is deliberately not remappable — it always closes the find bar,
+then a dialog, then stops a loading page.
+
+Ctrl+N and Ctrl+L open small **Name Check** and **Plate Check** windows: type,
+press Enter, and the query runs and is logged. Previously these only focused the
+toolbar fields, which did nothing when the lookup fields were hidden.
+
+## Updates
+
+Help > About has a **Check for Updates** button. It reads the public release list
+for the project and compares the newest tag with the running version. If a newer
+release exists, an **Update Now** button appears, which downloads the release
+installer, hands it to Windows and closes the client so the files can be
+replaced. There is also **Open Release Page** if you would rather do it by hand.
+
+An optional check when the client starts can be switched on under
+Tools > Options > Window; it is off by default. Nothing is ever downloaded or
+installed without pressing Update, and no information about you is sent — the
+check is a plain read of the public release list.
+
+For the automatic check and the Update button to be useful, releases have to be
+published on the project page with the installer attached as a release asset, and
+the tag has to be the version number (for example `v1.0.2`).
+
+
+## Implementation notes
+
+The source files carry no inline comments. The behaviour that used to be
+explained there is recorded here instead.
+
+**Skin boot.** Each page stores the active skin in its own local storage and
+repaints itself from that value before the site renders. The loader accepts
+every skin name; while it only accepted `light`, `dark` and `off`, an Aero or
+LAPD page booted painted as classic light and corrected itself a second later,
+which is what caused the visible flash of old visuals. The glass layer is
+applied in that same first pass.
+
+**Pop-up dragging.** A dialog is moved with a CSS transform and never leaves
+its normal layout position, so Bootstrap's own dismiss logic keeps working.
+The offset is remembered on the element between drags and cleared whenever the
+dialog is shown or hidden, so a dialog always reopens centred and in view.
+The click-through behaviour that keeps the MDC usable behind a pop-up is only
+armed once a dialog has actually been dragged; until then dialogs behave
+exactly as the site intends.
+
+**Panels.** Cards use a flat pale face from the palette with a light outline,
+a 6px frame and a drop shadow, over a tinted page background. Card headers are
+transparent so only their text shows. Collapse toggles are pinned inside their
+own header at a fixed size; pinning every absolutely positioned child of a card
+was what pushed stray squares outside the panels.
+
+**Images.** Pictures are limited to the width of their panel. Only pictures
+that declare no size of their own are scaled by height, because forcing that on
+every image collapsed department crests down to their natural size. Warrant
+seals are given an explicit height.
+
+**Discord presence.** Rich presence is spoken directly over Discord's local
+socket, with no third-party dependency. It is off by default and every failure
+is silent, since "Discord is not running" is the normal case. The application
+id lives at the top of the Discord section in `main.js`, and the icon must be
+uploaded to that Discord application's Rich Presence art assets under the key
+`app_icon`.
+
+**Supervisor features.** Some views available to supervisors and high ranking
+officers may behave incorrectly, because the page source for them was never
+available. This client was built by reading the page source of the web MDC.

@@ -1,7 +1,7 @@
-#define AppName "MDC Client"
-#define AppVersion "1.0.0"
-#define AppPublisher "MDC Client"
-#define AppExe "MDC Client.exe"
+#define AppName "PatrolOne Mobile Client"
+#define AppVersion "1.0.1"
+#define AppPublisher "PatrolOne Mobile Client"
+#define AppExe "PatrolOne Mobile Client.exe"
 #define SourceDir "..\dist\win-unpacked"
 
 [Setup]
@@ -15,7 +15,7 @@ DefaultGroupName={#AppName}
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
 OutputDir=Output
-OutputBaseFilename=MDC-Client-Setup-{#AppVersion}
+OutputBaseFilename=PatrolOne-Mobile-Client-Setup-{#AppVersion}
 SetupIconFile=..\build\icon.ico
 Compression=lzma2/max
 SolidCompression=yes

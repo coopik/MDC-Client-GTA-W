@@ -24,19 +24,27 @@ const NOT_ICON = ':not(i):not(svg):not(use):not(path)' +
   ':not(.icon-bar):not(.navbar-toggler-icon)' +
   ':not(.bi):not([class^="bi-"]):not([class*=" bi-"])'
 
-const BOX_SEL = [
-  'html', 'body', 'main', 'section', 'article', 'aside', 'header', 'footer', 'nav',
-  '.wrapper', '.main-panel', '.content', '.container', '.container-fluid',
-  '.row', '.col', '[class^="col-"]',
-  '.navbar', '.navbar-transparent', '.navbar-absolute', '.navbar-collapse', '.navbar-wrapper',
-  '.sidebar', '.sidebar-wrapper', '.sidebar-submenu', '.menu-collapsed',
+const PANEL_SEL = [
+  'html', 'body', '.wrapper', '.main-panel', '.content',
+  '.card', '.card-dashboard', '.card-stats', '.card-header', '.card-footer',
+  '.panel', '.box', '.well',
+  '.modal-content', '.modal-header', '.modal-footer',
+  '.swal2-popup', '.swal2-header', '.swal2-actions',
+  '.dropdown-menu', '.list-group',
+  '.toast', '.popover', '.tooltip-inner',
+  '.navbar', '.navbar-absolute', '.navbar-wrapper',
+  '.sidebar', '.sidebar-wrapper', '.sidebar-submenu'
+].join(', ')
+
+const FLAT_SEL = [
+  'main', 'section', 'article', 'aside', 'header', 'footer', 'nav',
+  '.container', '.container-fluid',
+  '.row', '.col', '[class^="col-"]', '[class*=" col-"]',
+  '.navbar-transparent', '.navbar-collapse', '.menu-collapsed',
   '.nav', '.nav-tabs', '.nav-pills', '.tab-content', '.tab-pane',
-  '.card', '.card-dashboard', '.card-stats', '.card-body', '.card-header', '.card-footer',
-  '.accordion', '.panel', '.panel-body', '.box', '.well',
-  '.modal-dialog', '.modal-content', '.modal-body', '.modal-header', '.modal-footer',
-  '.swal2-popup', '.swal2-content', '.swal2-header', '.swal2-actions',
-  '.dropdown-menu', '.dropdown-item', '.list-group', '.list-group-item',
-  '.toast', '.toast-body', '.popover', '.tooltip-inner',
+  '.card-body', '.panel-body', '.accordion',
+  '.modal-dialog', '.modal-body', '.swal2-content',
+  '.dropdown-item', '.list-group-item', '.toast-body',
   '.table', '.table-responsive', '.material-table', '.dataTables_wrapper',
   'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
   'ul', 'ol', 'li', 'dl', 'form', '.form-group', '.input-group',
@@ -88,6 +96,50 @@ const PALETTES = {
     infoStrong: '#0A5A8A',
     primary: '#0A246A'
   },
+  aero: {
+    panel: '#F1F6FB',
+    panelAlt: '#E6F0FA',
+    header: '#D3E5F5',
+    border: '#8CAFCF',
+    borderLite: '#BBD3E8',
+    field: '#FFFFFF',
+    fieldBorder: '#7DA2C4',
+    text: '#10222E',
+    textMuted: '#44586B',
+    hover: '#DCEBFB',
+    sel: '#CBE3F8',
+    selBorder: '#5A9BD5',
+    zebra: '#F5F9FD',
+    row: '#FFFFFF',
+    link: '#0B4C8C',
+    visited: '#5B3A97',
+    titlebar: '#B8D6EE',
+    titlebarText: '#0A2A44',
+    btnFace: '#EAF3FB',
+    btnHover: '#DAECFA',
+    btnActive: '#C6E0F5',
+    scrollTrack: '#EFF5FA',
+    scrollThumb: '#B9D2E6',
+    scrollThumbHover: '#9DBFDA',
+    chip: '#E3EFFA',
+    chipBorder: '#8CAFCF',
+    highlight: '#FFF8C4',
+    danger: '#C0392B',
+    dangerText: '#FFFFFF',
+    dangerSoft: '#FBE3E0',
+    dangerInk: '#8C2318',
+    warning: '#F0B400',
+    warningText: '#000000',
+    warningSoft: '#FFF6D8',
+    warningInk: '#8A6A00',
+    success: '#2E8B3D',
+    successText: '#FFFFFF',
+    successSoft: '#E3F5E6',
+    successInk: '#1D6127',
+    info: '#DCEBFB',
+    infoStrong: '#1E6FA8',
+    primary: '#2A6FA8'
+  },
   dark: {
     panel: '#2B2B2B',
     panelAlt: '#323232',
@@ -132,8 +184,6 @@ const PALETTES = {
     infoStrong: '#1E6B94',
     primary: '#24406E'
   },
-  /* LAPD / PremierOne Mobile Client livery: deep navy panels, bright blue
-     chrome, white text and pale blue rules. */
   lapd: {
     panel: '#0E2360',
     panelAlt: '#13307E',
@@ -177,6 +227,735 @@ const PALETTES = {
     info: '#153A86',
     infoStrong: '#2F7FD0',
     primary: '#1B3F9E'
+  }
+}
+
+PALETTES.aerolapd = Object.assign({}, PALETTES.lapd)
+PALETTES.aerodark = Object.assign({}, PALETTES.dark)
+
+const GLASS_STYLE_ID = 'mdt-glass-skin'
+
+const GLASS = {
+  aero: {
+    hi: '#FBFDFF', mid: '#E4F0FA', lo: '#CFE4F6', ink: '#1B3A5C',
+    border: '#9FBBD8', focus: '#3C7FB1', glow: 'rgba(60,127,177,0.60)',
+    shade: 'rgba(22,58,96,0.24)', face: 'rgba(255,255,255,0.60)',
+    pageHi: '#E9F1F8', pageLo: '#D4E3F1',
+    panelHi: '#FFFFFF', panelLo: '#F3F7FB', panelBorder: '#B7CADE',
+    hdrHi: '#FDFEFF', hdrMid: '#EEF6FD', hdrLo: '#DCEAF7', hdrInk: '#15385C',
+    btnHi: '#FDFDFD', btnMid: '#F4F4F4', btnLo: '#E2E2E2',
+    btnBorder: '#9A9A9A', btnInk: '#1A1A1A',
+    hoverHi: '#F5FCFF', hoverMid: '#E4F5FD', hoverLo: '#C9E9F9',
+    hoverBorder: '#3C7FB1',
+    downHi: '#D3EDF9', downLo: '#EAF7FD',
+    fieldBg: '#FFFFFF', fieldInk: '#111111', fieldBorder: '#9BA3AD',
+    sel: '#CBE8F6', selBorder: '#26A0DA', rowAlt: '#F5F9FD',
+    muted: '#5B7595', titleHi: '#FCFEFF', titleMid: '#E8F3FC', titleLo: '#CFE3F5',
+    titleInk: '#0F3054', emboss: 'rgba(255,255,255,0.85)',
+    menuBg: '#F2F2F2', menuBorder: '#A0A0A0',
+    barHi: '#EFF6FC', barLo: '#DCE9F6',
+    scrollTrack: '#F0F4F8', scrollThumbHi: '#F2F6FA', scrollThumbLo: '#CBD8E5',
+    scrollBorder: '#9FB3C8', dark: 0
+  },
+  aerolapd: {
+    hi: '#3A6FD0', mid: '#1F4AA6', lo: '#153A86', ink: '#FFFFFF',
+    border: '#5C86D6', focus: '#8FB6F5', glow: 'rgba(130,180,255,0.55)',
+    shade: 'rgba(4,16,44,0.45)', face: 'rgba(255,255,255,0.22)',
+    pageHi: '#12306B', pageLo: '#0B2049',
+    panelHi: '#24499A', panelLo: '#1B3B80', panelBorder: '#4E77CB',
+    hdrHi: '#3E6FCB', hdrMid: '#28539F', hdrLo: '#1A3F86', hdrInk: '#FFFFFF',
+    btnHi: '#4C79D0', btnMid: '#2F58AE', btnLo: '#1E3F8E',
+    btnBorder: '#7FA6EE', btnInk: '#FFFFFF',
+    hoverHi: '#5F8DE0', hoverMid: '#3A66C2', hoverLo: '#27509F',
+    hoverBorder: '#9CC0FF',
+    downHi: '#1B3F8C', downLo: '#2C57AE',
+    fieldBg: '#FFFFFF', fieldInk: '#0E1F45', fieldBorder: '#6E8CC8',
+    sel: '#2F5CBF', selBorder: '#7FA6EE', rowAlt: '#1F4189',
+    muted: '#C2D3F5', titleHi: '#4676D2', titleMid: '#28539F', titleLo: '#17398A',
+    titleInk: '#FFFFFF', emboss: 'rgba(255,255,255,0.35)',
+    menuBg: '#1B3B80', menuBorder: '#4E77CB',
+    barHi: '#2E5AB4', barLo: '#1B3F8C',
+    scrollTrack: '#E7EEFA', scrollThumbHi: '#F3F7FE', scrollThumbLo: '#C3D4EF',
+    scrollBorder: '#5C86D6', dark: 0
+  },
+  aerodark: {
+    hi: '#4E4E4E', mid: '#363636', lo: '#282828', ink: '#F2F2F2',
+    border: '#5F5F5F', focus: '#7FB3FF', glow: 'rgba(127,179,255,0.45)',
+    shade: 'rgba(0,0,0,0.55)', face: 'rgba(255,255,255,0.14)',
+    pageHi: '#2B2B2B', pageLo: '#1E1E1E',
+    panelHi: '#3A3A3A', panelLo: '#2F2F2F', panelBorder: '#565656',
+    hdrHi: '#4C4C4C', hdrMid: '#3C3C3C', hdrLo: '#2E2E2E', hdrInk: '#F0F0F0',
+    btnHi: '#4A4A4A', btnMid: '#3E3E3E', btnLo: '#333333',
+    btnBorder: '#6A6A6A', btnInk: '#F0F0F0',
+    hoverHi: '#54626F', hoverMid: '#44525F', hoverLo: '#36424E',
+    hoverBorder: '#7FB3FF',
+    downHi: '#2C3A44', downLo: '#3A4654',
+    fieldBg: '#252525', fieldInk: '#F2F2F2', fieldBorder: '#616161',
+    sel: '#2F4A6B', selBorder: '#4F86C6', rowAlt: '#333333',
+    muted: '#B4B4B4', titleHi: '#4E4E4E', titleMid: '#3A3A3A', titleLo: '#2A2A2A',
+    titleInk: '#F5F5F5', emboss: 'rgba(255,255,255,0.10)',
+    menuBg: '#333333', menuBorder: '#5F5F5F',
+    barHi: '#3E3E3E', barLo: '#2C2C2C',
+    scrollTrack: '#2A2A2A', scrollThumbHi: '#4E4E4E', scrollThumbLo: '#3A3A3A',
+    scrollBorder: '#5F5F5F', dark: 1
+  }
+}
+
+function buildGlassCss(g) {
+  const emb = g.dark ? 'none' : `0 1px 0 ${g.emboss}`
+  const gloss = g.dark
+    ? 'linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 48%, rgba(0,0,0,0.16) 100%)'
+    : 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.14) 48%, rgba(0,0,0,0.07) 100%)'
+  return `
+html.mdt-aero body {
+  background-image: linear-gradient(180deg, ${g.pageHi} 0%, ${g.pageLo} 100%) !important;
+  background-attachment: fixed !important;
+  background-color: ${g.pageLo} !important;
+  color: ${g.ink} !important;
+  font-family: "Segoe UI", Tahoma, Geneva, sans-serif !important;
+}
+
+html.mdt-aero body .card, html.mdt-aero body .panel, html.mdt-aero body .card-profile,
+html.mdt-aero body .card-profile-avatar, html.mdt-aero body .card-profile-elements,
+html.mdt-aero body .card-stats {
+  background-image: linear-gradient(180deg, ${g.panelHi} 0%, ${g.panelLo} 100%) !important;
+  background-color: ${g.panelHi} !important;
+  border: 1px solid ${g.panelBorder} !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px ${g.shade}, inset 0 1px 0 ${g.emboss} !important;
+  background-clip: padding-box !important;
+}
+
+html.mdt-aero body .card > .card-header, html.mdt-aero body .panel > .panel-heading,
+html.mdt-aero body .card-header, html.mdt-aero body .card-header-index,
+html.mdt-aero body .card-header-dark, html.mdt-aero body .panel-heading {
+  background-image: linear-gradient(180deg, ${g.hdrHi} 0%, ${g.hdrMid} 52%, ${g.hdrLo} 100%) !important;
+  background-color: ${g.hdrMid} !important;
+  color: ${g.hdrInk} !important;
+  border-bottom: 1px solid ${g.panelBorder} !important;
+  box-shadow: inset 0 1px 0 ${g.emboss} !important;
+  text-shadow: ${emb} !important;
+  border-radius: 3px 3px 0 0 !important;
+}
+
+html.mdt-aero body .card > .card-body, html.mdt-aero body .panel > .panel-body,
+html.mdt-aero body .card-profile .card-body, html.mdt-aero body .card-profile-avatar .card-body,
+html.mdt-aero body .card-profile-elements .card-body {
+  background: transparent !important;
+  background-image: none !important;
+  color: ${g.ink} !important;
+}
+
+html.mdt-aero body .card-profile, html.mdt-aero body .card-profile-avatar {
+  box-shadow: 0 2px 6px ${g.shade}, inset 0 1px 0 ${g.emboss} !important;
+}
+html.mdt-aero body .card-profile .characterDetailsName,
+html.mdt-aero body .card-profile #characterName {
+  color: ${g.ink} !important;
+  text-shadow: ${emb} !important;
+}
+html.mdt-aero body .card-profile .characterDetailsTitle {
+  color: ${g.muted} !important;
+}
+html.mdt-aero body .card-profile .characterDetailsValue {
+  color: ${g.ink} !important;
+}
+html.mdt-aero body .card-profile-avatar .card-img,
+html.mdt-aero body .card-profile-avatar #charPicture {
+  background: ${g.panelLo} !important;
+  border-radius: 3px !important;
+  overflow: hidden !important;
+}
+
+html.mdt-aero body .btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions), html.mdt-aero body button.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions), html.mdt-aero body .note-btn {
+  background-image: linear-gradient(180deg, ${g.btnHi} 0%, ${g.btnMid} 48%, ${g.btnLo} 100%) !important;
+  background-color: ${g.btnMid} !important;
+  border: 1px solid ${g.btnBorder} !important;
+  border-radius: 3px !important;
+  color: ${g.btnInk} !important;
+  box-shadow: inset 0 1px 0 ${g.emboss} !important;
+  text-shadow: ${emb} !important;
+  background-clip: padding-box !important;
+}
+html.mdt-aero body .btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions):hover, html.mdt-aero body button.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions):hover, html.mdt-aero body .note-btn:hover {
+  background-image: linear-gradient(180deg, ${g.hoverHi} 0%, ${g.hoverMid} 48%, ${g.hoverLo} 100%) !important;
+  border-color: ${g.hoverBorder} !important;
+  box-shadow: inset 0 1px 0 ${g.emboss}, 0 0 4px ${g.glow} !important;
+}
+html.mdt-aero body .btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions):active, html.mdt-aero body .btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions).active, html.mdt-aero body button.btn:active {
+  background-image: linear-gradient(180deg, ${g.downHi} 0%, ${g.downLo} 100%) !important;
+  border-color: ${g.hoverBorder} !important;
+  box-shadow: inset 0 2px 3px rgba(0,0,0,0.18) !important;
+}
+html.mdt-aero body .btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions):focus, html.mdt-aero body button.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-dark):not(.btn-collapse):not(.btn-actions):focus {
+  outline: none !important;
+  box-shadow: inset 0 1px 0 ${g.emboss}, 0 0 5px ${g.glow} !important;
+}
+
+html.mdt-aero body .btn-primary, html.mdt-aero body .btn-success, html.mdt-aero body .btn-danger,
+html.mdt-aero body .btn-warning, html.mdt-aero body .btn-info, html.mdt-aero body .btn-secondary,
+html.mdt-aero body .badge-primary, html.mdt-aero body .badge-success, html.mdt-aero body .badge-danger,
+html.mdt-aero body .badge-warning, html.mdt-aero body .badge-info, html.mdt-aero body .badge-dark,
+html.mdt-aero body .badge-secondary {
+  background-image: ${gloss} !important;
+  border-radius: 3px !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35) !important;
+}
+
+html.mdt-aero body input.form-control, html.mdt-aero body select.form-control,
+html.mdt-aero body textarea.form-control, html.mdt-aero body input[type="text"],
+html.mdt-aero body input[type="search"], html.mdt-aero body input[type="number"],
+html.mdt-aero body input[type="password"], html.mdt-aero body select, html.mdt-aero body textarea {
+  background-image: none !important;
+  background-color: ${g.fieldBg} !important;
+  color: ${g.fieldInk} !important;
+  border: 1px solid ${g.fieldBorder} !important;
+  border-radius: 2px !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.14) !important;
+}
+html.mdt-aero body input.form-control:focus, html.mdt-aero body select.form-control:focus,
+html.mdt-aero body textarea.form-control:focus, html.mdt-aero body input[type="text"]:focus,
+html.mdt-aero body select:focus, html.mdt-aero body textarea:focus {
+  border-color: ${g.focus} !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.10), 0 0 5px ${g.glow} !important;
+  outline: none !important;
+}
+
+html.mdt-aero body .table thead th, html.mdt-aero body table thead th {
+  background-image: linear-gradient(180deg, ${g.hdrHi} 0%, ${g.hdrMid} 55%, ${g.hdrLo} 100%) !important;
+  color: ${g.hdrInk} !important;
+  border-bottom: 1px solid ${g.panelBorder} !important;
+  text-shadow: ${emb} !important;
+}
+html.mdt-aero body .table tbody tr:nth-child(even) > td {
+  background-color: ${g.rowAlt} !important;
+}
+html.mdt-aero body .table tbody tr:hover > td {
+  background-color: ${g.sel} !important;
+}
+html.mdt-aero body .table td, html.mdt-aero body .table th {
+  border-color: ${g.panelBorder} !important;
+  color: ${g.ink} !important;
+}
+
+html.mdt-aero body .modal-content, html.mdt-aero body .swal2-popup {
+  background-image: linear-gradient(180deg, ${g.hi} 0%, ${g.mid} 46%, ${g.lo} 100%) !important;
+  background-color: ${g.mid} !important;
+  border: 1px solid ${g.border} !important;
+  border-radius: 6px 6px 4px 4px !important;
+  box-shadow: 0 14px 38px ${g.shade}, inset 0 0 0 1px ${g.face} !important;
+  color: ${g.ink} !important;
+  background-clip: padding-box !important;
+}
+html.mdt-aero body .modal-header, html.mdt-aero body .swal2-header {
+  background-image: linear-gradient(180deg, ${g.titleHi} 0%, ${g.titleMid} 52%, ${g.titleLo} 100%) !important;
+  color: ${g.titleInk} !important;
+  border-bottom: 1px solid ${g.border} !important;
+  border-radius: 5px 5px 0 0 !important;
+  box-shadow: inset 0 1px 0 ${g.emboss} !important;
+  text-shadow: ${emb} !important;
+}
+html.mdt-aero body .modal-title, html.mdt-aero body .modal-header h3, html.mdt-aero body .modal-header h4 {
+  color: ${g.titleInk} !important;
+  text-shadow: ${emb} !important;
+}
+html.mdt-aero body .modal-body, html.mdt-aero body .swal2-content {
+  background: transparent !important;
+  color: ${g.ink} !important;
+}
+html.mdt-aero body .modal-footer {
+  background-image: linear-gradient(180deg, ${g.barHi} 0%, ${g.barLo} 100%) !important;
+  border-top: 1px solid ${g.border} !important;
+  border-radius: 0 0 3px 3px !important;
+}
+
+html.mdt-aero body .dropdown-menu {
+  background-image: none !important;
+  background-color: ${g.menuBg} !important;
+  border: 1px solid ${g.menuBorder} !important;
+  border-radius: 3px !important;
+  box-shadow: 0 6px 16px ${g.shade} !important;
+  color: ${g.ink} !important;
+}
+html.mdt-aero body .dropdown-item {
+  color: ${g.ink} !important;
+  border-radius: 2px !important;
+}
+html.mdt-aero body .dropdown-item:hover, html.mdt-aero body .dropdown-item:focus {
+  background-image: linear-gradient(180deg, ${g.hoverHi} 0%, ${g.hoverLo} 100%) !important;
+  border: 1px solid ${g.hoverBorder} !important;
+  color: ${g.ink} !important;
+}
+
+html.mdt-aero body .nav-tabs .nav-link.active, html.mdt-aero body .nav-pills .nav-link.active {
+  background-image: linear-gradient(180deg, ${g.hdrHi} 0%, ${g.hdrLo} 100%) !important;
+  border: 1px solid ${g.panelBorder} !important;
+  border-bottom-color: transparent !important;
+  border-radius: 3px 3px 0 0 !important;
+  color: ${g.hdrInk} !important;
+}
+
+html.mdt-aero body .progress {
+  background-color: ${g.panelLo} !important;
+  border: 1px solid ${g.panelBorder} !important;
+  border-radius: 3px !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.18) !important;
+}
+html.mdt-aero body .progress-bar {
+  background-image: linear-gradient(180deg, #A6E96A 0%, #6BC72E 48%, #4FA81C 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45) !important;
+}
+
+html.mdt-aero body .alert {
+  background-image: linear-gradient(180deg, ${g.panelHi} 0%, ${g.panelLo} 100%) !important;
+  border: 1px solid ${g.panelBorder} !important;
+  border-radius: 3px !important;
+  color: ${g.ink} !important;
+  box-shadow: inset 0 1px 0 ${g.emboss} !important;
+}
+
+html.mdt-aero body ::-webkit-scrollbar {
+  width: 17px !important;
+  height: 17px !important;
+}
+html.mdt-aero body ::-webkit-scrollbar-track {
+  background: ${g.scrollTrack} !important;
+  border-left: 1px solid ${g.scrollBorder} !important;
+}
+html.mdt-aero body ::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(90deg, ${g.scrollThumbHi} 0%, ${g.scrollThumbLo} 100%) !important;
+  border: 1px solid ${g.scrollBorder} !important;
+  border-radius: 2px !important;
+}
+html.mdt-aero body ::-webkit-scrollbar-thumb:hover {
+  background-image: linear-gradient(90deg, ${g.hoverHi} 0%, ${g.hoverLo} 100%) !important;
+}
+
+html.mdt-aero body hr {
+  border-top: 1px solid ${g.panelBorder} !important;
+  opacity: 0.6 !important;
+}
+html.mdt-aero body a {
+  color: ${g.dark ? '#8FC0F5' : '#14508C'} !important;
+}
+
+html.mdt-aero body .btn-primary, html.mdt-aero body .btn-success,
+html.mdt-aero body .btn-danger, html.mdt-aero body .btn-warning,
+html.mdt-aero body .btn-info, html.mdt-aero body .btn-dark,
+html.mdt-aero body .btn-actions {
+  color: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.30) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.38) !important;
+}
+html.mdt-aero body .btn-warning, html.mdt-aero body .btn-warning:hover {
+  color: #2B2000 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+
+html.mdt-aero body .btn-collapse {
+  background-image: linear-gradient(180deg, ${g.btnHi} 0%, ${g.btnMid} 48%, ${g.btnLo} 100%) !important;
+  background-color: ${g.btnMid} !important;
+  border: 1px solid ${g.btnBorder} !important;
+  border-radius: 2px !important;
+  color: ${g.btnInk} !important;
+  box-shadow: inset 0 1px 0 ${g.emboss} !important;
+}
+html.mdt-aero body .btn-collapse:hover {
+  background-image: linear-gradient(180deg, ${g.hoverHi} 0%, ${g.hoverLo} 100%) !important;
+  border-color: ${g.hoverBorder} !important;
+}
+html.mdt-aero body .btn-collapse i, html.mdt-aero body .btn-collapse .fas {
+  color: ${g.btnInk} !important;
+  font-size: 10px !important;
+  line-height: 16px !important;
+  vertical-align: middle !important;
+}
+
+html.mdt-aero body .card > .card-body:last-child,
+html.mdt-aero body .panel > .panel-body:last-child {
+  border-radius: 0 0 3px 3px !important;
+}
+html.mdt-aero body .card > .card-body, html.mdt-aero body .card-body > span,
+html.mdt-aero body .card-body > div:not(.card):not(.panel) {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+html.mdt-aero body .card-body > *, html.mdt-aero body .card-body > span > *,
+html.mdt-aero body .card-body .row {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+html.mdt-aero body .card-body .table-responsive, html.mdt-aero body .card-body .table {
+  border-radius: 0 0 3px 3px !important;
+  overflow: visible !important;
+}
+
+html.mdt-aero body .card-profile > .card-body {
+  padding: 10px 12px !important;
+}
+html.mdt-aero body .card-profile > .card-body > .row {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 6px 4px !important;
+}
+html.mdt-aero body .card-profile-avatar {
+  padding: 4px !important;
+  background-image: linear-gradient(180deg, ${g.panelHi} 0%, ${g.panelLo} 100%) !important;
+}
+html.mdt-aero body .card-profile-avatar .card-img,
+html.mdt-aero body .card-profile-avatar #charPicture {
+  border: 1px solid ${g.panelBorder} !important;
+  border-radius: 3px !important;
+  background: ${g.panelLo} !important;
+}
+
+html.mdt-aero body .modal-body .card, html.mdt-aero body .modal-body .panel {
+  box-shadow: none !important;
+}
+html.mdt-aero body .note-editor, html.mdt-aero body .note-frame,
+html.mdt-aero body .note-editable, html.mdt-aero body .note-editing-area {
+  background-color: ${g.fieldBg} !important;
+  background-image: none !important;
+  color: ${g.fieldInk} !important;
+  border-color: ${g.fieldBorder} !important;
+}
+html.mdt-aero body .note-toolbar, html.mdt-aero body .note-toolbar.card-header {
+  background-image: linear-gradient(180deg, ${g.hdrHi} 0%, ${g.hdrLo} 100%) !important;
+  border-bottom: 1px solid ${g.panelBorder} !important;
+}
+html.mdt-aero body .modal-body label, html.mdt-aero body .modal-body .col-form-label,
+html.mdt-aero body .modal-body h5, html.mdt-aero body .modal-body h6 {
+  color: ${g.ink} !important;
+  text-shadow: ${emb} !important;
+}
+html.mdt-aero body .swal2-title, html.mdt-aero body .swal2-html-container {
+  color: ${g.ink} !important;
+}
+html.mdt-aero body .modal-header .close, html.mdt-aero body .modal-content .close,
+html.mdt-aero body .swal2-close {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 45px !important;
+  height: 21px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border: 1px solid #8C2318 !important;
+  border-top: 0 !important;
+  border-right: 0 !important;
+  border-radius: 0 5px 0 4px !important;
+  background-image: linear-gradient(180deg, #F0776B 0%, #D2402F 48%, #A9261A 100%) !important;
+  background-color: #C0392B !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45) !important;
+  font-size: 13px !important;
+  line-height: 19px !important;
+  text-align: center !important;
+  overflow: hidden !important;
+  z-index: 6 !important;
+}
+html.mdt-aero body .modal-header .close:hover,
+html.mdt-aero body .modal-content .close:hover,
+html.mdt-aero body .swal2-close:hover {
+  background-image: linear-gradient(180deg, #F79A90 0%, #DE5342 48%, #B92C1E 100%) !important;
+}
+html.mdt-aero body .modal-header .close i,
+html.mdt-aero body .modal-content .close i,
+html.mdt-aero body .modal-header .close span,
+html.mdt-aero body .modal-content .close span {
+  color: #FFFFFF !important;
+  font-size: 12px !important;
+  line-height: 19px !important;
+  vertical-align: middle !important;
+}
+html.mdt-aero body .modal-header {
+  position: relative !important;
+  padding-right: 56px !important;
+  padding-left: 56px !important;
+}
+
+html.mdt-aero body .card-body .row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+html.mdt-aero body .card-body .row > [class^="col-"],
+html.mdt-aero body .card-body .row > [class*=" col-"],
+html.mdt-aero body .card-body .row > .col {
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-wrap: break-word !important;
+}
+html.mdt-aero body .card-body .style-list-no-style {
+  margin: 0 !important;
+  padding-left: 0 !important;
+  list-style: none !important;
+}
+html.mdt-aero body .colourPreview {
+  display: inline-block !important;
+  width: 13px !important;
+  height: 13px !important;
+  border: 1px solid ${g.panelBorder} !important;
+  border-radius: 2px !important;
+  vertical-align: middle !important;
+  margin-right: 4px !important;
+  flex: none !important;
+}
+html.mdt-aero body .btn-actions-xs {
+  padding: 1px 6px !important;
+  line-height: 16px !important;
+  font-size: 11px !important;
+}
+
+html.mdt-aero body .card.card-profile,
+html.mdt-aero body .card.card-profile-avatar {
+  background-image: linear-gradient(180deg, ${g.panelHi} 0%, ${g.panelLo} 100%) !important;
+  background-color: ${g.panelHi} !important;
+  border: 1px solid ${g.panelBorder} !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 1px 0 ${g.emboss}, 0 1px 2px ${g.shade} !important;
+  background-clip: padding-box !important;
+}
+html.mdt-aero body .card.card-profile > .card-body,
+html.mdt-aero body .card.card-profile > .card-body > .row,
+html.mdt-aero body .card.card-profile .col-xl-6,
+html.mdt-aero body .card.card-profile .characterDetailsName,
+html.mdt-aero body .card.card-profile h3,
+html.mdt-aero body .card.card-profile h5 {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html.mdt-aero body .card.card-profile .characterDetailsName,
+html.mdt-aero body .card.card-profile .characterDetailsTitle,
+html.mdt-aero body .card.card-profile .characterDetailsValue,
+html.mdt-aero body .card.card-profile h3, html.mdt-aero body .card.card-profile h5 {
+  color: ${g.ink} !important;
+  text-shadow: ${emb} !important;
+}
+
+html.mdt-aero body .dropdown-menu {
+  background-color: ${g.menuBg} !important;
+  background-image: none !important;
+  border: 1px solid ${g.menuBorder} !important;
+  border-radius: 3px !important;
+  box-shadow: 0 3px 8px ${g.shade} !important;
+}
+html.mdt-aero body .dropdown-menu .dropdown-item,
+html.mdt-aero body .dropdown-menu a, html.mdt-aero body .dropdown-menu span,
+html.mdt-aero body .dropdown-header, html.mdt-aero body .dropdown-menu li > a {
+  color: ${g.ink} !important;
+  background-color: transparent !important;
+}
+html.mdt-aero body .dropdown-menu .dropdown-item:hover,
+html.mdt-aero body .dropdown-menu .dropdown-item:focus,
+html.mdt-aero body .dropdown-menu li > a:hover {
+  background-image: linear-gradient(180deg, ${g.hoverHi} 0%, ${g.hoverLo} 100%) !important;
+  background-color: ${g.hoverMid} !important;
+  color: ${g.hdrInk} !important;
+}
+html.mdt-aero body .dropdown-menu .dropdown-item.disabled,
+html.mdt-aero body .dropdown-menu .dropdown-item:disabled {
+  color: ${g.muted} !important;
+  background-image: none !important;
+}
+html.mdt-aero body .dropdown-divider {
+  border-top: 1px solid ${g.menuBorder} !important;
+}
+
+html.mdt-aero body img, html.mdt-aero body .personPhotograph,
+html.mdt-aero body .warrantSealLogoLeft, html.mdt-aero body .warrantSealLogoRight,
+html.mdt-aero body .characterFactionLogo, html.mdt-aero body .characterFactionLogo img {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html.mdt-aero body td .badge, html.mdt-aero body .badge {
+  display: inline-block !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  line-height: 1.35 !important;
+  vertical-align: baseline !important;
+  box-sizing: border-box !important;
+}
+html.mdt-aero body td .badge, html.mdt-aero body li .badge {
+  text-align: left !important;
+}
+html.mdt-aero body td > ul, html.mdt-aero body td > ul > li {
+  max-width: 100% !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+html.mdt-aero body td > ul {
+  margin: 0 !important;
+  padding-left: 16px !important;
+}
+html.mdt-aero body .table td, html.mdt-aero body .table th {
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+`
+}
+function applyGlass() {
+  const g = GLASS[themeNow()]
+  const host = document.head || document.documentElement
+  const root = document.documentElement
+  let node = document.getElementById(GLASS_STYLE_ID)
+  if (!g) {
+    if (root && root.classList) root.classList.remove('mdt-aero')
+    if (node && node.parentNode) node.parentNode.removeChild(node)
+    return
+  }
+  if (root && root.classList) root.classList.add('mdt-aero')
+  if (!node) {
+    node = document.createElement('style')
+    node.id = GLASS_STYLE_ID
+    node.setAttribute('type', 'text/css')
+  }
+  const css = buildGlassCss(g)
+  if (node.textContent !== css) node.textContent = css
+  if (host && node.parentNode !== host) host.appendChild(node)
+  else if (host && host.lastChild !== node) host.appendChild(node)
+}
+
+
+const PLATE_STYLE_ID = 'mdt-plate-skin'
+const PLATE_RE = /^[A-Z0-9][A-Z0-9 -]{1,10}$/
+
+function buildPlateCss() {
+  return `
+html body [data-mdt-plate="1"] {
+  position: relative !important;
+  display: inline-block !important;
+  background: #FFFFFF !important;
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F4F6FA 100%) !important;
+  border: 1px solid #C9D2E2 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 6px rgba(10, 20, 45, 0.30) !important;
+  padding: 16px 30px 10px !important;
+  min-width: 150px !important;
+  text-align: center !important;
+  overflow: visible !important;
+}
+
+html body [data-mdt-plate="1"],
+html body [data-mdt-plate="1"] * {
+  color: #1B2E8C !important;
+  font-family: "Segoe UI", Tahoma, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 26px !important;
+  line-height: 1.1 !important;
+  letter-spacing: 1px !important;
+  text-shadow: none !important;
+}
+
+html body [data-mdt-plate="1"]::before {
+  content: "San Andreas";
+  position: absolute !important;
+  top: 3px !important;
+  left: 0 !important;
+  right: 0 !important;
+  text-align: center !important;
+  color: #E02B36 !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-style: italic !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0 !important;
+  pointer-events: none !important;
+}
+
+html body [data-mdt-plate="1"]::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 6px !important;
+  left: 8px !important;
+  width: 18px !important;
+  height: 7px !important;
+  border-radius: 4px !important;
+  background: #E8434C !important;
+  box-shadow: 108px 0 0 #E8434C !important;
+  pointer-events: none !important;
+}
+
+html body [data-mdt-plate="1"] [data-mdt-plate-cap="1"] { display: none !important; }
+`
+}
+
+function applyPlateStyle() {
+  const host = document.head || document.documentElement
+  if (!host) return
+  let node = document.getElementById(PLATE_STYLE_ID)
+  if (!node) {
+    node = document.createElement('style')
+    node.id = PLATE_STYLE_ID
+    node.setAttribute('type', 'text/css')
+    node.textContent = buildPlateCss()
+  }
+  if (node.parentNode !== host) host.appendChild(node)
+}
+
+function isPlateRecordPage() {
+  try {
+    return /^\/dmv\/[^/]+/i.test(location.pathname)
+  } catch (_) {
+    return false
+  }
+}
+
+function fixPlates() {
+  if (!document.body) return
+  if (!isPlateRecordPage()) {
+    for (const old of document.querySelectorAll('[data-mdt-plate="1"]')) {
+      old.removeAttribute('data-mdt-plate')
+    }
+    return
+  }
+  applyPlateStyle()
+  let nodes = []
+  try {
+    nodes = document.querySelectorAll(
+      '[class*="plate" i], [id*="plate" i], [name*="plate" i]'
+    )
+  } catch (_) {
+    return
+  }
+  for (const el of nodes) {
+    if (!el || el.getAttribute('data-mdt-plate') === '1') continue
+    const tag = el.tagName
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' ||
+        tag === 'OPTION' || tag === 'TABLE' || tag === 'TR' ||
+        tag === 'THEAD' || tag === 'TBODY' || tag === 'FORM') continue
+    if (el.querySelector('input, select, textarea, table, .btn')) continue
+    const text = flatText(el)
+    if (!text || text.length > 12) continue
+    if (!PLATE_RE.test(text.toUpperCase())) continue
+    if (text.toUpperCase() !== text) continue
+    for (const kid of el.querySelectorAll('*')) {
+      if (/san\s*andreas/i.test(flatText(kid))) kid.setAttribute('data-mdt-plate-cap', '1')
+    }
+    el.setAttribute('data-mdt-plate', '1')
   }
 }
 
@@ -225,9 +1004,14 @@ body, body *${NOT_ICON} {
 .main-panel { overflow-x: hidden !important; }
 .sidebar, .sidebar-wrapper { overflow-x: hidden !important; }
 
-${BOX_SEL} {
+${PANEL_SEL} {
   background-image: none !important;
   background-color: ${p.panel} !important;
+}
+
+${FLAT_SEL} {
+  background-image: none !important;
+  background-color: transparent !important;
 }
 
 html body .bg-dark, html body .bg-black, html body .bg-secondary, html body .bg-body,
@@ -283,12 +1067,65 @@ html body .text-muted, html body .text-secondary, html body .opacity-50, html bo
   min-height: 0 !important;
 }
 
-/* The collapse toggle is absolutely positioned near the centre of its header,
-   so on cards with a centred title (Message of the Day, the profile card) the
-   dash landed on top of the text. Pin it to the right edge and keep the title
-   clear of it. */
 html body .card-header, html body .panel-heading, html body .card > .card-header {
   position: relative !important;
+}
+html body .card-title {
+  position: static !important;
+}
+html body .card-header .btn-collapse, html body .card-title .btn-collapse,
+html body .panel-heading .btn-collapse {
+  position: absolute !important;
+  top: 50% !important;
+  right: 6px !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  margin: 0 !important;
+  width: 20px !important;
+  height: 18px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  line-height: 16px !important;
+  font-size: 11px !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  z-index: 3 !important;
+}
+html body .card > .card-header, html body .panel > .panel-heading {
+  padding-left: 30px !important;
+  padding-right: 30px !important;
+  min-height: 22px !important;
+  line-height: 16px !important;
+  overflow: visible !important;
+}
+html body .card, html body .panel {
+  background-color: ${p.panel} !important;
+  border: 1px solid ${p.border} !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+  background-clip: padding-box !important;
+}
+html body .card-profile, html body .card-profile-avatar,
+html body .card-profile-elements {
+  background-color: ${p.panel} !important;
+  background-image: none !important;
+  border: 1px solid ${p.border} !important;
+  border-radius: 4px !important;
+}
+html body .card-profile .card-body, html body .card-profile-avatar .card-body,
+html body .card-profile-elements .card-body {
+  background: transparent !important;
+  background-image: none !important;
+}
+html body .card-body > .table-responsive, html body .card-body .table {
+  max-width: 100% !important;
+}
+html body img.warrantSealLogoLeft, html body img.warrantSealLogoRight {
+  height: 92px !important;
+  width: auto !important;
+  max-width: none !important;
 }
 html body .card-header:has(.btn-collapse),
 html body .panel-heading:has(.btn-collapse),
@@ -328,6 +1165,90 @@ html body .panel-heading > .close {
 }
 
 .card-body, .panel-body { padding: 6px 8px !important; }
+
+html body .card-profile, html body .card-profile-avatar {
+  position: relative !important;
+  background: ${p.panel} !important;
+  border: 1px solid ${p.border} !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+html body .card-profile-avatar {
+  padding: 3px !important;
+  background: ${p.field} !important;
+}
+html body .card-profile-avatar .card-img,
+html body .card-profile-avatar img {
+  border-radius: 0 !important;
+  display: block !important;
+  max-width: 100% !important;
+}
+html body .card-img, html body #charPicture {
+  position: relative !important;
+  display: block !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+}
+html body .card-img img, html body img.personPhotograph {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin: 0 auto !important;
+}
+html body .card-img-overlay {
+  position: absolute !important;
+  top: 2px !important;
+  right: 2px !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  line-height: 1 !important;
+  text-align: right !important;
+  pointer-events: auto !important;
+  z-index: 3 !important;
+}
+html body .card-img-overlay br {
+  display: block !important;
+  line-height: 2px !important;
+}
+html body .card-img-overlay > a {
+  display: inline-block !important;
+  float: none !important;
+  position: static !important;
+  margin: 0 0 2px 0 !important;
+  padding: 2px !important;
+  width: 18px !important;
+  height: 18px !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  border: 1px solid ${p.border} !important;
+  text-align: center !important;
+  line-height: 12px !important;
+  box-sizing: border-box !important;
+}
+html body .card-img-overlay > a:hover {
+  background: ${p.hover} !important;
+}
+html body .card-img-overlay .uploadIcon,
+html body .card-img-overlay i {
+  color: ${p.text} !important;
+  font-size: 11px !important;
+  line-height: 12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  margin: 0 !important;
+  vertical-align: top !important;
+}
+html body .card hr, html body .panel hr {
+  border-top: 1px solid ${p.borderLite} !important;
+  border-bottom: 0 !important;
+  margin: 6px 8px !important;
+  opacity: 1 !important;
+}
 .card-title { font-size: 12px !important; font-weight: bold !important; margin: 2px 0 !important; }
 
 .card-icon {
@@ -344,7 +1265,6 @@ html body .panel-heading > .close {
 .card-header-dark .card-icon { background-color: #404040 !important; }
 .card-icon i, .card-icon .material-icons, .card-icon svg { color: #FFFFFF !important; }
 
-/* Dashboard stat cards: the header used to sit inset with its own tinted bar. */
 .card-stats, .card-dashboard {
   background-color: ${p.panel} !important;
   border-radius: 0 !important;
@@ -353,9 +1273,6 @@ html body .panel-heading > .close {
   margin-top: 14px !important;
 }
 
-/* Filter strips mix plain inputs with bootstrap-select pickers. The picker
-   keeps its own margins and taller toggle, so on the DMV filter row it sat a
-   few pixels below the text fields instead of on their baseline. */
 .bootstrap-select:not(.form-control) {
   margin: 1px !important;
   vertical-align: middle !important;
@@ -378,8 +1295,6 @@ html body .panel-heading > .close {
   overflow: hidden !important;
 }
 
-/* Search widgets and their buttons ship with a near black pill behind them
-   (DMV filter strip, map overlay), which reads as a hole in the classic skin. */
 html body .btn-dark, html body .btn.btn-dark,
 html body .btn-secondary, html body .btn.btn-secondary,
 html body .btn-inverse, html body .btn.btn-inverse,
@@ -409,10 +1324,6 @@ html body .map-search, html body .leaflet-control-search, html body .leaflet-con
   padding: 2px !important;
 }
 
-/* Filter strips (Incident Database and friends) mix text fields, pickers and
-   action buttons across Material's column grid, which dropped some controls a
-   line below their neighbours at mismatched sizes. Each grid cell and the row
-   holding it are marked, so the run lays out as one flat wrapping line. */
 html body [data-mdt-frow="1"] {
   display: flex !important;
   flex-wrap: wrap !important;
@@ -475,11 +1386,6 @@ html body [data-mdt-frow="1"] .checkbox {
   font-size: 12px !important;
 }
 
-/* Leaflet maps. The skin's borders, backgrounds and scroll trimming break the
-   tile panes and clip the layer control, so keep the map surface near stock and
-   only skin the chrome around it. */
-/* The water surround is part of the map surface, not chrome: the vanilla page
-   shows cyan around the island on both the vehicle and emergency maps. */
 #map {
   background-color: #0FA8D2 !important;
   width: 100% !important;
@@ -599,9 +1505,6 @@ html body [data-mdt-frow="1"] .checkbox {
   border-radius: 0 !important;
   box-shadow: none !important;
   margin: 0 !important;
-  /* The icon tile used to sit flush against the top-left corner of the card.
-     The header is now a centred flex row with real breathing room, so the
-     tile is inset and lines up with the middle of the figure + label. */
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
@@ -648,8 +1551,6 @@ html body [data-mdt-frow="1"] .checkbox {
 .card-dashboard .card-category, .card-dashboard .card-title {
   margin: 0 !important;
   padding: 0 !important;
-  /* Figure and label sit together beside the icon instead of being pushed to
-     opposite ends of the card. */
   text-align: left !important;
   white-space: nowrap !important;
   color: ${p.text} !important;
@@ -667,7 +1568,6 @@ html body [data-mdt-frow="1"] .checkbox {
   padding: 2px 6px !important;
 }
 
-/* Tab panels: the frame used to break out past the tab strip. */
 .tab-content {
   background-color: ${p.panel} !important;
   border: 1px solid ${p.border} !important;
@@ -685,7 +1585,6 @@ html body [data-mdt-frow="1"] .checkbox {
   margin: 0 !important;
 }
 
-/* Lookup pages: one centred column of fields with the button underneath. */
 html.mdt-lookup .tab-content form {
   display: flex !important;
   flex-direction: column !important;
@@ -696,8 +1595,6 @@ html.mdt-lookup .tab-content form {
   margin: 0 !important;
   padding: 0 !important;
 }
-/* Wrappers at any depth become full-width centring columns, so a half-width
-   grid column can no longer drag the field stack off centre. */
 html.mdt-lookup .tab-content form .row,
 html.mdt-lookup .tab-content form .form-row,
 html.mdt-lookup .tab-content form [class*="col-"],
@@ -714,7 +1611,6 @@ html.mdt-lookup .tab-content form > div:not(.form-group):not(.bmd-form-group):no
   padding: 0 !important;
   float: none !important;
 }
-/* Every field and the button share one 320px column, so they line up exactly. */
 html.mdt-lookup .tab-content form .form-group,
 html.mdt-lookup .tab-content form .bmd-form-group,
 html.mdt-lookup .tab-content form .input-group {
@@ -1247,8 +2143,6 @@ html body .modal[data-mdt-vanilla="1"] .card-header {
 }
 .modal-backdrop, .modal-backdrop.show { background-color: #000000 !important; }
 
-/* Arrest report dialog: keep the charge rows inside the frame instead of
-   letting the absolutely positioned time badge stretch them past the edge. */
 .modal:not([data-mdt-vanilla="1"]) .modal-body .card,
 .modal:not([data-mdt-vanilla="1"]) .modal-body .card-body {
   overflow: visible !important;
@@ -1256,7 +2150,6 @@ html body .modal[data-mdt-vanilla="1"] .card-header {
   margin: 0 0 4px 0 !important;
   padding: 2px !important;
 }
-/* The arrest dialog keeps its own spacing, it just must not overflow. */
 .modal[data-mdt-vanilla="1"] .modal-body .card,
 .modal[data-mdt-vanilla="1"] .modal-body .card-body {
   max-width: 100% !important;
@@ -1267,7 +2160,6 @@ html body .modal[data-mdt-vanilla="1"] .card-header {
   width: auto !important;
 }
 
-/* Narrative editor (summernote) was rendering as a black slab. */
 .note-editor, .note-editor.note-frame, .note-frame, .summernote, .CodeMirror {
   background-color: ${p.field} !important;
   border: 1px solid ${p.fieldBorder} !important;
@@ -1303,9 +2195,6 @@ html body .modal[data-mdt-vanilla="1"] .card-header {
 }
 .note-btn, .note-editor .btn { background-color: ${p.btnFace} !important; color: ${p.text} !important; border: 1px solid ${p.border} !important; }
 
-/* The summernote toolbar carries class="card-header", so it was picking up the
-   card/collapse header rules and stacking every button group on its own line.
-   Give the toolbar its own horizontal layout at higher specificity. */
 html body .note-editor .note-toolbar,
 html body .note-toolbar.card-header {
   display: flex !important;
@@ -1372,7 +2261,6 @@ html body .note-toolbar .note-current-fontname {
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
-/* Toolbar dropdowns: font list, style list, and the colour palettes. */
 html body .note-editor .note-dropdown-menu {
   display: none;
   position: absolute !important;
@@ -1413,7 +2301,6 @@ html body .note-editor .note-dropdown-menu > .dropdown-item * {
   color: inherit !important;
   margin: 0 !important;
 }
-/* The colour dropdown holds two palettes side by side. */
 html body .note-editor .note-dropdown-menu .note-palette {
   display: inline-block !important;
   width: 150px !important;
@@ -1441,7 +2328,6 @@ html body .note-editor .note-color-row {
   height: auto !important;
   margin: 0 0 1px 0 !important;
 }
-/* Swatches keep their inline background-color; only the box is restyled. */
 html body .note-editor .note-color-btn {
   display: block !important;
   box-sizing: border-box !important;
@@ -1470,7 +2356,6 @@ html body .note-editor .note-color-select {
 }
 html body .note-editor .note-holder-custom { display: none !important; }
 html body .note-editor .note-dimension-picker { position: relative !important; }
-/* The editing surface itself was rendering as a black slab inside dialogs. */
 html body .note-editor .note-editing-area,
 html body .note-editor .note-editing-area > .note-editable,
 html body .note-editor .note-editing-area > .note-codable {
@@ -1478,11 +2363,6 @@ html body .note-editor .note-editing-area > .note-codable {
   color: ${p.text} !important;
 }
 
-/* Person Lookup and ID Lookup. The fields are not inside a <form>, so the
-   earlier form-scoped rules never matched: the real markup is
-   .tab-content > .tab-pane > .row.justify-content-center > .col-xl-4.
-   Pin every row to one centred column so the fields and the Search button
-   share the same axis and width. */
 html.mdt-lookup .tab-content .tab-pane > .row,
 html.mdt-lookup .tab-content .tab-pane .row.justify-content-center {
   display: flex !important;
@@ -1534,7 +2414,6 @@ html.mdt-lookup .tab-content .tab-pane .btn {
   float: none !important;
 }
 
-/* Licence cards: Revoke / Suspend used to float out of the card. */
 .card-license {
   background-color: ${p.panel} !important;
   border: 1px solid ${p.border} !important;
@@ -1575,7 +2454,6 @@ html.mdt-lookup .tab-content .tab-pane .btn {
   margin: 0 !important;
   vertical-align: middle !important;
 }
-/* Revoke and Suspend sat in block level wrappers, which stacked them. */
 .card-license .btn-group, .card-license .dropdown, .card-license .dropup {
   display: inline-flex !important;
   align-items: center !important;
@@ -1590,7 +2468,6 @@ html.mdt-lookup .tab-content .tab-pane .btn {
   max-width: none !important;
 }
 
-/* "Show 10 entries" length picker was rendering as a big square box. */
 html body .dataTables_length, html body div[id$="_length"] {
   display: inline-flex !important;
   align-items: center !important;
@@ -1632,7 +2509,6 @@ html body .dataTables_length .form-control, html body .dataTables_length .bmd-fo
 }
 html body .dataTables_length .bmd-form-group { border: none !important; padding: 0 !important; }
 
-/* Charge rows in the arrest dialog: single line, uniform control sizing. */
 html body .modal .modal-body [data-mdt-crow="1"] select,
 html body .modal .modal-body [data-mdt-crow="1"] .form-control,
 html body .modal .modal-body [data-mdt-crow="1"] .bootstrap-select > .dropdown-toggle,
@@ -1686,10 +2562,6 @@ html body .modal .modal-body [data-mdt-cbtn="1"] button {
   justify-content: center !important;
 }
 
-/* Perfect Scrollbar wraps several containers (.ps-container, and the arrest
-   dialog's .modal-body.modal-scroll) in its own rails while the element also
-   scrolls natively, which is where the doubled scrollbars and the grey rail
-   floating over the interface came from. The rails go, native scrolling stays. */
 .ps-scrollbar-x-rail, .ps-scrollbar-y-rail,
 .ps-scrollbar-x, .ps-scrollbar-y {
   display: none !important;
@@ -1703,8 +2575,6 @@ html body .modal .modal-body [data-mdt-cbtn="1"] button {
   -ms-overflow-style: auto !important;
 }
 
-/* The dialog itself is the only scroller: header and footer stay put and the
-   body takes the remaining height. */
 html body .modal .modal-content {
   display: flex !important;
   flex-direction: column !important;
@@ -1716,10 +2586,6 @@ html body .modal .modal-body {
   max-height: none !important;
 }
 
-/* Arrest dialog charge rows. The site builds each row as
-     .form-group.row.col-12 > .input-group.col-5 | .col-3 | .col-3 | .col-1
-   with a bootstrap-select in each group, so the row is laid out as a grid with
-   the remove button in a fixed last column. */
 html body .modal .modal-body .form-group.row.col-12 {
   display: grid !important;
   grid-template-columns: minmax(0, 5fr) minmax(0, 3fr) minmax(0, 3fr) 28px !important;
@@ -1809,9 +2675,6 @@ html body .modal .modal-body .remove_button i {
   font-size: 12px !important;
 }
 
-/* Charge rows are appended into .input-group-addon.chargeWrapper, which shares
-   a class with the button strip above it, so that wrapper must stay a vertical
-   stack: one row per line, newest underneath. */
 html body .modal .modal-body .chargeWrapper {
   display: flex !important;
   flex-direction: column !important;
@@ -1820,8 +2683,6 @@ html body .modal .modal-body .chargeWrapper {
   gap: 0 !important;
   width: 100% !important;
   margin: 0 0 6px 0 !important;
-  /* Its own panel: the list scrolls inside these bounds so a long charge list
-     can never spill over the Narrative editor underneath it. */
   position: relative !important;
   float: none !important;
   clear: both !important;
@@ -1835,7 +2696,6 @@ html body .modal .modal-body .chargeWrapper {
   background-color: ${p.panelAlt} !important;
   padding: 5px !important;
 }
-/* Whatever follows the charge list starts on its own line. */
 html body .modal .modal-body .chargeWrapper + * {
   clear: both !important;
   position: relative !important;
@@ -1846,11 +2706,6 @@ html body .modal .modal-body .chargeWrapper > * {
   flex: 0 0 auto !important;
 }
 
-/* The Penal Code and Add Charge buttons are inline-styled to 15% width and
-   stacked; they belong side by side above the rows. */
-/* The infraction dialog uses the same pattern with a different wrapper class,
-   so any addon that actually holds rows is matched by shape rather than name
-   and gets the same stacked panel. */
 html body .modal .modal-body .input-group-addon:has(> .form-group.row),
 html body .modal .modal-body .input-group-addon:has(> .form-group.bmd-form-group),
 html body .modal .modal-body .input-group-addon:has(> .input-group) {
@@ -1882,10 +2737,6 @@ html body .modal .modal-body .input-group-addon:has(> .input-group) > * {
   margin: 0 0 4px 0 !important;
 }
 
-/* Header field columns (Type / Location / Status / Confidential Level, and the
-   same strip in Add Record). The site centres the caption with .text-center but
-   leaves the control in a .btn-group that sits wherever it lands, so the label
-   and its control were off-axis from each other. */
 html body .modal .modal-body > .row > [class*="col-"] > .form-group,
 html body .modal .modal-body > .row > [class*="col-"] > .bmd-form-group {
   display: flex !important;
@@ -1932,11 +2783,6 @@ html body .modal .modal-body > .row > [class*="col-"] .input-group {
   margin: 0 auto !important;
 }
 
-/* Summernote toolbars inside a modal (Edit Record, Add Record). The header
-   column rules above match every .btn-group in the column, and the toolbar's
-   groups are .btn-group as well, which stacked and centred them one per row.
-   They are excluded above; the layout is restated here so it also wins on
-   specificity inside modals. */
 html body .modal .modal-body .note-toolbar {
   display: flex !important;
   flex-direction: row !important;
@@ -2002,12 +2848,6 @@ html body .modal .modal-body .input-group-addon:not(.chargeWrapper) > .btn {
   padding: 0 12px !important;
 }
 
-/* Dashboard statistics. Each card is
-     .card.card-stats > .card-header.card-header-icon.card-header-<colour>
-       > .card-icon > i, h4.card-title, h6
-   and Material Design lifts .card-icon out of the header with a negative
-   offset so it overhangs the card. In a flat skin there is nothing to overhang,
-   so the tile is pinned inside the header next to the figure and label. */
 html body .card.card-stats,
 html body .card.card-dashboard {
   overflow: hidden !important;
@@ -2074,13 +2914,6 @@ html body .card.card-stats .card-header h6.text-dark {
   color: ${p.text} !important;
 }
 
-/* Leaflet Search control on the map pages. The plugin emits
-     .leaflet-control-search.search-exp
-       > label.search-input (hidden) + input.search-input
-       + ul.search-tooltip + a.search-cancel > span + a.search-button
-       + div.search-alert
-   The label shares the input's class, and the input carries an inline
-   max-width in the thousands of pixels, which is what made the field sprawl. */
 html body .leaflet-control-search {
   display: inline-flex !important;
   align-items: center !important;
@@ -2192,11 +3025,6 @@ html body .leaflet-control-search .search-alert {
   font-size: 11px !important;
 }
 
-/* Scrolling pickers (Caution Code, Profiling Sample facility). Markup is
-     .dropdown-menu.dropdown-menu-scroll.ps-container
-       > a.dropdown-item[name="cautionCodeOption"] > span.badge.badge-pill
-   They rely on Perfect Scrollbar for their scrollbar, which is now suppressed,
-   so they need a real height limit and native scrolling of their own. */
 html body .dropdown-menu.dropdown-menu-scroll {
   display: block !important;
   box-sizing: border-box !important;
@@ -2304,6 +3132,64 @@ a:visited { color: ${p.visited} !important; }
   vertical-align: baseline !important;
 }
 
+html body .badge {
+  display: inline-block !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  line-height: 1.35 !important;
+  vertical-align: baseline !important;
+  box-sizing: border-box !important;
+}
+html body td .badge, html body li .badge {
+  text-align: left !important;
+}
+html body td > ul, html body td > ul > li, html body td, html body th {
+  max-width: 100% !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+}
+html body .table-responsive, html body .card-body .table {
+  overflow-x: visible !important;
+}
+
+html body .alert, html body .alert-with-icon {
+  overflow: visible !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+}
+html body .alert > i, html body .alert > .fa, html body .alert > .fas,
+html body .alert > [class^="fa-"], html body .alert > [class*=" fa-"],
+html body .alert i.material-icons, html body .alert-with-icon > i {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  flex: none !important;
+  width: 14px !important;
+  height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+  font-size: 13px !important;
+  line-height: 15px !important;
+  margin: 1px 4px 0 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  vertical-align: top !important;
+}
+html body .alert > span, html body .alert > div, html body .alert > b {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
+}
+html body .alert .close, html body .alert button.close {
+  flex: none !important;
+  margin-left: auto !important;
+}
+
 html body .badge-danger, html body .bg-danger, html body .btn-danger, html body .btn.btn-danger {
   background-color: ${p.danger} !important; color: ${p.dangerText} !important;
   border: 1px solid ${p.danger} !important; font-weight: bold !important;
@@ -2325,6 +3211,40 @@ html body .badge-success, html body .bg-success, html body .btn-success, html bo
   border: 1px solid ${p.success} !important; font-weight: bold !important;
 }
 html body .badge-success *, html body .btn-success * { color: ${p.successText} !important; }
+html body .badge > h6, html body .badge > p, html body .badge > div,
+html body .badge > h1, html body .badge > h2, html body .badge > h3,
+html body .badge > h4, html body .badge > h5 {
+  display: inline-block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: baseline !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: inherit !important;
+}
+html body #warrant > .row, html body #warrantReason > .row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+}
+html body #warrant .col-md-3, html body #warrantReason .col-md-3 {
+  flex: 0 0 25% !important; max-width: 25% !important;
+}
+html body #warrant .col-md-4, html body #warrantReason .col-md-4 {
+  flex: 0 0 33.333333% !important; max-width: 33.333333% !important;
+}
+html body #warrant .col-md-6, html body #warrantReason .col-md-6 {
+  flex: 0 0 50% !important; max-width: 50% !important;
+}
+html body #warrant .col-md-8, html body #warrantReason .col-md-8 {
+  flex: 0 0 66.666667% !important; max-width: 66.666667% !important;
+}
+html body #warrant .col-md-9, html body #warrantReason .col-md-9 {
+  flex: 0 0 75% !important; max-width: 75% !important;
+}
+html body #warrant .text-right, html body #warrantReason .text-right {
+  text-align: right !important;
+}
 .alert-success { background-color: ${p.successSoft} !important; color: ${p.successInk} !important; border: 1px solid ${p.success} !important; }
 
 html body div[data-notify="container"], html body .alert[data-notify] {
@@ -2374,15 +3294,18 @@ html body .alert[data-notify].alert-info {
 }
 html body [data-notify="icon"] {
   position: absolute !important;
-  left: 9px !important;
+  left: 8px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   margin: 0 !important;
   padding: 0 !important;
-  width: 18px !important;
-  height: 18px !important;
-  font-size: 18px !important;
-  line-height: 18px !important;
+  width: 13px !important;
+  height: 13px !important;
+  max-width: 13px !important;
+  max-height: 13px !important;
+  overflow: hidden !important;
+  font-size: 13px !important;
+  line-height: 13px !important;
   background: none !important;
   border: none !important;
 }
@@ -2445,7 +3368,6 @@ function themeNow() {
   return isMdcHost() ? theme : 'off'
 }
 
-/* Every skin except "Original MDC" has an entry in PALETTES. */
 function paletteNow() {
   return PALETTES[themeNow()] || PALETTES.light
 }
@@ -2624,16 +3546,6 @@ function restoreHidden() {
   })
 }
 
-/* The MDC page header carries three icon controls, with these exact ids in the
-   site's own markup:
-     #navbarDropdownHistory        search history
-     #navbarDropdownNotifications  notifications
-     #navbarDropdownProfile        profile / account menu
-   On a custom skin the whole nav-item is hidden here and never revealed again.
-   Instead the client asks for the contents of a dropdown, renders them in its
-   own menu next to Help, and asks us to follow the chosen link. That keeps the
-   site dropdown from popping open half-way down the page and from bringing the
-   original icons back. */
 const HDR_SEL = {
   history: '#navbarDropdownHistory',
   bell: '#navbarDropdownNotifications',
@@ -2645,12 +3557,42 @@ function findHeaderCtl(kind) {
   if (!sel) return null
   const nodes = document.querySelectorAll(sel)
   for (let i = 0; i < nodes.length; i++) {
-    // The sidebar carries a second copy of the profile menu; prefer the one in
-    // the top navigation bar.
     if (nodes[i].closest('.navbar')) return nodes[i]
   }
   return nodes[0] || null
 }
+
+
+const ALERT_MAX = 999
+let lastAlertCount = -1
+
+function alertCountFrom(node) {
+  if (!node) return 0
+  const badge = node.querySelector('.badge, .notification-count, .count, sup')
+  if (badge) {
+    const n = parseInt(String(flatText(badge)).replace(/[^0-9]/g, ''), 10)
+    if (!isNaN(n)) return Math.min(n, ALERT_MAX)
+  }
+  const box = node.closest('li.nav-item') || node.parentNode
+  const menu = box && box.querySelector ? box.querySelector('.dropdown-menu') : null
+  if (!menu) return 0
+  const unread = menu.querySelectorAll(
+    '.unread, [data-unread="1"], .notification-unread, li.unread, a.unread'
+  )
+  return Math.min(unread.length, ALERT_MAX)
+}
+
+function reportAlerts() {
+  try {
+    const n = alertCountFrom(findHeaderCtl('bell'))
+    if (n === lastAlertCount) return
+    lastAlertCount = n
+    ipcRenderer.sendToHost('mdt:alerts', n)
+  } catch (_) {
+  }
+}
+
+setInterval(reportAlerts, 15000)
 
 function headerCtlBox(node) {
   return (node && node.closest && (node.closest('li.nav-item') || node.closest('li'))) || node
@@ -2676,8 +3618,6 @@ function restoreHeaderControls() {
   })
 }
 
-/* The client owns appearance on a custom skin, so the site's own Day Mode /
-   Night Mode switch (#darkMode) is left out of the mirrored menu. */
 function isDayModeItem(node) {
   if (!node) return false
   if (node.id === 'darkMode') return true
@@ -2694,8 +3634,6 @@ function headerMenuItems(kind) {
   for (let i = 0; i < links.length; i++) {
     const link = links[i]
     if (themeNow() !== 'off' && isDayModeItem(link)) continue
-    // History and notification rows carry a title line plus a small timestamp
-    // or source line; split them so the client can show both.
     const small = link.querySelector('span')
     const sub = small ? flatText(small) : ''
     let label = flatText(link)
@@ -2720,8 +3658,6 @@ function runHeaderItem(kind, index) {
   const link = menu.querySelectorAll('a')[index]
   if (!link) return
   const href = link.getAttribute('href') || ''
-  // A real destination is followed directly; anything script-driven is clicked
-  // on the hidden node, which still fires its handlers.
   if (href && href !== '#' && href.charAt(0) !== '#') {
     try {
       window.location.assign(link.href)
@@ -2872,9 +3808,6 @@ function fixChargeBars() {
       })
       const parent = el.parentElement
       if (parent) {
-        // Keep the charge host block-level. Forcing flex here turned every
-        // charge row into a flex item, which is what pushed the Charge /
-        // Addition / Class fields outside the arrest report dialog.
         markRow(parent, {
           display: 'block',
           position: 'relative',
@@ -2900,10 +3833,6 @@ function restoreTimeBadges() {
   })
 }
 
-// The "Time: 0 Days 0 Hours 0 Mins" readout sits on top of the Penal Code /
-// Charge buttons and the first charge row. It needs a line of its own even in
-// the arrest dialog, which is otherwise left on its vanilla layout, so this
-// uses its own marker that exemptDialogs() does not clear.
 function fixTimeBadges() {
   if (themeNow() === 'off') {
     restoreTimeBadges()
@@ -2960,8 +3889,6 @@ function hasSelectish(el) {
   return !!el.querySelector('select, .bootstrap-select, input, textarea')
 }
 
-// True for a wrapper whose only content is a single unlabelled icon button,
-// which is how the red "remove charge" button is rendered.
 function isLoneIconButton(el) {
   if (!el || !el.querySelectorAll) return false
   if (hasSelectish(el)) return false
@@ -2970,11 +3897,6 @@ function isLoneIconButton(el) {
   return labelText(btns[0]).length === 0
 }
 
-// Each charge is laid out with Bootstrap columns that no longer fit the dialog,
-// so the fields stretch unevenly and the red remove button wraps onto a line of
-// its own. Lay every charge out as one nowrap flex line: the select columns
-// share the free space and the icon buttons keep their intrinsic width. Uses
-// its own markers because the arrest dialog is exempt from markRow().
 function fixChargeRows() {
   if (themeNow() === 'off') {
     restoreChargeRows()
@@ -2994,11 +3916,8 @@ function fixChargeRows() {
       if (!body.contains(row) || row === body) continue
       if (rows.indexOf(row) !== -1) continue
       const count = row.querySelectorAll('select, .bootstrap-select').length
-      // A charge is Charge + Addition + Class, so anything holding more than
-      // four pickers is a wrapper around several charges, not one charge row.
       if (count < 2 || count > 4) continue
       if (flatText(row).length > 200) continue
-      // Only take the innermost qualifying container.
       const nested = row.querySelectorAll('.row, .form-row')
       let hasNested = false
       for (let n = 0; n < nested.length; n++) {
@@ -3032,8 +3951,6 @@ function fixChargeRows() {
           if (!cell.style || !cell.dataset) continue
           cell.dataset.mdtCcell = '1'
           const picker = hasSelectish(cell)
-          // A zero flex basis collapses the pickers, because their own width is
-          // a percentage of the cell. Give them a real basis and a floor.
           setImportant(cell, {
             float: 'none',
             margin: '0',
@@ -3046,7 +3963,6 @@ function fixChargeRows() {
           if (!picker) cell.dataset.mdtCbtn = '1'
         }
       }
-      // Pull a remove button that wrapped below the charge back onto its line.
       const host = row.parentElement
       if (!host || !host.style || !host.dataset) continue
       const kids = []
@@ -3129,9 +4045,6 @@ function sharedAncestor(nodes) {
   return null
 }
 
-// Revoke and Suspend each sit in their own block level wrapper, so they stacked
-// vertically. Turn their shared wrapper into one centred row and make every
-// wrapper between it and the buttons inline so they sit side by side.
 function fixLicenseButtons() {
   if (themeNow() === 'off') {
     restoreLicenseButtons()
@@ -3337,8 +4250,6 @@ function hideColourControls() {
     })
 }
 
-// The MDC side panel is replaced by chips in the app's own tab strip, so its
-// links are scraped here and handed to the shell.
 const NAV_ROOT_SEL = '.sidebar, .sidebar-wrapper, #sidebar, aside.sidebar, nav.sidebar'
 let lastNavJson = ''
 
@@ -3363,8 +4274,6 @@ function collectNav() {
     const label = labelText(a).replace(/\s+/g, ' ').trim()
     if (!label || label.length > 40) continue
     const raw = a.getAttribute('href') || ''
-    // Group headers such as Person Database only toggle a submenu, so they have
-    // no target of their own and are dropped in favour of their children.
     if (!raw || /^#|^javascript:/i.test(raw)) continue
     const url = a.href
     if (!url) continue
@@ -3512,6 +4421,197 @@ function fixSingleScroller() {
   }
 }
 
+const NOIMG_RE = /^no image(?:\s+(?:found|available|on file|uploaded))?\.?$/i
+
+const SHOT_SEL = '#copyWarrant, #copyWarrantReason, [id^="copyWarrant"]'
+let shotWired = 0
+let shotTimer = 0
+let shotActive = 0
+const SHOT_STYLE_ID = 'mdt-shot-skin'
+let shotFrozen = []
+const BLANK_BG = /^(transparent|rgba\(0,\s*0,\s*0,\s*0\))$/i
+function shotTarget(btn) {
+  const id = (btn && btn.id) || ''
+  const wanted = /reason/i.test(id) ? 'warrantReason' : 'warrant'
+  return document.getElementById(wanted) || document.getElementById('warrant')
+}
+function shotBackdrop(root) {
+  let node = root && root.parentElement
+  while (node && node !== document.documentElement) {
+    let bg = ''
+    try {
+      bg = window.getComputedStyle(node).backgroundColor || ''
+    } catch (_) {
+      bg = ''
+    }
+    if (bg && !BLANK_BG.test(bg.replace(/\s+/g, ' ').trim())) return bg
+    node = node.parentElement
+  }
+  return themeNow() === 'off' ? '#FFFFFF' : paletteNow().panel
+}
+function freezeNode(el, prop, value) {
+  shotFrozen.push([el, prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)])
+  el.style.setProperty(prop, value, 'important')
+}
+function beginShot(btn) {
+  const root = shotTarget(btn)
+  if (!root) return
+  endShot()
+  try {
+    const nodes = [root].concat(Array.prototype.slice.call(root.querySelectorAll('*')))
+    for (const el of nodes) {
+      const tag = el.tagName
+      if (tag === 'IMG' || tag === 'BR' || tag === 'SCRIPT' || tag === 'STYLE') continue
+      let ink = ''
+      try {
+        ink = window.getComputedStyle(el).color || ''
+      } catch (_) {
+        ink = ''
+      }
+      if (ink) freezeNode(el, 'color', ink)
+    }
+    const inner = root.querySelectorAll('.badge > *')
+    for (const el of inner) {
+      let disp = ''
+      try {
+        disp = window.getComputedStyle(el).display || ''
+      } catch (_) {
+        disp = ''
+      }
+      if (disp === 'block' || disp === 'flex') {
+        freezeNode(el, 'display', 'inline-block')
+        freezeNode(el, 'margin', '0')
+      }
+    }
+    freezeNode(root, 'background-color', shotBackdrop(root))
+    shotActive = 1
+  } catch (_) {
+  }
+  if (shotTimer) clearTimeout(shotTimer)
+  shotTimer = setTimeout(endShot, 1500)
+}
+function endShot() {
+  shotActive = 0
+  if (shotTimer) {
+    clearTimeout(shotTimer)
+    shotTimer = 0
+  }
+  const list = shotFrozen
+  shotFrozen = []
+  for (const row of list) {
+    try {
+      const el = row[0]
+      el.style.removeProperty(row[1])
+      if (row[2]) el.style.setProperty(row[1], row[2], row[3] || '')
+    } catch (_) {
+    }
+  }
+}
+function watchWarrantCopy() {
+  if (shotWired) return
+  shotWired = 1
+  document.addEventListener('click', function (ev) {
+    const target = ev.target
+    if (!target || !target.closest) return
+    const btn = target.closest(SHOT_SEL)
+    if (!btn) return
+    beginShot(btn)
+  }, true)
+}
+
+const KEY_RE = /^\s*index\.([A-Za-z][A-Za-z0-9]*)\s*:?\s*$/
+function humanKey(raw) {
+  const words = String(raw).replace(/([a-z0-9])([A-Z])/g, '$1 $2').trim()
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+function fixLabelKeys() {
+  const links = document.querySelectorAll('a[href*="index."]')
+  for (const link of links) {
+    const href = link.getAttribute('href') || ''
+    if (!/^(https?:)?\/\/index\.[A-Za-z]/.test(href)) continue
+    const text = document.createTextNode(link.textContent || '')
+    if (link.parentNode) link.parentNode.replaceChild(text, link)
+  }
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null)
+  const hits = []
+  let node = walker.nextNode()
+  while (node) {
+    const raw = node.nodeValue || ''
+    if (raw.indexOf('index.') !== -1) hits.push(node)
+    node = walker.nextNode()
+  }
+  for (const hit of hits) {
+    const parent = hit.parentNode
+    if (!parent) continue
+    const tag = (parent.nodeName || '').toLowerCase()
+    if (tag === 'script' || tag === 'style' || tag === 'textarea') continue
+    const raw = hit.nodeValue || ''
+    const match = raw.match(KEY_RE)
+    if (match) {
+      const tail = raw.indexOf(':') !== -1 ? ':' : ''
+      hit.nodeValue = humanKey(match[1]) + tail
+      continue
+    }
+    const next = raw.replace(/index\.([A-Za-z][A-Za-z0-9]*)/g, function (whole, key) {
+      return humanKey(key)
+    })
+    if (next !== raw) hit.nodeValue = next
+  }
+}
+const WELL_SEL = '.warrantSealLogoLeft, .warrantSealLogoRight, .personPhotograph, .characterFactionLogo img, img[src*="/img/logo/"]'
+function clearImageWells() {
+  const shots = document.querySelectorAll(WELL_SEL)
+  for (const shot of shots) {
+    let node = shot.parentNode
+    let depth = 0
+    while (node && node.nodeType === 1 && depth < 3) {
+      const tag = (node.nodeName || '').toLowerCase()
+      if (tag === 'body' || tag === 'html') break
+      if (node.classList && (node.classList.contains('card') || node.classList.contains('card-body'))) break
+      setImportant(node, 'background', 'transparent')
+      setImportant(node, 'background-color', 'transparent')
+      setImportant(node, 'background-image', 'none')
+      setImportant(node, 'box-shadow', 'none')
+      node = node.parentNode
+      depth += 1
+    }
+  }
+}
+function fixNoImage() {
+  if (themeNow() === 'off') return
+  const nodes = document.querySelectorAll(
+    'div:not([data-mdt-noimg]), span:not([data-mdt-noimg]), p:not([data-mdt-noimg]), td:not([data-mdt-noimg]), h1:not([data-mdt-noimg]), h2:not([data-mdt-noimg]), h3:not([data-mdt-noimg]), h4:not([data-mdt-noimg]), h5:not([data-mdt-noimg])'
+  )
+  nodes.forEach((node) => {
+    if (!NOIMG_RE.test(flatText(node))) return
+    if (node.querySelector('div, span, p, td, img, h1, h2, h3, h4, h5')) return
+    let host = node
+    for (let i = 0; i < 4; i++) {
+      const parent = host.parentElement
+      if (!parent || parent === document.body) break
+      if (!NOIMG_RE.test(flatText(parent))) break
+      host = parent
+    }
+    if (host.offsetHeight < 90) {
+      host.setAttribute('data-mdt-noimg', 'small')
+      return
+    }
+    host.setAttribute('data-mdt-noimg', '1')
+    setImportant(host, {
+      'max-height': '26px',
+      'min-height': '0',
+      height: 'auto',
+      overflow: 'hidden',
+      padding: '2px 6px',
+      margin: '0 0 4px 0',
+      'font-size': '11px',
+      'line-height': '20px',
+      'text-align': 'center',
+      opacity: '0.7'
+    })
+  })
+}
+
 let scrollerTimer = null
 function scheduleScrollerFix() {
   if (scrollerTimer) clearTimeout(scrollerTimer)
@@ -3525,6 +4625,8 @@ function scheduleScrollerFix() {
     fixChargeBars()
     fixChargeRows()
     fixLicenseButtons()
+    fixNoImage()
+    fixPlates()
     fixTimeBadges()
     packButtonRows()
     centerFieldColumns()
@@ -3625,11 +4727,6 @@ function restoreInlineColors() {
   })
 }
 
-// Every painter below caches its work with a data-mdt-* marker and skips nodes
-// it has already touched. That cache is palette specific, so switching skins
-// left stale light-palette paint behind: on a WANTED record the banner host
-// kept its light panel/border and rendered as a white box in dark mode.
-// Dropping the markers on a skin change forces a clean repaint.
 function resetPaintedState() {
   try {
     restoreBanners()
@@ -3649,14 +4746,6 @@ function resetPaintedState() {
   }
 }
 
-// Filter strips: runs of fields and action buttons laid out on Material's
-// column grid, which on Incident Database dropped Search Faction and the two
-// buttons onto their own lines at odd sizes.
-//
-// The first attempt looked for one container holding the whole strip, but the
-// card body that holds those fields also holds the results table, so nothing
-// ever matched. Work per control instead: mark each control's own grid cell
-// and the row that holds it, and let the CSS flatten just those.
 const FSTRIP_FIELD_SEL = [
   'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])',
   'select',
@@ -3690,7 +4779,6 @@ function fixFilterStrips() {
     const rows = []
     const cells = []
     byRow.forEach((list, row) => {
-      // A single control is just a field on the page; a strip is a run of them.
       if (list.length < 2) return
       rows.push(row)
       list.forEach((cell) => cells.push(cell))
@@ -3720,7 +4808,6 @@ function restoreFilterStrips() {
   })
 }
 
-// The lookup pages are the only ones whose tab forms get recentred.
 const LOOKUP_TAB_RE = /^(person|id|vehicle|plate)\s+lookup$/i
 
 function markLookupPage() {
@@ -3738,9 +4825,6 @@ function markLookupPage() {
   document.documentElement.classList.toggle('mdt-lookup', hit)
 }
 
-// The skin and the layout settings are remembered inside the page so a fresh
-// navigation can paint them at document start, before anything else renders,
-// instead of flashing the vanilla page while waiting for the host to report in.
 const PREFS_KEY = 'mdtViewPrefs'
 const BOOT_STYLE_ID = 'mdt-boot-cloak'
 let lastPrefsJson = ''
@@ -3762,7 +4846,7 @@ function loadPrefs() {
     if (!raw) return
     const saved = JSON.parse(raw)
     if (!saved || typeof saved !== 'object') return
-    if (saved.theme === 'dark' || saved.theme === 'light' || saved.theme === 'off') theme = saved.theme
+    if (typeof saved.theme === 'string' && (PALETTES[saved.theme] || saved.theme === 'off')) theme = saved.theme
     sidebarHidden = !!saved.sidebar
     searchHidden = !!saved.search
     lastPrefsJson = raw
@@ -3798,7 +4882,6 @@ function cloak() {
   if (uncloaked || !document.documentElement || themeNow() === 'off') return
   cloakStyleEl()
   document.documentElement.classList.add('mdt-cloak')
-  // Never leave the page hidden, whatever happens to the rest of the pass.
   setTimeout(uncloak, 1500)
 }
 
@@ -3807,6 +4890,7 @@ function earlyBoot() {
   try {
     cloak()
     keepLast()
+    applyGlass()
     watchStyles()
     applySidebarState()
     applySearchState()
@@ -3817,10 +4901,13 @@ function earlyBoot() {
 
 function applyTheme(next) {
   const prev = theme
-  // Any skin with a palette entry is valid; only "off" means leave the page alone.
   theme = PALETTES[next] ? next : next === 'off' ? 'off' : 'light'
   if (prev !== theme) resetPaintedState()
   keepLast()
+  applyGlass()
+  applyDragFlag()
+  reportAlerts()
+  fixPlates()
   normalizeInlineColors()
   fixSingleScroller()
   fixContrast()
@@ -3830,6 +4917,10 @@ function applyTheme(next) {
   fixChargeBars()
   fixChargeRows()
   fixLicenseButtons()
+  fixNoImage()
+  fixLabelKeys()
+  clearImageWells()
+  watchWarrantCopy()
   fixTimeBadges()
   packButtonRows()
   centerFieldColumns()
@@ -3843,9 +4934,6 @@ function applyTheme(next) {
   savePrefs()
 }
 
-// The stylesheet watcher used to start at DOMContentLoaded, so every stylesheet
-// the site loaded before that point landed after our skin and the page painted
-// vanilla for a frame. It now starts as soon as documentElement exists.
 let styleObserver = null
 
 function watchStyles() {
@@ -3873,9 +4961,6 @@ function watchStyles() {
 
 loadPrefs()
 
-// documentElement may not exist yet when this preload runs. readystatechange
-// only fires at "interactive", by which point the vanilla page is already on
-// screen, so poll on a zero delay until the element shows up instead.
 if (!earlyBoot()) {
   const bootTimer = setInterval(() => {
     if (earlyBoot()) clearInterval(bootTimer)
@@ -3890,7 +4975,6 @@ document.addEventListener('DOMContentLoaded', () => {
   reportPageInfo()
   scheduleScrollerFix()
   markLookupPage()
-  setTimeout(uncloak, 200)
   window.addEventListener('resize', scheduleScrollerFix)
 
   watchStyles()
@@ -3903,7 +4987,7 @@ window.addEventListener('load', () => {
   uncloak()
 })
 
-const HOTKEYS = {
+let HOTKEYS = {
   F3: 'findnext',
   F5: 'reload',
   F8: 'cycletheme',
@@ -3911,9 +4995,8 @@ const HOTKEYS = {
   F10: 'togglesidebar'
 }
 
-const CTRL_HOTKEYS = {
+let CTRL_HOTKEYS = {
   f: 'find',
-  p: 'print',
   n: 'focusname',
   l: 'focusplate',
   '+': 'zoomin',
@@ -3941,8 +5024,6 @@ window.addEventListener('keydown', (e) => {
 
 if (window.addEventListener) window.addEventListener('resize', scheduleScrollerFix)
 
-/* Right-click a link (a nav entry, a record, a warrant) to open it as another
-   page in the client instead of replacing the current one. */
 document.addEventListener('contextmenu', (e) => {
   const t = e && e.target
   if (!t || !t.closest) return
@@ -3995,6 +5076,9 @@ const errorObserver = new MutationObserver((records) => {
   }
 })
 
+if (document.body) watchModalDrag()
+else document.addEventListener('DOMContentLoaded', watchModalDrag)
+
 function watchErrors() {
   if (!document.body) return
   try {
@@ -4005,12 +5089,141 @@ function watchErrors() {
 if (document.body) watchErrors()
 else document.addEventListener('DOMContentLoaded', watchErrors)
 
+ipcRenderer.on('mdt:set-keys', (_e, payload) => {
+  try {
+    if (payload && payload.plain) HOTKEYS = payload.plain
+    if (payload && payload.ctrl) CTRL_HOTKEYS = payload.ctrl
+  } catch (_) {
+  }
+})
+
 ipcRenderer.on('mdt:nav-go', (_e, url) => {
   navGo(String(url || ''))
 })
 
 ipcRenderer.on('mdt:set-sidebar', (_e, hidden) => {
   setSidebarHidden(hidden)
+})
+
+
+let dragEnabled = true
+let dragState = null
+
+function applyDragFlag() {
+  try {
+    document.documentElement.classList.toggle('mdt-drag', !!dragEnabled)
+  } catch (_) {
+  }
+}
+
+function dragTarget(node) {
+  if (!node || !node.closest) return null
+  const head = node.closest('.modal-header, .swal2-header')
+  if (!head) return null
+  if (node.closest('button, a, input, select, textarea, .close')) return null
+  return head.closest('.modal-dialog, .swal2-popup')
+}
+
+function startModalDrag(e) {
+  if (!dragEnabled || !e || e.button !== 0) return
+  const box = dragTarget(e.target)
+  if (!box) return
+  const prev = box.getAttribute('data-mdt-offset')
+  const at = prev ? prev.split(',') : ['0', '0']
+  box.setAttribute('data-mdt-moved', '1')
+  if (document.body) document.body.setAttribute('data-mdt-moved', '1')
+  dragState = {
+    box: box,
+    ox: parseFloat(at[0]) || 0,
+    oy: parseFloat(at[1]) || 0,
+    sx: e.clientX,
+    sy: e.clientY
+  }
+  e.preventDefault()
+}
+
+function moveModalDrag(e) {
+  if (!dragState) return
+  const box = dragState.box
+  const rect = box.getBoundingClientRect()
+  let x = dragState.ox + (e.clientX - dragState.sx)
+  let y = dragState.oy + (e.clientY - dragState.sy)
+  const leftEdge = rect.left - dragState.ox
+  const topEdge = rect.top - dragState.oy
+  x = Math.min(Math.max(x, 60 - rect.width - leftEdge), window.innerWidth - 60 - leftEdge)
+  y = Math.min(Math.max(y, -topEdge), window.innerHeight - 28 - topEdge)
+  dragState.lx = x
+  dragState.ly = y
+  box.style.setProperty('transform', 'translate(' + x + 'px, ' + y + 'px)', 'important')
+}
+
+function endModalDrag() {
+  if (dragState && dragState.box && typeof dragState.lx === 'number') {
+    dragState.box.setAttribute('data-mdt-offset', dragState.lx + ',' + dragState.ly)
+  }
+  dragState = null
+}
+
+function resetModalDrag(box) {
+  if (!box) return
+  box.removeAttribute('data-mdt-moved')
+  box.removeAttribute('data-mdt-offset')
+  if (document.body && !document.querySelector('[data-mdt-moved="1"]')) {
+    document.body.removeAttribute('data-mdt-moved')
+  }
+  box.style.removeProperty('transform')
+  box.style.removeProperty('position')
+  box.style.removeProperty('left')
+  box.style.removeProperty('top')
+  box.style.removeProperty('width')
+  box.style.removeProperty('margin')
+}
+
+function stackModal(node) {
+  if (!node || !node.style) return
+  const open = document.querySelectorAll('.modal.show').length
+  const z = 1050 + (open + 1) * 20
+  node.style.setProperty('z-index', String(z), 'important')
+  setTimeout(() => {
+    const shades = document.querySelectorAll('.modal-backdrop')
+    const last = shades[shades.length - 1]
+    if (last && last.style) last.style.setProperty('z-index', String(z - 10), 'important')
+    if (document.body) document.body.classList.add('modal-open')
+  }, 0)
+}
+
+function keepStackOpen() {
+  setTimeout(() => {
+    if (!document.body) return
+    if (document.querySelector('.modal.show')) document.body.classList.add('modal-open')
+  }, 0)
+}
+
+function watchModalDrag() {
+  document.addEventListener('mousedown', startModalDrag, true)
+  document.addEventListener('mousemove', moveModalDrag, true)
+  document.addEventListener('mouseup', endModalDrag, true)
+  document.addEventListener('hidden.bs.modal', (e) => {
+    if (!e || !e.target || !e.target.querySelector) return
+    resetModalDrag(e.target.querySelector('.modal-dialog'))
+    if (e.target.style) e.target.style.removeProperty('z-index')
+    keepStackOpen()
+  }, true)
+  document.addEventListener('show.bs.modal', (e) => {
+    if (!e || !e.target || !e.target.querySelector) return
+    resetModalDrag(e.target.querySelector('.modal-dialog'))
+    stackModal(e.target)
+  }, true)
+}
+
+ipcRenderer.on('mdt:set-drag', (_e, value) => {
+  dragEnabled = !!value
+  applyDragFlag()
+  if (!dragEnabled) {
+    for (const box of document.querySelectorAll('[data-mdt-moved="1"]')) {
+      resetModalDrag(box)
+    }
+  }
 })
 
 ipcRenderer.on('mdt:set-skin', (_e, value) => {
