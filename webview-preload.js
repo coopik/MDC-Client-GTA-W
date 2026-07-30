@@ -1235,7 +1235,6 @@ html body .card-img-overlay > a:hover {
 }
 html body .card-img-overlay .uploadIcon,
 html body .card-img-overlay i {
-  color: ${p.text} !important;
   font-size: 11px !important;
   line-height: 12px !important;
   width: 12px !important;
