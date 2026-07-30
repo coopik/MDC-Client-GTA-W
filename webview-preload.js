@@ -1313,7 +1313,8 @@ html body .btn-inverse:hover, html body .btn-default:hover { background-color: $
 html body [class*="search"]:not(input):not(button):not(a):not(.btn):not(.form-control):not(table):not(thead):not(tbody):not(tr):not(td):not(th) {
   background-image: none !important;
   box-shadow: none !important;
-  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
 }
 html body .search-bar, html body .search-box, html body .searchbox,
 html body .search-wrapper, html body .search-container, html body .search-panel,
@@ -2956,7 +2957,6 @@ html body .leaflet-control-search input.search-input::placeholder {
 html body .leaflet-control-search a.search-button,
 html body .leaflet-control-search a.search-cancel {
   display: flex !important;
-  align-items: center !important;
   justify-content: center !important;
   box-sizing: border-box !important;
   width: 22px !important;
@@ -2981,7 +2981,6 @@ html body .leaflet-control-search a.search-cancel {
 html body .leaflet-control-search a.search-cancel span {
   display: block !important;
   margin: 0 !important;
-  line-height: 22px !important;
 }
 html body .leaflet-control-search a.search-button:hover,
 html body .leaflet-control-search a.search-cancel:hover {

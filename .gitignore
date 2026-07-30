@@ -1,6 +1,3 @@
 node_modules/
 dist/
 *.log
-installer/Output/
-.DS_Store
-Thumbs.db
