@@ -2890,7 +2890,7 @@ html body .card.card-dashboard .card-header .card-icon {
 html body .card.card-stats .card-header .card-icon i,
 html body .card.card-dashboard .card-header .card-icon i {
   font-size: 18px !important;
-  line-height: 34px !important;
+  line-height: 55px !important;
   margin: 0 !important;
 }
 html body .card.card-stats .card-header .card-title,
