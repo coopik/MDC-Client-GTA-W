@@ -837,6 +837,21 @@ function showHistory() {
     '</div>' +
     '<div class="hist-count" id="hist-count"></div>' +
     '<div class="hist-list" id="hist-list"></div>' +
+    '<div class="hist-pager" id="hist-pager">' +
+    '<button class="btn-sm" id="hist-first" title="First page">&#171;</button>' +
+    '<button class="btn-sm" id="hist-prev" title="Previous page">&#8249;</button>' +
+    '<span class="hist-page" id="hist-page"></span>' +
+    '<button class="btn-sm" id="hist-next" title="Next page">&#8250;</button>' +
+    '<button class="btn-sm" id="hist-last" title="Last page">&#187;</button>' +
+    '<span class="tspacer"></span>' +
+    '<label class="fld-label" for="hist-size">Per page:</label>' +
+    '<select class="fld" id="hist-size">' +
+    '<option value="25">25</option>' +
+    '<option value="50" selected>50</option>' +
+    '<option value="100">100</option>' +
+    '<option value="200">200</option>' +
+    '</select>' +
+    '</div>' +
     '<p class="opt-note">Every page and record you open in this client is logged on this computer only, with the time you opened it. ' +
     'Left-click an entry to open it in the page in front, right-click to open it as a new page. ' +
     'Logging can be turned off under Tools &gt; Options.</p>')
@@ -844,21 +859,49 @@ function showHistory() {
   const input = el('hist-q')
   const list = el('hist-list')
   const count = el('hist-count')
+  const pager = el('hist-pager')
+  const pageLabel = el('hist-page')
+  const sizeSel = el('hist-size')
+  let page = 1
+  let perPage = 50
+
+  function histRows() {
+    const q = (input && input.value ? input.value : '').trim().toLowerCase()
+    return histList.filter((entry) => histMatch(entry, q))
+  }
 
   function paint() {
-    const q = (input && input.value ? input.value : '').trim().toLowerCase()
-    const rows = histList.filter((entry) => histMatch(entry, q))
+    const rows = histRows()
+    const pages = Math.max(1, Math.ceil(rows.length / perPage))
+    if (page > pages) page = pages
+    if (page < 1) page = 1
+    const from = (page - 1) * perPage
+    const shown = rows.slice(from, from + perPage)
     if (count) {
       count.textContent = histList.length
-        ? rows.length + ' of ' + histList.length + ' entries'
+        ? (rows.length
+          ? 'Showing ' + (from + 1) + ' to ' + (from + shown.length) + ' of ' + rows.length +
+            ' entries (' + histList.length + ' logged in total)'
+          : '0 of ' + histList.length + ' entries')
         : 'Nothing logged yet.'
     }
+    if (pageLabel) pageLabel.textContent = 'Page ' + page + ' of ' + pages
+    if (pager) pager.style.display = rows.length ? '' : 'none'
+    const firstB = el('hist-first')
+    const prevB = el('hist-prev')
+    const nextB = el('hist-next')
+    const lastB = el('hist-last')
+    if (firstB) firstB.disabled = page <= 1
+    if (prevB) prevB.disabled = page <= 1
+    if (nextB) nextB.disabled = page >= pages
+    if (lastB) lastB.disabled = page >= pages
     if (!list) return
     if (!rows.length) {
       list.innerHTML = '<div class="hist-empty">No entries match.</div>'
       return
     }
-    list.innerHTML = rows.slice(0, 400).map((entry) =>
+    list.scrollTop = 0
+    list.innerHTML = shown.map((entry) =>
       '<div class="hist-row" data-url="' + esc(entry.url) + '" title="' + esc(entry.url) + '">' +
       '<span class="hist-when">' + esc(histWhen(entry.at)) + '</span>' +
       '<span class="hist-kind">' + esc(entry.kind || 'Page') + '</span>' +
@@ -867,8 +910,34 @@ function showHistory() {
   }
 
   if (input) {
-    input.addEventListener('input', paint)
+    input.addEventListener('input', () => {
+      page = 1
+      paint()
+    })
     setTimeout(() => input.focus(), 0)
+  }
+
+  function gotoPage(target) {
+    page = target
+    paint()
+    playSound('click')
+  }
+
+  const firstBtn = el('hist-first')
+  const prevBtn = el('hist-prev')
+  const nextBtn = el('hist-next')
+  const lastBtn = el('hist-last')
+  if (firstBtn) firstBtn.addEventListener('click', () => gotoPage(1))
+  if (prevBtn) prevBtn.addEventListener('click', () => gotoPage(page - 1))
+  if (nextBtn) nextBtn.addEventListener('click', () => gotoPage(page + 1))
+  if (lastBtn) lastBtn.addEventListener('click', () => gotoPage(Math.max(1, Math.ceil(histRows().length / perPage))))
+  if (sizeSel) {
+    sizeSel.addEventListener('change', () => {
+      const n = parseInt(sizeSel.value, 10)
+      perPage = n > 0 ? n : 50
+      page = 1
+      paint()
+    })
   }
 
   if (list) {
@@ -1020,16 +1089,32 @@ function actionForCombo(combo) {
   return ''
 }
 
+function comboOfMouse(e) {
+  if (!e || typeof e.button !== 'number') return ''
+  const n = e.button + 1
+  if (n !== 2 && n !== 4 && n !== 5) return ''
+  return 'Mouse' + n
+}
+
+function mouseLabel(combo) {
+  if (combo === 'Mouse2') return 'Middle mouse button'
+  if (combo === 'Mouse4') return 'Mouse button 4 (back)'
+  if (combo === 'Mouse5') return 'Mouse button 5 (forward)'
+  return combo
+}
+
 function keysForViews() {
   const plain = {}
   const ctrl = {}
+  const mouse = {}
   KEY_ACTIONS.forEach((item) => {
     const combo = comboFor(item.action)
     const single = /^Ctrl\+(.)$/i.exec(combo)
-    if (/^F\d+$/i.test(combo)) plain[combo.toUpperCase()] = item.action
+    if (/^Mouse[245]$/i.test(combo)) mouse[combo] = item.action
+    else if (/^F\d+$/i.test(combo)) plain[combo.toUpperCase()] = item.action
     else if (single) ctrl[single[1].toLowerCase()] = item.action
   })
-  return { plain, ctrl }
+  return { plain, ctrl, mouse }
 }
 
 function sendKeys() {
@@ -1049,13 +1134,14 @@ function sendKeys() {
 function showKeys() {
   const rows = KEY_ACTIONS.map((item) =>
     '<tr><td>' + esc(item.label) + '</td>' +
-    '<td class="key-combo">' + esc(comboFor(item.action)) + '</td>' +
+    '<td class="key-combo">' + esc(/^Mouse[245]$/.test(comboFor(item.action)) ? mouseLabel(comboFor(item.action)) : comboFor(item.action)) + '</td>' +
     '<td><button class="btn-sm key-set" data-key="' + item.action + '">Change</button></td></tr>'
   ).join('')
 
   openDialog('Keyboard Shortcuts',
     '<p class="opt-note">These work in the client and inside MDC pages. Press ' +
-    'Change and then the combination you want; Escape cancels. Escape itself ' +
+    'Change and then the combination you want; Escape cancels. Mouse buttons ' +
+    'work too: press the middle button or a side button instead of a key. Escape itself ' +
     'always closes the find bar, a dialog or a loading page and cannot be ' +
     'remapped.</p>' +
     '<table class="key-table">' + rows + '</table>' +
@@ -1069,17 +1155,13 @@ function showKeys() {
   const arm = (action, btn) => {
     if (status) status.textContent = 'Press the new combination...'
     btn.textContent = 'Press key'
-    const handler = (ev) => {
-      ev.preventDefault()
-      ev.stopPropagation()
-      if (ev.key === 'Escape') {
-        document.removeEventListener('keydown', handler, true)
-        showKeys()
-        return
-      }
-      const combo = comboOf(ev)
-      if (!combo) return
+    const stop = () => {
       document.removeEventListener('keydown', handler, true)
+      document.removeEventListener('mousedown', mouseHandler, true)
+      document.removeEventListener('auxclick', swallow, true)
+    }
+    const assign = (combo) => {
+      stop()
       const clash = actionForCombo(combo)
       if (clash && clash !== action) delete keymap[clash]
       const item = keyItem(action)
@@ -1089,9 +1171,38 @@ function showKeys() {
       sendKeys()
       showKeys()
       const after = el('key-status')
-      if (after) after.textContent = combo + ' assigned' + (clash && clash !== action ? ', taken from ' + clash : '') + '.'
+      if (after) {
+        after.textContent = (/^Mouse[245]$/.test(combo) ? mouseLabel(combo) : combo) +
+          ' assigned' + (clash && clash !== action ? ', taken from ' + clash : '') + '.'
+      }
+    }
+    const handler = (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      if (ev.key === 'Escape') {
+        stop()
+        showKeys()
+        return
+      }
+      const combo = comboOf(ev)
+      if (!combo) return
+      assign(combo)
+    }
+    const mouseHandler = (ev) => {
+      const combo = comboOfMouse(ev)
+      if (!combo) return
+      ev.preventDefault()
+      ev.stopPropagation()
+      assign(combo)
+    }
+    const swallow = (ev) => {
+      if (!comboOfMouse(ev)) return
+      ev.preventDefault()
+      ev.stopPropagation()
     }
     document.addEventListener('keydown', handler, true)
+    document.addEventListener('mousedown', mouseHandler, true)
+    document.addEventListener('auxclick', swallow, true)
   }
   dialogBody.querySelectorAll('.key-set').forEach((btn) => {
     on(btn, 'click', () => arm(btn.getAttribute('data-key'), btn))
@@ -2066,6 +2177,24 @@ boot('keyboard', () => {
     e.preventDefault()
     run(action)
   })
+
+  document.addEventListener('mousedown', (e) => {
+    if (backdrop && !backdrop.classList.contains('hidden')) return
+    const combo = comboOfMouse(e)
+    if (!combo) return
+    const action = actionForCombo(combo)
+    if (!action) return
+    e.preventDefault()
+    e.stopPropagation()
+    run(action)
+  }, true)
+
+  document.addEventListener('auxclick', (e) => {
+    const combo = comboOfMouse(e)
+    if (!combo || !actionForCombo(combo)) return
+    e.preventDefault()
+    e.stopPropagation()
+  }, true)
 })
 
 boot('init', () => {
@@ -2078,7 +2207,21 @@ boot('init', () => {
   if (view.updateCheck) setTimeout(() => runUpdateCheck(true), 4000)
   applyView()
   if (window.mdt && window.mdt.onWake) window.mdt.onWake(wakeViews)
-  setTimeout(() => playSound('startup'), 500)
+  let played = false
+  try {
+    played = sessionStorage.getItem('mdtStartupPlayed') === '1'
+    sessionStorage.setItem('mdtStartupPlayed', '1')
+  } catch (_) {
+  }
+  if (window.mdt && window.mdt.startupOnce) {
+    window.mdt.startupOnce().then((first) => {
+      if (first) setTimeout(() => playSound('startup'), 500)
+    }).catch(() => {
+      if (!played) setTimeout(() => playSound('startup'), 500)
+    })
+  } else if (!played) {
+    setTimeout(() => playSound('startup'), 500)
+  }
   if (window.mdt && window.mdt.getInfo) {
     window.mdt.getInfo().then((info) => { appInfo = info })
   }

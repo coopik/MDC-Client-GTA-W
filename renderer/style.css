@@ -857,6 +857,30 @@ body.theme-lapd .hdrpop-sub { color: #B9CBF2; }
   background: var(--hover, #E8EEF8);
 }
 
+.hist-pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 2px 0;
+  font-size: 11px;
+}
+
+.hist-pager .btn-sm {
+  min-width: 26px;
+  padding: 1px 6px;
+}
+
+.hist-pager .fld {
+  flex: 0 0 auto;
+  min-width: 56px;
+}
+
+.hist-page {
+  padding: 0 6px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .hist-when {
   flex: 0 0 108px;
   font-size: 11px;

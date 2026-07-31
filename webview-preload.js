@@ -943,6 +943,8 @@ function fixPlates() {
   }
   for (const el of nodes) {
     if (!el || el.getAttribute('data-mdt-plate') === '1') continue
+    if (el.querySelector && el.querySelector('.font-plate, [id^="vehiclePlateText"]')) continue
+    if (el.closest && el.closest('.badge:has(.font-plate)')) continue
     const tag = el.tagName
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' ||
         tag === 'OPTION' || tag === 'TABLE' || tag === 'TR' ||
@@ -1294,6 +1296,292 @@ html body .card hr, html body .panel hr {
   overflow: hidden !important;
 }
 
+html body .leaflet-control-search {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1400 !important;
+}
+html body .leaflet-control-search .search-tooltip,
+html body .leaflet-control-search ul,
+html body ul.search-tooltip,
+html body .search-tooltip {
+  position: absolute !important;
+  top: 100% !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  margin: 2px 0 0 0 !important;
+  padding: 0 !important;
+  width: 252px !important;
+  max-height: 220px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: ${p.panel} !important;
+  background-color: ${p.panel} !important;
+  background-image: none !important;
+  color: ${p.text} !important;
+  border: 1px solid ${p.border} !important;
+  border-radius: 0 !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35) !important;
+  opacity: 1 !important;
+  z-index: 1500 !important;
+  list-style: none !important;
+}
+html body .leaflet-control-search .search-tip,
+html body .search-tooltip > li,
+html body .search-tip {
+  display: block !important;
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  background: ${p.panelAlt} !important;
+  background-color: ${p.panelAlt} !important;
+  background-image: none !important;
+  color: ${p.text} !important;
+  border: none !important;
+  border-bottom: 1px solid ${p.borderLite} !important;
+  border-radius: 0 !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+}
+html body .search-tip:hover,
+html body .search-tip-select {
+  background: ${p.sel} !important;
+  background-color: ${p.sel} !important;
+}
+
+html body #mugshotPreview > img {
+  max-width: 100% !important;
+  max-height: 440px !important;
+  margin: 0 auto !important;
+}
+html body #modalPicture .modal-body,
+html body #mugshotPreview {
+  overflow: visible !important;
+  max-width: 100% !important;
+  background: transparent !important;
+}
+html body .cropper-container {
+  position: relative !important;
+  display: block !important;
+  margin: 0 auto !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  direction: ltr !important;
+  touch-action: none !important;
+  user-select: none !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+html body .cropper-container img,
+html body .cropper-view-box img,
+html body .mugshotPreviewCropper img {
+  display: block !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+html body .cropper-wrap-box,
+html body .cropper-canvas,
+html body .cropper-drag-box,
+html body .cropper-crop-box,
+html body .cropper-modal {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html body .cropper-wrap-box,
+html body .cropper-canvas {
+  overflow: hidden !important;
+  background: none !important;
+}
+html body .cropper-drag-box {
+  background-color: #FFFFFF !important;
+  opacity: 0 !important;
+}
+html body .cropper-modal {
+  background-color: #000000 !important;
+  opacity: 0.5 !important;
+}
+html body .cropper-view-box {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  outline: 1px solid #39F !important;
+  outline-color: rgba(51, 153, 255, 0.75) !important;
+  background: none !important;
+}
+html body .cropper-dashed {
+  position: absolute !important;
+  display: block !important;
+  border: 0 dashed #EEEEEE !important;
+  opacity: 0.5 !important;
+  background: none !important;
+}
+html body .cropper-dashed.dashed-h {
+  top: 33.33333% !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 33.33333% !important;
+  border-top-width: 1px !important;
+  border-bottom-width: 1px !important;
+}
+html body .cropper-dashed.dashed-v {
+  top: 0 !important;
+  left: 33.33333% !important;
+  width: 33.33333% !important;
+  height: 100% !important;
+  border-right-width: 1px !important;
+  border-left-width: 1px !important;
+}
+html body .cropper-center {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  display: block !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0.75 !important;
+  background: none !important;
+}
+html body .cropper-face,
+html body .cropper-line,
+html body .cropper-point {
+  position: absolute !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0.1 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html body .cropper-face {
+  top: 0 !important;
+  left: 0 !important;
+  background-color: #FFFFFF !important;
+  cursor: move !important;
+}
+html body .cropper-line { background-color: #39F !important; }
+html body .cropper-line.line-e { top: 0 !important; right: -3px !important; left: auto !important; width: 5px !important; cursor: ew-resize !important; }
+html body .cropper-line.line-n { top: -3px !important; left: 0 !important; height: 5px !important; cursor: ns-resize !important; }
+html body .cropper-line.line-w { top: 0 !important; left: -3px !important; width: 5px !important; cursor: ew-resize !important; }
+html body .cropper-line.line-s { bottom: -3px !important; top: auto !important; left: 0 !important; height: 5px !important; cursor: ns-resize !important; }
+html body .cropper-point {
+  width: 5px !important;
+  height: 5px !important;
+  background-color: #39F !important;
+  opacity: 0.75 !important;
+}
+html body .cropper-point.point-e { top: 50% !important; right: -3px !important; left: auto !important; margin-top: -3px !important; cursor: ew-resize !important; }
+html body .cropper-point.point-n { top: -3px !important; left: 50% !important; margin-left: -3px !important; cursor: ns-resize !important; }
+html body .cropper-point.point-w { top: 50% !important; left: -3px !important; margin-top: -3px !important; cursor: ew-resize !important; }
+html body .cropper-point.point-s { bottom: -3px !important; top: auto !important; left: 50% !important; margin-left: -3px !important; cursor: s-resize !important; }
+html body .cropper-point.point-ne { top: -3px !important; right: -3px !important; left: auto !important; cursor: nesw-resize !important; }
+html body .cropper-point.point-nw { top: -3px !important; left: -3px !important; cursor: nwse-resize !important; }
+html body .cropper-point.point-sw { bottom: -3px !important; top: auto !important; left: -3px !important; cursor: nesw-resize !important; }
+html body .cropper-point.point-se { right: -3px !important; bottom: -3px !important; top: auto !important; left: auto !important; width: 20px !important; height: 20px !important; opacity: 1 !important; cursor: nwse-resize !important; }
+html body #mugshotPreview:has(.cropper-container) > .cropper-hidden,
+html body .cropper-container ~ .cropper-hidden { display: none !important; }
+html body .cropper-hide { position: absolute !important; display: block !important; width: 0 !important; height: 0 !important; }
+html body .cropper-bg { background-image: none !important; background-color: ${p.panelAlt} !important; }
+html body .cropper-invisible { opacity: 0 !important; }
+html body .mugshotPreviewCropper {
+  overflow: hidden !important;
+  background: none !important;
+  border: 1px solid ${p.border} !important;
+}
+
+html body .note-editor,
+html body .note-frame,
+html body .note-editing-area,
+html body .note-editable,
+html body .note-codable,
+html body .note-statusbar {
+  background: ${p.field} !important;
+  background-color: ${p.field} !important;
+  background-image: none !important;
+  color: ${p.text} !important;
+  border-radius: 0 !important;
+}
+html body .note-placeholder {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: ${p.textMuted} !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+html body input::placeholder,
+html body textarea::placeholder,
+html body .form-control::placeholder {
+  color: ${p.textMuted} !important;
+  opacity: 1 !important;
+  background: transparent !important;
+}
+html body .note-editor,
+html body .note-frame {
+  border: 1px solid ${p.fieldBorder} !important;
+}
+html body .note-editing-area,
+html body .note-editable,
+html body .note-codable,
+html body .note-statusbar {
+  border: none !important;
+}
+html body .note-editable * {
+  background-color: transparent !important;
+}
+html body .note-toolbar,
+html body .note-toolbar.card-header {
+  background: ${p.header} !important;
+  background-color: ${p.header} !important;
+  background-image: none !important;
+  border-bottom: 1px solid ${p.border} !important;
+  border-radius: 0 !important;
+}
+
+html.mdt-form-page body .card,
+html.mdt-form-page body .card-header,
+html.mdt-form-page body .card-body,
+html.mdt-form-page body .card-footer,
+html.mdt-form-page body .form-control,
+html.mdt-form-page body .btn,
+html.mdt-form-page body .dropdown-menu,
+html.mdt-form-page body .dropdown-toggle,
+html.mdt-form-page body .input-group-text,
+html.mdt-form-page body .alert,
+html.mdt-form-page body .note-editor,
+html.mdt-form-page body .note-frame {
+  border-radius: 0 !important;
+}
+html.mdt-form-page body .card {
+  border: 1px solid ${p.border} !important;
+  overflow: visible !important;
+  background-clip: border-box !important;
+}
+html.mdt-form-page body .card-header {
+  border-top: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-bottom: 1px solid ${p.border} !important;
+  margin: 0 !important;
+}
+
 html body .btn-dark, html body .btn.btn-dark,
 html body .btn-secondary, html body .btn.btn-secondary,
 html body .btn-inverse, html body .btn.btn-inverse,
@@ -1309,7 +1597,7 @@ html body .btn-inverse *, html body .btn-default * { color: ${p.text} !important
 html body .btn-dark:hover, html body .btn-secondary:hover,
 html body .btn-inverse:hover, html body .btn-default:hover { background-color: ${p.btnHover} !important; }
 
-html body [class*="search"]:not(input):not(button):not(a):not(.btn):not(.form-control):not(table):not(thead):not(tbody):not(tr):not(td):not(th) {
+html body [class*="search"]:not(input):not(button):not(a):not(.btn):not(.form-control):not(table):not(thead):not(tbody):not(tr):not(td):not(th):not(.search-tooltip):not(.search-tip):not(.search-tip-select):not([data-mdt-tip]):not([data-mdt-tip-row]) {
   background-image: none !important;
   box-shadow: none !important;
   border: none !important;
@@ -2188,7 +2476,12 @@ html body .modal[data-mdt-vanilla="1"] .card-header {
   overflow-y: auto !important;
   padding: 4px 6px !important;
 }
-.note-placeholder { color: ${p.textMuted} !important; }
+.note-placeholder {
+  color: ${p.textMuted} !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+}
 .note-statusbar, .note-resizebar {
   background-color: ${p.header} !important;
   border-top: 1px solid ${p.border} !important;
@@ -3243,6 +3536,206 @@ html body #warrant .col-md-9, html body #warrantReason .col-md-9 {
 html body #warrant .text-right, html body #warrantReason .text-right {
   text-align: right !important;
 }
+html.mdt-form-page body .card-body .form-group,
+html.mdt-form-page body .card-body .bmd-form-group,
+html.mdt-form-page body .card-body .input-group {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  float: none !important;
+  margin: 0 0 12px 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+html.mdt-form-page body .card-body label,
+html.mdt-form-page body .card-body .bmd-label-static,
+html.mdt-form-page body .card-body .bmd-label-floating,
+html.mdt-form-page body .card-body .card-title {
+  display: block !important;
+  position: static !important;
+  float: none !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 0 3px 0 !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+html.mdt-form-page body .card-body .form-control:not(.summernote):not(.note-codable),
+html.mdt-form-page body .card-body input.form-control,
+html.mdt-form-page body .card-body textarea:not(.summernote):not(.note-codable),
+html.mdt-form-page body .card-body select,
+html.mdt-form-page body .card-body .bootstrap-select,
+html.mdt-form-page body .card-body .note-editor,
+html.mdt-form-page body .card-body .note-frame {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  float: none !important;
+}
+html.mdt-form-page body .card-body .w-50,
+html.mdt-form-page body .card-body .w-25,
+html.mdt-form-page body .card-body .w-75 {
+  width: 100% !important;
+}
+html body textarea.summernote,
+html body .summernote,
+html body *:has(> .note-editor) > textarea,
+html body .note-editor + textarea {
+  display: none !important;
+}
+html body .note-editor textarea.note-codable,
+html body .note-frame textarea.note-codable,
+html body .note-editing-area > .note-codable {
+  display: none !important;
+}
+html body .note-frame.codeview .note-codable,
+html body .note-editor.codeview .note-codable {
+  display: block !important;
+}
+html body .note-frame.codeview .note-editable,
+html body .note-editor.codeview .note-editable {
+  display: none !important;
+}
+html.mdt-form-page body .row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  width: auto !important;
+  margin: 0 -8px !important;
+}
+html.mdt-form-page body .row > [class*="col-"],
+html.mdt-form-page body .row > .col {
+  min-width: 0 !important;
+  margin: 0 !important;
+  float: none !important;
+  order: 0 !important;
+  padding: 0 8px 8px !important;
+}
+html.mdt-form-page body .card-body > .row,
+html.mdt-form-page body form > .row {
+  align-items: flex-start !important;
+}
+html.mdt-form-page body .row > .col,
+html.mdt-form-page body .row > .col-sm,
+html.mdt-form-page body .row > .col-md,
+html.mdt-form-page body .row > .col-lg,
+html.mdt-form-page body .row > .col-xl {
+  flex: 1 0 0% !important;
+  max-width: 100% !important;
+  width: auto !important;
+}
+html.mdt-form-page body .row > .col-auto,
+html.mdt-form-page body .row > .col-sm-auto,
+html.mdt-form-page body .row > .col-md-auto,
+html.mdt-form-page body .row > .col-lg-auto,
+html.mdt-form-page body .row > .col-xl-auto {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: 100% !important;
+}
+${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => {
+  const w = (n * 100 / 12).toFixed(6) + '%'
+  return `html.mdt-form-page body .row > .col-sm-${n},
+html.mdt-form-page body .row > .col-md-${n},
+html.mdt-form-page body .row > .col-lg-${n},
+html.mdt-form-page body .row > .col-xl-${n} {
+  flex: 0 0 ${w} !important;
+  max-width: ${w} !important;
+}`
+}).join('\n')}
+html.mdt-form-page body .card,
+html.mdt-form-page body .card-body {
+  width: auto !important;
+  max-width: none !important;
+  float: none !important;
+}
+html.mdt-form-page body .note-editor,
+html.mdt-form-page body .note-frame,
+html.mdt-form-page body .note-editing-area,
+html.mdt-form-page body .note-editable {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 150px !important;
+  box-sizing: border-box !important;
+}
+html.mdt-form-page body #map,
+html.mdt-form-page body .map,
+html.mdt-form-page body .leaflet-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+html body .badge:has(.font-plate),
+html body .badge:has([id^="vehiclePlateText"]),
+html body .badge:has([id^="plateText"]) {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  background-color: #FFFFFF !important;
+  color: #1A1D64 !important;
+  border: none !important;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 6px !important;
+  padding: 4px 12px 6px !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+html body .badge:has(.font-plate) [id^="vehiclePlateText"],
+html body .badge:has(.font-plate) [id^="plateText"],
+html body .badge:has([id^="vehiclePlateText"]) [id^="vehiclePlateText"],
+html body .badge:has([id^="plateText"]) [id^="plateText"] {
+  color: #1A1D64 !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  display: block !important;
+  line-height: 1.1 !important;
+}
+html body .badge:has(.font-plate) .font-plate,
+html body .badge:has(.font-plate) .text-danger,
+html body .badge:has(.font-plate) b,
+html body .badge:has([id^="vehiclePlateText"]) .font-plate,
+html body .badge:has([id^="vehiclePlateText"]) .text-danger,
+html body .badge:has([id^="plateText"]) .font-plate,
+html body .badge:has([id^="plateText"]) .text-danger {
+  color: #D22B2B !important;
+  background: transparent !important;
+}
+html body .badge:has(.font-plate) .badge-danger,
+html body .badge:has([id^="vehiclePlateText"]) .badge-danger,
+html body .badge:has([id^="plateText"]) .badge-danger {
+  background-color: #D22B2B !important;
+  border-color: #D22B2B !important;
+  color: #D22B2B !important;
+  min-width: 12px !important;
+  min-height: 6px !important;
+}
+html body .badge:has(.font-plate) .font-plate,
+html body .badge:has([id^="vehiclePlateText"]) .font-plate {
+  font-size: 10px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: none !important;
+}
+html body .badge:has(.font-plate) > div,
+html body .badge:has([id^="vehiclePlateText"]) > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  background: transparent !important;
+  line-height: 1 !important;
+}
+html body .bg-white, html body .card.bg-white, html body .modal-content.bg-white,
+html body .bg-light, html body .card.bg-light, html body .card-body.bg-white,
+html body .card-header.bg-white, html body .jumbotron.bg-white {
+  background-color: ${p.panel} !important;
+  background-image: none !important;
+  color: ${p.text} !important;
+  border-color: ${p.fieldBorder} !important;
+}
+html body .bg-white > *:not(.badge):not(.btn):not(input):not(select):not(textarea),
+html body .bg-light > *:not(.badge):not(.btn):not(input):not(select):not(textarea) {
+  color: ${p.text} !important;
+}
 .alert-success { background-color: ${p.successSoft} !important; color: ${p.successInk} !important; border: 1px solid ${p.success} !important; }
 
 html body div[data-notify="container"], html body .alert[data-notify] {
@@ -3769,8 +4262,28 @@ const ROW_PROPS = [
   'overflow', 'position', 'text-align', 'float', 'max-width'
 ]
 
+const FORM_PAGE_RE = /\/(incident|apb|warrant|report|arrest)\/(create|edit)/i
+
+function isFormPage() {
+  try {
+    return FORM_PAGE_RE.test(String(location.pathname || ''))
+  } catch (_) {
+    return false
+  }
+}
+
+function applyFormFlag() {
+  try {
+    if (document.documentElement) {
+      document.documentElement.classList.toggle('mdt-form-page', isFormPage() && themeNow() !== 'off')
+    }
+  } catch (_) {
+  }
+}
+
 function markRow(el, props) {
   if (!el || !el.style || !el.dataset || el.dataset.mdtRow === '1') return
+  if (isFormPage()) return
   if (el.closest && el.closest('[data-mdt-vanilla="1"]')) return
   el.dataset.mdtRow = '1'
   Object.keys(props).forEach((key) => el.style.setProperty(key, props[key], 'important'))
@@ -4827,6 +5340,7 @@ const PREFS_KEY = 'mdtViewPrefs'
 const BOOT_STYLE_ID = 'mdt-boot-cloak'
 let lastPrefsJson = ''
 let uncloaked = false
+let skinSynced = false
 
 function savePrefs() {
   try {
@@ -4887,6 +5401,7 @@ function earlyBoot() {
   if (!document.documentElement) return false
   try {
     cloak()
+    applyFormFlag()
     keepLast()
     applyGlass()
     watchStyles()
@@ -4973,6 +5488,10 @@ document.addEventListener('DOMContentLoaded', () => {
   reportPageInfo()
   scheduleScrollerFix()
   markLookupPage()
+  watchMapSearch()
+  watchMugshot()
+  watchSourceTextareas()
+  hideNarrativeLabel()
   window.addEventListener('resize', scheduleScrollerFix)
 
   watchStyles()
@@ -4982,7 +5501,12 @@ window.addEventListener('load', () => {
   keepLast()
   normalizeInlineColors()
   scheduleScrollerFix()
-  uncloak()
+  watchMapSearch()
+  scheduleMapSearchFix()
+  hideSourceTextareas()
+  hideNarrativeLabel()
+  if (skinSynced) uncloak()
+  else setTimeout(uncloak, 450)
 })
 
 let HOTKEYS = {
@@ -5091,9 +5615,41 @@ ipcRenderer.on('mdt:set-keys', (_e, payload) => {
   try {
     if (payload && payload.plain) HOTKEYS = payload.plain
     if (payload && payload.ctrl) CTRL_HOTKEYS = payload.ctrl
+    if (payload && payload.mouse) MOUSE_KEYS = payload.mouse
   } catch (_) {
   }
 })
+
+let MOUSE_KEYS = {}
+
+function mouseCombo(e) {
+  if (!e) return ''
+  const n = e.button + 1
+  if (n !== 2 && n !== 4 && n !== 5) return ''
+  return 'Mouse' + n
+}
+
+function runMouseKey(e) {
+  const combo = mouseCombo(e)
+  if (!combo) return false
+  const action = MOUSE_KEYS[combo]
+  if (!action) return false
+  e.preventDefault()
+  e.stopPropagation()
+  try {
+    ipcRenderer.sendToHost('mdt:hotkey', action)
+  } catch (_) {
+  }
+  return true
+}
+
+window.addEventListener('mousedown', runMouseKey, true)
+window.addEventListener('auxclick', (e) => {
+  if (mouseCombo(e) && MOUSE_KEYS[mouseCombo(e)]) {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+}, true)
 
 ipcRenderer.on('mdt:nav-go', (_e, url) => {
   navGo(String(url || ''))
@@ -5197,6 +5753,924 @@ function keepStackOpen() {
   }, 0)
 }
 
+function styleTipList(list, p) {
+  list.setAttribute('data-mdt-tip', '1')
+  list.style.setProperty('position', 'absolute', 'important')
+  list.style.setProperty('top', '100%', 'important')
+  list.style.setProperty('bottom', 'auto', 'important')
+  list.style.setProperty('left', '0', 'important')
+  list.style.setProperty('right', 'auto', 'important')
+  list.style.setProperty('margin', '2px 0 0 0', 'important')
+  list.style.setProperty('padding', '0', 'important')
+  list.style.setProperty('width', '252px', 'important')
+  list.style.setProperty('max-height', '220px', 'important')
+  list.style.setProperty('overflow-y', 'auto', 'important')
+  list.style.setProperty('overflow-x', 'hidden', 'important')
+  list.style.setProperty('background-color', p.panel, 'important')
+  list.style.setProperty('background-image', 'none', 'important')
+  list.style.setProperty('color', p.text, 'important')
+  list.style.setProperty('border', '1px solid ' + p.border, 'important')
+  list.style.setProperty('border-radius', '0', 'important')
+  list.style.setProperty('box-shadow', '0 4px 10px rgba(0, 0, 0, 0.35)', 'important')
+  list.style.setProperty('opacity', '1', 'important')
+  list.style.setProperty('z-index', '1500', 'important')
+  list.style.setProperty('list-style', 'none', 'important')
+}
+
+function styleTipRow(tip, p) {
+  tip.setAttribute('data-mdt-tip-row', '1')
+  tip.style.setProperty('display', 'block', 'important')
+  tip.style.setProperty('margin', '0', 'important')
+  tip.style.setProperty('padding', '4px 8px', 'important')
+  tip.style.setProperty('background-color', p.panelAlt, 'important')
+  tip.style.setProperty('background-image', 'none', 'important')
+  tip.style.setProperty('color', p.text, 'important')
+  tip.style.setProperty('border', 'none', 'important')
+  tip.style.setProperty('border-bottom', '1px solid ' + p.borderLite, 'important')
+  tip.style.setProperty('font-size', '11px', 'important')
+  tip.style.setProperty('white-space', 'nowrap', 'important')
+  tip.style.setProperty('overflow', 'hidden', 'important')
+  tip.style.setProperty('text-overflow', 'ellipsis', 'important')
+  tip.style.setProperty('cursor', 'pointer', 'important')
+}
+
+function fixMapSearch() {
+  if (themeNow() === 'off') return
+  const controls = document.querySelectorAll('.leaflet-control-search')
+  if (!controls.length) return
+  const p = paletteNow()
+  for (const ctl of controls) {
+    ctl.style.setProperty('position', 'relative', 'important')
+    ctl.style.setProperty('overflow', 'visible', 'important')
+    ctl.style.setProperty('z-index', '1400', 'important')
+    const lists = ctl.querySelectorAll('ul, .search-tooltip, [class*="tooltip"]')
+    for (const list of lists) {
+      if (list.getAttribute('data-mdt-tip') !== '1') styleTipList(list, p)
+      for (const tip of list.children) {
+        if (tip.getAttribute('data-mdt-tip-row') !== '1') styleTipRow(tip, p)
+      }
+    }
+  }
+}
+
+let mapSearchTimer = null
+
+function scheduleMapSearchFix() {
+  if (mapSearchTimer) return
+  mapSearchTimer = setTimeout(() => {
+    mapSearchTimer = null
+    fixMapSearch()
+  }, 80)
+}
+
+function watchMapSearch() {
+  if (!document.querySelector('#map, .leaflet-container')) return
+  if (!document.body) return
+  scheduleMapSearchFix()
+  const obs = new MutationObserver(scheduleMapSearchFix)
+  obs.observe(document.body, { childList: true, subtree: true })
+  document.addEventListener('input', scheduleMapSearchFix, true)
+  document.addEventListener('keyup', scheduleMapSearchFix, true)
+  document.addEventListener('focusin', scheduleMapSearchFix, true)
+}
+
+const CROP_OFF = true
+
+const CROP_STYLE_ID = 'mdt-crop-style'
+
+const CROP_CSS = `
+.mdt-crop-wrap {
+  position: relative !important;
+  display: inline-block !important;
+  max-width: 100% !important;
+  line-height: 0 !important;
+  user-select: none !important;
+}
+.mdt-crop-wrap > img {
+  display: block !important;
+  max-width: 100% !important;
+  max-height: 440px !important;
+  width: auto !important;
+  height: auto !important;
+}
+.mdt-crop-box {
+  position: absolute !important;
+  box-sizing: border-box !important;
+  border: 1px solid #FFFFFF !important;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45) !important;
+  cursor: move !important;
+  z-index: 5 !important;
+}
+.mdt-crop-grid {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border: 1px dashed rgba(255, 255, 255, 0.55) !important;
+  pointer-events: none !important;
+}
+.mdt-crop-handle {
+  position: absolute !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: #39F !important;
+  border: 1px solid #FFFFFF !important;
+  z-index: 6 !important;
+}
+.mdt-crop-nw { left: -6px !important; top: -6px !important; cursor: nwse-resize !important; }
+.mdt-crop-ne { right: -6px !important; top: -6px !important; cursor: nesw-resize !important; }
+.mdt-crop-sw { left: -6px !important; bottom: -6px !important; cursor: nesw-resize !important; }
+.mdt-crop-se { right: -6px !important; bottom: -6px !important; cursor: nwse-resize !important; }
+.mugshotPreviewCropper,
+#mugshotPreview .img-preview,
+.cropper-preview {
+  display: none !important;
+}
+html body #uploadMugshot[data-mdt-crop-on="1"] {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  filter: none !important;
+  cursor: pointer !important;
+}
+`
+
+function ensureCropStyle() {
+  if (CROP_OFF) return
+  if (document.getElementById(CROP_STYLE_ID)) return
+  const el = document.createElement('style')
+  el.id = CROP_STYLE_ID
+  el.textContent = CROP_CSS
+  const head = document.head || document.documentElement
+  if (head) head.appendChild(el)
+}
+
+class MdtCropper {
+  constructor(img, opts) {
+    this.img = img
+    this.opts = opts || {}
+    this.ratio = this.opts.aspectRatio || 0
+    this.drag = null
+    this.x = 0
+    this.y = 0
+    this.w = 0
+    this.h = 0
+    img.mdtCropper = this
+    this.build()
+  }
+
+  build() {
+    ensureCropStyle()
+    const img = this.img
+    const parent = img.parentNode
+    if (!parent) return
+    img.classList.remove('cropper-hidden')
+    img.style.setProperty('display', 'block', 'important')
+    img.style.setProperty('max-width', '100%', 'important')
+    img.style.setProperty('max-height', '440px', 'important')
+    const wrap = document.createElement('div')
+    wrap.className = 'mdt-crop-wrap'
+    parent.insertBefore(wrap, img)
+    wrap.appendChild(img)
+    const box = document.createElement('div')
+    box.className = 'mdt-crop-box'
+    const grid = document.createElement('div')
+    grid.className = 'mdt-crop-grid'
+    box.appendChild(grid)
+    for (const k of ['nw', 'ne', 'sw', 'se']) {
+      const hd = document.createElement('span')
+      hd.className = 'mdt-crop-handle mdt-crop-' + k
+      hd.setAttribute('data-mdt-crop-handle', k)
+      box.appendChild(hd)
+    }
+    wrap.appendChild(box)
+    this.wrap = wrap
+    this.box = box
+    hideExtraMugshots(img)
+    this.onDown = (e) => this.start(e)
+    this.onMove = (e) => this.move(e)
+    this.onUp = () => this.end()
+    box.addEventListener('mousedown', this.onDown, true)
+    document.addEventListener('mousemove', this.onMove, true)
+    document.addEventListener('mouseup', this.onUp, true)
+    this.fit = () => this.reset()
+    if (img.complete && img.naturalWidth) this.reset()
+    else img.addEventListener('load', this.fit)
+    window.addEventListener('resize', this.fit)
+  }
+
+  reset() {
+    const w = this.img.clientWidth
+    const h = this.img.clientHeight
+    if (!w || !h) return
+    const area = this.opts.autoCropArea || 0.8
+    let bw = w * area
+    let bh = h * area
+    if (this.ratio) {
+      bh = bw / this.ratio
+      if (bh > h * area) {
+        bh = h * area
+        bw = bh * this.ratio
+      }
+    }
+    this.x = (w - bw) / 2
+    this.y = (h - bh) / 2
+    this.w = bw
+    this.h = bh
+    this.paint()
+    this.preview()
+    enableUpload()
+  }
+
+  paint() {
+    if (!this.box) return
+    this.box.style.left = this.x + 'px'
+    this.box.style.top = this.y + 'px'
+    this.box.style.width = this.w + 'px'
+    this.box.style.height = this.h + 'px'
+  }
+
+  start(e) {
+    if (!e || e.button !== 0) return
+    const hd = e.target && e.target.getAttribute
+      ? e.target.getAttribute('data-mdt-crop-handle')
+      : null
+    this.drag = {
+      mode: hd || 'move',
+      px: e.clientX,
+      py: e.clientY,
+      x: this.x,
+      y: this.y,
+      w: this.w,
+      h: this.h
+    }
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  move(e) {
+    const s = this.drag
+    if (!s) return
+    const maxW = this.img.clientWidth
+    const maxH = this.img.clientHeight
+    const dx = e.clientX - s.px
+    const dy = e.clientY - s.py
+    if (s.mode === 'move') {
+      this.x = Math.min(Math.max(0, s.x + dx), Math.max(0, maxW - s.w))
+      this.y = Math.min(Math.max(0, s.y + dy), Math.max(0, maxH - s.h))
+      this.paint()
+      e.preventDefault()
+      return
+    }
+    const k = s.mode
+    let x = s.x
+    let y = s.y
+    let w = s.w
+    let h = s.h
+    if (k.indexOf('e') >= 0) w = s.w + dx
+    if (k.indexOf('w') >= 0) {
+      w = s.w - dx
+      x = s.x + dx
+    }
+    if (k.indexOf('s') >= 0) h = s.h + dy
+    if (k.indexOf('n') >= 0) {
+      h = s.h - dy
+      y = s.y + dy
+    }
+    w = Math.max(24, w)
+    h = Math.max(24, h)
+    if (this.ratio) {
+      h = w / this.ratio
+      if (k.indexOf('n') >= 0) y = s.y + s.h - h
+    }
+    if (x < 0) {
+      w += x
+      x = 0
+      if (this.ratio) h = w / this.ratio
+    }
+    if (y < 0) {
+      h += y
+      y = 0
+      if (this.ratio) w = h * this.ratio
+    }
+    if (x + w > maxW) {
+      w = maxW - x
+      if (this.ratio) h = w / this.ratio
+    }
+    if (y + h > maxH) {
+      h = maxH - y
+      if (this.ratio) w = h * this.ratio
+    }
+    this.x = x
+    this.y = y
+    this.w = Math.max(24, w)
+    this.h = Math.max(24, h)
+    this.paint()
+    e.preventDefault()
+  }
+
+  end() {
+    if (!this.drag) return
+    this.drag = null
+    this.preview()
+    applyCropToInput()
+    enableUpload()
+  }
+
+  scale() {
+    const img = this.img
+    const sx = img.clientWidth ? img.naturalWidth / img.clientWidth : 1
+    const sy = img.clientHeight ? img.naturalHeight / img.clientHeight : 1
+    return { sx: sx || 1, sy: sy || 1 }
+  }
+
+  getData() {
+    const s = this.scale()
+    return {
+      x: Math.round(this.x * s.sx),
+      y: Math.round(this.y * s.sy),
+      width: Math.round(this.w * s.sx),
+      height: Math.round(this.h * s.sy),
+      rotate: 0,
+      scaleX: 1,
+      scaleY: 1
+    }
+  }
+
+  getCroppedCanvas(o) {
+    const s = this.scale()
+    const sw = Math.max(1, Math.round(this.w * s.sx))
+    const sh = Math.max(1, Math.round(this.h * s.sy))
+    const cv = document.createElement('canvas')
+    cv.width = (o && o.width) || sw
+    cv.height = (o && o.height) || sh
+    const ctx = cv.getContext('2d')
+    if (ctx) {
+      ctx.drawImage(
+        this.img,
+        Math.round(this.x * s.sx),
+        Math.round(this.y * s.sy),
+        sw,
+        sh,
+        0,
+        0,
+        cv.width,
+        cv.height
+      )
+    }
+    return cv
+  }
+
+  preview() {
+    const sel = this.opts.preview
+    if (!sel) return
+    if (sel === 'off') return
+    let hosts = []
+    try {
+      hosts = document.querySelectorAll(sel)
+    } catch (_) {
+      return
+    }
+    if (!hosts.length) return
+    let url = ''
+    try {
+      const wide = 160
+      const tall = this.ratio ? Math.round(wide / this.ratio) : wide
+      url = this.getCroppedCanvas({ width: wide, height: tall }).toDataURL('image/png')
+    } catch (_) {
+      return
+    }
+    for (const host of hosts) {
+      host.innerHTML = ''
+      const im = document.createElement('img')
+      im.src = url
+      im.style.setProperty('display', 'block', 'important')
+      im.style.setProperty('max-width', '100%', 'important')
+      host.appendChild(im)
+    }
+  }
+
+  replace(url) {
+    if (!url) return
+    this.img.setAttribute('src', url)
+    setTimeout(() => this.reset(), 120)
+  }
+
+  destroy() {
+    const img = this.img
+    if (this.box && this.box.parentNode) this.box.parentNode.removeChild(this.box)
+    document.removeEventListener('mousemove', this.onMove, true)
+    document.removeEventListener('mouseup', this.onUp, true)
+    window.removeEventListener('resize', this.fit)
+    if (img) {
+      img.removeEventListener('load', this.fit)
+      if (this.wrap && this.wrap.parentNode) {
+        this.wrap.parentNode.insertBefore(img, this.wrap)
+        this.wrap.parentNode.removeChild(this.wrap)
+      }
+      img.mdtCropper = null
+    }
+    this.box = null
+    this.wrap = null
+  }
+}
+
+function installCropShim() {
+  if (CROP_OFF) return
+  window.Cropper = MdtCropper
+  const jq = window.jQuery || window.$
+  if (!jq || !jq.fn) return
+  if (jq.fn.cropper && jq.fn.cropper.mdtOwn) return
+  jq.fn.cropper = function (a, b) {
+    let out
+    this.each(function () {
+      const el = this
+      if (typeof a === 'string') {
+        let inst = el.mdtCropper || currentCropper()
+        if (!inst && a === 'getCroppedCanvas' && el.getAttribute &&
+          el.getAttribute('src')) {
+          try {
+            inst = new MdtCropper(el, { aspectRatio: 1, autoCropArea: 0.8, preview: 'off' })
+          } catch (_) {
+            inst = null
+          }
+        }
+        if (!inst) return
+        if (a === 'getCroppedCanvas') out = inst.getCroppedCanvas(b)
+        else if (a === 'getData') out = inst.getData()
+        else if (a === 'replace') inst.replace(b)
+        else if (a === 'destroy') inst.destroy()
+        else if (a === 'reset') inst.reset()
+        return
+      }
+      if (el.mdtCropper) el.mdtCropper.destroy()
+      new MdtCropper(el, a || {})
+    })
+    return out === undefined ? this : out
+  }
+  jq.fn.cropper.mdtOwn = true
+}
+
+function enableUpload() {
+  if (CROP_OFF) return
+  const list = document.querySelectorAll('#uploadMugshot, #modalPicture button, #modalPicture .btn')
+  for (const b of list) {
+    b.removeAttribute('disabled')
+    b.classList.remove('disabled')
+    b.setAttribute('data-mdt-crop-on', '1')
+    b.style.removeProperty('pointer-events')
+    b.style.setProperty('opacity', '1', 'important')
+    b.style.setProperty('cursor', 'pointer', 'important')
+  }
+}
+
+function cropFileNow() {
+  const inst = currentCropper()
+  if (!inst) return null
+  let url = ''
+  try {
+    url = inst.getCroppedCanvas({}).toDataURL('image/png')
+  } catch (_) {
+    return null
+  }
+  const parts = url.split(',')
+  if (parts.length < 2) return null
+  try {
+    const bin = atob(parts[1])
+    const arr = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+    window.mdtCroppedMugshot = url
+    return new File([arr], 'mugshot.png', { type: 'image/png' })
+  } catch (_) {
+    return null
+  }
+}
+
+function swapFormData(body) {
+  const f = cropFileNow()
+  if (!f || !body || typeof body.entries !== 'function') return body
+  let hit = false
+  const out = new FormData()
+  for (const pair of Array.from(body.entries())) {
+    const key = pair[0]
+    const val = pair[1]
+    const isFile = val && typeof val === 'object' && typeof val.size === 'number' &&
+      typeof val.type === 'string'
+    if (isFile && (val.type.indexOf('image') === 0 || val.size === 0)) {
+      out.append(key, f, 'mugshot.png')
+      hit = true
+      continue
+    }
+    if (typeof val === 'string' && val.indexOf('data:image') === 0 &&
+      window.mdtCroppedMugshot) {
+      out.append(key, window.mdtCroppedMugshot)
+      hit = true
+      continue
+    }
+    out.append(key, val)
+  }
+  return hit ? out : body
+}
+
+let uploadHooked = false
+
+function installUploadHook() {
+  if (CROP_OFF) return
+  if (uploadHooked) return
+  uploadHooked = true
+  try {
+    const open = XMLHttpRequest.prototype.open
+    XMLHttpRequest.prototype.open = function (m, u) {
+      this.mdtMethod = m
+      this.mdtUrl = u
+      return open.apply(this, arguments)
+    }
+  } catch (_) {
+  }
+  try {
+    const send = XMLHttpRequest.prototype.send
+    XMLHttpRequest.prototype.send = function (body) {
+      let next = body
+      try {
+        const raw = body && typeof body === 'object' &&
+          typeof body.size === 'number' && typeof body.type === 'string' &&
+          body.type.indexOf('image') === 0
+        if (body instanceof FormData && currentCropper()) next = swapFormData(body)
+        else if (raw && currentCropper()) {
+          const shot = cropFileNow()
+          if (shot) next = shot
+        } else if (typeof body === 'string' && currentCropper() &&
+          body.indexOf('data%3Aimage') >= 0 && window.mdtCroppedMugshot) {
+          cropFileNow()
+          next = body.replace(/data%3Aimage[^&]*/, encodeURIComponent(window.mdtCroppedMugshot))
+        }
+      } catch (_) {
+      }
+      try {
+        logNet(this.mdtMethod || 'POST', this.mdtUrl || '', next)
+      } catch (_) {
+      }
+      return send.call(this, next)
+    }
+  } catch (_) {
+  }
+  try {
+    const nativeFetch = window.fetch
+    if (typeof nativeFetch === 'function') {
+      window.fetch = function (input, init) {
+        let next = init
+        try {
+          if (init && init.body instanceof FormData && currentCropper()) {
+            next = Object.assign({}, init, { body: swapFormData(init.body) })
+          }
+        } catch (_) {
+        }
+        return nativeFetch.call(window, input, next)
+      }
+    }
+  } catch (_) {
+  }
+}
+
+const NET_LOG = []
+
+function describeBody(body) {
+  if (!body) return 'no body'
+  if (typeof body === 'string') return 'text ' + body.slice(0, 400)
+  if (typeof FormData !== 'undefined' && body instanceof FormData) {
+    const bits = []
+    for (const pair of Array.from(body.entries())) {
+      const v = pair[1]
+      if (v && typeof v === 'object' && typeof v.size === 'number') {
+        bits.push(pair[0] + ' = FILE name:' + (v.name || '?') +
+          ' type:' + (v.type || '?') + ' size:' + v.size)
+      } else {
+        bits.push(pair[0] + ' = ' + String(v).slice(0, 140))
+      }
+    }
+    return 'formdata ' + bits.join(' | ')
+  }
+  if (typeof body === 'object' && typeof body.size === 'number') {
+    return 'blob type:' + (body.type || '?') + ' size:' + body.size
+  }
+  return 'other ' + Object.prototype.toString.call(body)
+}
+
+function logNet(method, url, body) {
+  NET_LOG.push(method + ' ' + url + ' :: ' + describeBody(body))
+  while (NET_LOG.length > 8) NET_LOG.shift()
+  window.mdtNetLog = NET_LOG
+}
+
+function mugshotReport() {
+  const jq = window.jQuery || window.$
+  const lines = []
+  lines.push('page ' + location.href)
+  lines.push('window.Cropper is ours: ' + (window.Cropper === MdtCropper))
+  lines.push('jquery present: ' + !!jq)
+  lines.push('jquery cropper ours: ' +
+    !!(jq && jq.fn && jq.fn.cropper && jq.fn.cropper.mdtOwn))
+  lines.push('live crop frame: ' + !!currentCropper())
+  lines.push('cropped file ready: ' + !!window.mdtCroppedMugshot)
+  const modal = document.getElementById('modalPicture')
+  lines.push('modalPicture found: ' + !!modal)
+  if (modal) {
+    for (const f of modal.querySelectorAll('form')) {
+      lines.push('FORM action=' + (f.getAttribute('action') || '-') +
+        ' method=' + (f.getAttribute('method') || '-') +
+        ' id=' + (f.id || '-'))
+    }
+    for (const im of modal.querySelectorAll('img')) {
+      lines.push('IMG id=' + (im.id || '-') + ' class=' + (im.className || '-') +
+        ' visible=' + (im.offsetParent !== null) + ' cropped=' + !!im.mdtCropper)
+    }
+    for (const el of modal.querySelectorAll('input, button, .btn, a.btn')) {
+      lines.push(el.tagName + ' id=' + (el.id || '-') +
+        ' name=' + (el.getAttribute('name') || '-') +
+        ' type=' + (el.getAttribute('type') || '-') +
+        ' disabled=' + (el.disabled === true) +
+        ' class=' + (el.className || '-'))
+    }
+  }
+  lines.push('--- last requests ---')
+  if (!NET_LOG.length) lines.push('none captured yet')
+  for (const l of NET_LOG) lines.push(l)
+  return lines.join('\n')
+}
+
+function showReport(text) {
+  const old = document.getElementById('mdt-report')
+  if (old && old.parentNode) old.parentNode.removeChild(old)
+  const wrap = document.createElement('div')
+  wrap.id = 'mdt-report'
+  wrap.setAttribute('style', 'position:fixed;left:20px;top:20px;right:20px;' +
+    'bottom:20px;z-index:2147483647;background:#111;border:2px solid #39F;' +
+    'padding:8px;display:flex;flex-direction:column')
+  const ta = document.createElement('textarea')
+  ta.setAttribute('style', 'flex:1;width:100%;background:#000;color:#3F6;' +
+    'font:12px monospace;border:0;padding:6px')
+  ta.value = text
+  const btn = document.createElement('button')
+  btn.textContent = 'Close'
+  btn.setAttribute('style', 'margin-top:6px;padding:4px 12px;align-self:flex-end')
+  btn.addEventListener('click', () => {
+    if (wrap.parentNode) wrap.parentNode.removeChild(wrap)
+  })
+  wrap.appendChild(ta)
+  wrap.appendChild(btn)
+  document.body.appendChild(wrap)
+  ta.focus()
+  ta.select()
+}
+
+function watchReportKey() {
+  document.addEventListener('keydown', (ev) => {
+    if (!ev.ctrlKey || !ev.shiftKey) return
+    if ((ev.key || '').toLowerCase() !== 'm') return
+    ev.preventDefault()
+    showReport(mugshotReport())
+  }, true)
+}
+
+function mugImg() {
+  const byId = document.getElementById('mugshotPreviewImage')
+  if (byId) return byId
+  const hosts = ['#mugshotPreview', '#modalPicture', '.modal.show', '.modal']
+  for (const h of hosts) {
+    const host = document.querySelector(h)
+    if (!host) continue
+    for (const im of host.querySelectorAll('img')) {
+      const src = im.getAttribute('src') || ''
+      if (src) return im
+    }
+  }
+  return null
+}
+
+function clearVanillaCropper(img) {
+  if (CROP_OFF) return
+  for (const box of document.querySelectorAll('.cropper-container')) {
+    const host = box.parentNode
+    if (host) host.removeChild(box)
+  }
+  if (img) img.classList.remove('cropper-hidden')
+  hideExtraMugshots(img)
+}
+
+function hideExtraMugshots(img) {
+  if (CROP_OFF) return
+  if (!img) return
+  const host = img.closest('#modalPicture') || img.closest('.modal') ||
+    img.closest('#mugshotPreview')
+  if (!host) return
+  for (const other of host.querySelectorAll('img, canvas')) {
+    if (other === img) continue
+    if (other.closest('.mdt-crop-wrap')) continue
+    if (other.closest('.note-editor')) continue
+    other.setAttribute('data-mdt-dupshot', '1')
+    other.style.setProperty('display', 'none', 'important')
+  }
+  for (const box of host.querySelectorAll('.mdt-crop-wrap')) {
+    if (box.contains(img)) continue
+    box.setAttribute('data-mdt-dupshot', '1')
+    box.style.setProperty('display', 'none', 'important')
+  }
+}
+
+function currentCropper() {
+  const img = mugImg()
+  return img && img.mdtCropper ? img.mdtCropper : null
+}
+
+function destroyCropper() {
+  const inst = currentCropper()
+  if (inst) inst.destroy()
+}
+
+function applyCropToInput() {
+  if (CROP_OFF) return
+  const f = cropFileNow()
+  if (!f) return
+  const inputs = document.querySelectorAll('#fileMugshot, #modalPicture input[type="file"]')
+  for (const inp of inputs) {
+    try {
+      const dt = new DataTransfer()
+      dt.items.add(f)
+      inp.files = dt.files
+    } catch (_) {
+    }
+  }
+}
+
+function hideNarrativeLabel() {
+  const list = document.querySelectorAll('.card-text, h1, h2, h3, h4, h5, label')
+  for (const el of list) {
+    if (el.getAttribute('data-mdt-nolabel') === '1') continue
+    if (el.closest('.note-editor') || el.closest('.note-frame')) continue
+    if (el.querySelector('.note-editor, textarea, input, select, .btn')) continue
+    const txt = (el.textContent || '').replace(/\s+/g, ' ').trim().replace(/[:\s]+$/, '')
+    if (txt !== 'Narrative') continue
+    el.setAttribute('data-mdt-nolabel', '1')
+    el.style.setProperty('display', 'none', 'important')
+  }
+}
+
+function startCropper() {
+  if (CROP_OFF) return
+  installCropShim()
+  const img = mugImg()
+  if (!img || !img.getAttribute('src')) return
+  if (img.mdtCropper) {
+    img.mdtCropper.reset()
+    return
+  }
+  clearVanillaCropper(img)
+  const opts = {
+    aspectRatio: 1,
+    viewMode: 1,
+    autoCropArea: 0.8,
+    background: false,
+    responsive: true,
+    checkOrientation: false,
+    preview: 'off'
+  }
+  try {
+    new MdtCropper(img, opts)
+  } catch (_) {
+  }
+}
+
+function previewMugshot(file) {
+  if (CROP_OFF) return
+  const img = mugImg()
+  if (!img || !file) return
+  installCropShim()
+  const rd = new FileReader()
+  rd.onload = () => {
+    img.setAttribute('src', String(rd.result))
+    img.classList.remove('cropper-hidden')
+    img.style.setProperty('display', 'block', 'important')
+    img.style.setProperty('visibility', 'visible', 'important')
+    img.style.setProperty('opacity', '1', 'important')
+    img.style.setProperty('max-width', '100%', 'important')
+    img.style.setProperty('max-height', '440px', 'important')
+    setTimeout(startCropper, 250)
+    setTimeout(revealMugshot, 900)
+    setTimeout(enableUpload, 300)
+    setTimeout(enableUpload, 1200)
+  }
+  try {
+    rd.readAsDataURL(file)
+  } catch (_) {
+  }
+}
+
+function revealMugshot() {
+  if (CROP_OFF) return
+  const img = mugImg()
+  if (!img) return
+  img.classList.remove('cropper-hidden')
+  img.style.setProperty('display', 'block', 'important')
+  img.style.setProperty('margin', '0 auto', 'important')
+  img.style.setProperty('max-width', '100%', 'important')
+  img.style.setProperty('max-height', '440px', 'important')
+}
+
+function watchMugshot() {
+  watchReportKey()
+  if (CROP_OFF) return
+  installCropShim()
+  installUploadHook()
+  for (const ms of [0, 300, 900, 2000, 4000]) setTimeout(installCropShim, ms)
+  const onPick = (ev) => {
+    const t = ev.target
+    if (!t || !t.files || !t.files.length) return
+    const isMug = t.id === 'fileMugshot' ||
+      (t.type === 'file' && !!t.closest('#modalPicture'))
+    if (!isMug) return
+    const file = t.files[0]
+    previewMugshot(file)
+    setTimeout(startCropper, 500)
+    setTimeout(startCropper, 1200)
+    setTimeout(startCropper, 2400)
+    setTimeout(revealMugshot, 2800)
+  }
+  document.addEventListener('change', onPick, true)
+  document.addEventListener('input', onPick, true)
+  document.addEventListener('click', (ev) => {
+    const t = ev.target
+    if (!t || !t.closest) return
+    if (t.closest('#uploadMugshot')) {
+      applyCropToInput()
+      enableUpload()
+    }
+    if (t.closest('[data-target="#modalPicture"], [href="#modalPicture"]')) {
+      installCropShim()
+      for (const ms of [200, 700, 1600]) setTimeout(startCropper, ms)
+    }
+  }, true)
+  document.addEventListener('hidden.bs.modal', (ev) => {
+    const t = ev && ev.target
+    if (!t || !t.querySelector) return
+    if (t.id === 'modalPicture' || t.querySelector('#mugshotPreviewImage')) destroyCropper()
+  }, true)
+}
+
+function inCodeView(el) {
+  const fr = el.closest('.note-frame, .note-editor')
+  return !!fr && fr.classList.contains('codeview')
+}
+
+function hideOneTextarea(el) {
+  if (!el) return
+  if (inCodeView(el)) {
+    el.style.removeProperty('display')
+    el.removeAttribute('data-mdt-src-hidden')
+    return
+  }
+  if (el.getAttribute('data-mdt-src-hidden') === '1') return
+  el.setAttribute('data-mdt-src-hidden', '1')
+  el.style.setProperty('display', 'none', 'important')
+}
+
+function hideSourceTextareas() {
+  const sel = [
+    'textarea.summernote',
+    '.note-editor + textarea',
+    '.note-frame + textarea',
+    '.note-editor textarea',
+    '.note-frame textarea',
+    'textarea.note-codable'
+  ].join(', ')
+  for (const el of document.querySelectorAll(sel)) hideOneTextarea(el)
+  for (const fr of document.querySelectorAll('.note-editor')) {
+    const box = fr.parentElement
+    if (!box) continue
+    for (const el of box.querySelectorAll(':scope > textarea')) hideOneTextarea(el)
+  }
+}
+
+let srcTextareaTimer = null
+
+function scheduleSourceTextareaFix() {
+  if (srcTextareaTimer) return
+  srcTextareaTimer = setTimeout(() => {
+    srcTextareaTimer = null
+    hideSourceTextareas()
+    hideNarrativeLabel()
+  }, 120)
+}
+
+function watchSourceTextareas() {
+  hideSourceTextareas()
+  for (const ms of [300, 900, 2000, 4000]) setTimeout(hideSourceTextareas, ms)
+  try {
+    const ob = new MutationObserver(scheduleSourceTextareaFix)
+    ob.observe(document.documentElement, { childList: true, subtree: true })
+  } catch (_) {
+  }
+}
+
 function watchModalDrag() {
   document.addEventListener('mousedown', startModalDrag, true)
   document.addEventListener('mousemove', moveModalDrag, true)
@@ -5225,6 +6699,7 @@ ipcRenderer.on('mdt:set-drag', (_e, value) => {
 })
 
 ipcRenderer.on('mdt:set-skin', (_e, value) => {
+  skinSynced = true
   if (typeof value === 'boolean') applyTheme(value ? 'light' : 'off')
   else applyTheme(String(value))
 })

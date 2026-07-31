@@ -391,6 +391,14 @@ function wireDownloads() {
 
 app.whenReady().then(wireDownloads)
 
+let startupSoundDone = false
+
+ipcMain.handle('app:startupOnce', () => {
+  if (startupSoundDone) return false
+  startupSoundDone = true
+  return true
+})
+
 ipcMain.handle('app:info', () => ({
   version: app.getVersion(),
   electron: process.versions.electron,

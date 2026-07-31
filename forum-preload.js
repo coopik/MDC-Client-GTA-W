@@ -116,7 +116,8 @@ header, #elSearch, #elSearchWrapper, #elUserNav, #elNotificationsBrowser,
 .ipsType_sectionHead + .ipsButton, .ipsMenu, .ipsCookieAlert, #elGuestMessage,
 .ipsPageHeader .ipsFlex-flex\\:11 + div, .ipsAreaBackground_reset > .ipsPad_half,
 #elTopicEventLog, .cTopicEventLog, [data-role="eventLog"], [data-role="topicEventLog"],
-.ipsQuote_citation, .ipsQuote_open, .ipsQuote_close {
+.ipsQuote_citation, .ipsQuote_open, .ipsQuote_close,
+.ipsPageHeader, .ipsPageHeader h1, .ipsType_pageTitle, .ipsPageHeader__meta {
   display: none !important;
 }
 .ipsPagination, .ipsPagination li, .ipsPagination a, .ipsPagination .ipsPagination_page,
@@ -275,15 +276,7 @@ article.cPost, .ipsBox, .cPost_contentWrap {
   overflow: visible !important;
 }
 #elPostFeed img { max-width: 100% !important; height: auto !important; }
-.ipsPageHeader, .ipsPageHeader h1, .ipsType_pageTitle {
-  background: ${p.header} !important;
-  color: ${p.text} !important;
-  border: 1px solid ${p.border} !important;
-  font-size: 13px !important;
-  font-weight: bold !important;
-  margin: 4px 4px 0 4px !important;
-  padding: 3px 6px !important;
-}
+
 [data-mdt-penal-hit="1"] {
   background: ${p.highlight} !important;
   color: ${p.text} !important;

@@ -1,6 +1,6 @@
 {
   "name": "mdc-client",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "PatrolOne Mobile Client - desktop shell for the GTA World Web MDC",
   "main": "main.js",
   "author": "PatrolOne Mobile Client",

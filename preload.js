@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('mdt', {
   getInfo: () => ipcRenderer.invoke('app:info'),
+  startupOnce: () => ipcRenderer.invoke('app:startupOnce'),
   clearSession: () => ipcRenderer.invoke('app:clearSession'),
   clearForumSession: () => ipcRenderer.invoke('app:clearForumSession'),
   openExternal: (url) => ipcRenderer.invoke('app:openExternal', url),
