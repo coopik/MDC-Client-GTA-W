@@ -2,6 +2,37 @@
 
 ## 1.0.2
 
+### Pages and layout
+
+- Incident create and other MDC form pages now keep the site's own stacked layout. Labels sit above their fields at full width instead of being packed onto one line, and the client's button and column packing is switched off on those pages.
+- Form pages on the Classic and Windows 7 Aero skins now match the layout the MDC uses on its own default skin: each label sits on its own line above a full width field, rows keep their natural columns, and the map stays in its column on the right.
+- The incident form now keeps the MDC's own field positioning. The client no longer stretches inputs to full width or forces every label onto its own line, so half-width fields, side by side rows such as Status and Date and Time, and the narrative column sit exactly where they do on the web MDC.
+- Removed the empty duplicate text boxes that appeared above the Narrative and Further Details editors on the incident form. Those were the hidden source boxes the rich text editor keeps behind the scenes, and the client is no longer forcing them back into view.
+- Removed the stray "Narrative:" caption that sat beside the narrative editor on the incident form.
+- Vehicle plates keep the MDC's own plate markup, so the red San Andreas caption, the two red tabs and the navy plate number render exactly as they do on the web MDC, including on DMV vehicle records. The client no longer draws its own plate over the top of them.
+- Panels and cards that the MDC marks as white now follow the active skin instead of staying white, which fixes the Search Faction box on the Incident Database page under Windows 7 Aero LAPD.
+- The street search on the Vehicle Map now drops its results below the search box with a solid, readable background instead of drawing plain text over the map and the box itself.
+- Faction and other picker fields follow the active skin instead of staying white.
+- Opening a personal record no longer shows the previous settings and the MDC side panel for a moment before the current ones load.
+- Placeholder text in the narrative editor, and field placeholders across the MDC generally, are no longer invisible or sitting on a filled block. They use the skin's muted text colour on a transparent background, on both light and dark skins.
+- The penal code tab no longer shows the forum's "San Andreas Penal Code" page heading and its background.
+
+### History
+
+- The history window opened with Ctrl+H is now paged, with first, previous, next and last buttons and a page size of 25, 50, 100 or 200 entries, so a long history no longer runs off the bottom of the window. Searching resets to the first page.
+- The startup sound now plays once per launch of the client. Refreshing a page with Ctrl+R no longer replays it.
+
+### Shortcuts
+
+- Shortcuts can now be assigned to mouse buttons. In Help then Keyboard Shortcuts, press Change and then click the middle button or a side button; back and forward side buttons and the middle button are all accepted, and they work in the client and inside MDC pages.
+
+### Mugshots
+
+- The Upload Mugshot window is left entirely alone: the client no longer includes a built in crop tool, so the MDC's own cropper and upload behave exactly as they do in the browser. No preview hiding, no forcing the Upload button on, and no touching of the uploaded picture.
+- Ctrl+Shift+M opens a copyable diagnostic report for troubleshooting mugshot upload issues.
+
+## 1.0.1
+
 A large update. The client was rebuilt around a proper skin engine, gained a Windows 7 skin family, a page system, history and alerts, an update checker and Discord presence, and a long list of fixes to the way MDC pages are laid out.
 
 ### Warrant capture
@@ -26,25 +57,12 @@ A large update. The client was rebuilt around a proper skin engine, gained a Win
 - Right-click a navigation chip, a quick shortcut or any link to open it as another page instead of replacing the one in front.
 - An optional MDC navigation bar shows the side panel links as tabs, and the side panel itself can be hidden and locked. Quick shortcuts are large icon buttons for Home, Query, Traffic, C6, Calls and Dispatch under the tab strip, captioned and toggleable.
 - Popped-up windows can be dragged by their title bar, and the page behind them stays usable.
-- Incident create and other MDC form pages now keep the site's own stacked layout. Labels sit above their fields at full width instead of being packed onto one line, and the client's button and column packing is switched off on those pages.
-- Form pages on the Classic and Windows 7 Aero skins now match the layout the MDC uses on its own default skin: each label sits on its own line above a full width field, rows keep their natural columns, and the map stays in its column on the right.
-- The incident form now keeps the MDC's own field positioning. The client no longer stretches inputs to full width or forces every label onto its own line, so half-width fields, side by side rows such as Status and Date and Time, and the narrative column sit exactly where they do on the web MDC.
-- Removed the empty duplicate text boxes that appeared above the Narrative and Further Details editors on the incident form. Those were the hidden source boxes the rich text editor keeps behind the scenes, and the client is no longer forcing them back into view.
-- Removed the stray "Narrative:" caption that sat beside the narrative editor on the incident form.
-- Vehicle plates keep the MDC's own plate markup, so the red San Andreas caption, the two red tabs and the navy plate number render exactly as they do on the web MDC, including on DMV vehicle records. The client no longer draws its own plate over the top of them.
-- Panels and cards that the MDC marks as white now follow the active skin instead of staying white, which fixes the Search Faction box on the Incident Database page under Windows 7 Aero LAPD.
-- The street search on the Vehicle Map now drops its results below the search box with a solid, readable background instead of drawing plain text over the map and the box itself.
-- Faction and other picker fields follow the active skin instead of staying white.
-- Opening a personal record no longer shows the previous settings and the MDC side panel for a moment before the current ones load.
-- Placeholder text in the narrative editor, and field placeholders across the MDC generally, are no longer invisible or sitting on a filled block. They use the skin's muted text colour on a transparent background, on both light and dark skins.
 
 ### History, alerts and notifications
 
 - A searchable history records every page visited, with an option to narrow it to subjects and vehicles only. Ctrl+H opens it.
-- The history window is paged, with first, previous, next and last buttons and a page size of 25, 50, 100 or 200 entries, so a long history no longer runs off the bottom of the window. Searching resets to the first page.
 - An alerts counter tracks unread notifications, with an optional sound and a reminder at login.
 - Nine interface sounds: clicks, navigation, opening and closing a page, confirmation, copy, notification, warning, error and start-up. Off by default.
-- The startup sound now plays once per launch of the client. Refreshing a page with Ctrl+R no longer replays it.
 - Optional Discord rich presence.
 
 ### Updates and identity
@@ -52,18 +70,11 @@ A large update. The client was rebuilt around a proper skin engine, gained a Win
 - The client is now PatrolOne Mobile Client, with a new application icon.
 - It checks GitHub for new releases on launch and can download and install an update in place.
 - Help carries a keyboard shortcut reference, and shortcuts can be remapped.
-- Shortcuts can now be assigned to mouse buttons. In Help then Keyboard Shortcuts, press Change and then click the middle button or a side button; back and forward side buttons and the middle button are all accepted, and they work in the client and inside MDC pages.
 
 ### Penal code
 
 - Out-of-character notes in double parentheses are stripped, along with the topic event log, the forum footer, the theme switcher and the copyright line.
 - The page no longer scrolls sideways, and the page selector is transparent.
-- The penal code tab no longer shows the forum's "San Andreas Penal Code" page heading and its background.
-
-### Mugshots
-
-- The Upload Mugshot window is left entirely alone: the client no longer includes a built in crop tool, so the MDC's own cropper and upload behave exactly as they do in the browser. No preview hiding, no forcing the Upload button on, and no touching of the uploaded picture.
-- Ctrl+Shift+M opens a copyable diagnostic report for troubleshooting mugshot upload issues.
 
 ### Layout and rendering fixes
 
