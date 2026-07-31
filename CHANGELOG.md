@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1
+## 1.0.2
 
 A large update. The client was rebuilt around a proper skin engine, gained a Windows 7 skin family, a page system, history and alerts, an update checker and Discord presence, and a long list of fixes to the way MDC pages are laid out.
 
