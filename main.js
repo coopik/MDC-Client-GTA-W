@@ -84,9 +84,18 @@ function showWindow() {
   }
   try {
     mainWindow.setSkipTaskbar(false)
+    if (typeof mainWindow.setEnabled === 'function') mainWindow.setEnabled(true)
     if (mainWindow.isMinimized()) mainWindow.restore()
     if (!mainWindow.isVisible()) mainWindow.show()
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.showInactive()
     mainWindow.moveTop()
+    mainWindow.setAlwaysOnTop(true)
+    mainWindow.setAlwaysOnTop(false)
+    try {
+      app.focus({ steal: true })
+    } catch (_) {
+    }
     mainWindow.focus()
     jiggle()
     wakeContents()
@@ -133,7 +142,7 @@ function createTray() {
     ])
   )
   tray.on('click', () => setImmediate(showWindow))
-  tray.on('double-click', showWindow)
+  tray.on('double-click', () => setImmediate(showWindow))
 }
 
 function destroyTray() {
@@ -190,6 +199,16 @@ function createWindow() {
     if (!trayEnabled) return
     event.preventDefault()
     mainWindow.hide()
+    setTimeout(() => {
+      if (!mainWindow || mainWindow.isDestroyed()) return
+      if (!mainWindow.isVisible() && mainWindow.isMinimized()) {
+        try {
+          mainWindow.restore()
+          mainWindow.hide()
+        } catch (_) {
+        }
+      }
+    }, 60)
   })
 
   mainWindow.on('close', (event) => {

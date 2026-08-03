@@ -625,6 +625,41 @@ html.mdt-aero body .note-editable, html.mdt-aero body .note-editing-area {
   color: ${g.fieldInk} !important;
   border-color: ${g.fieldBorder} !important;
 }
+html.mdt-aero body .modal .note-editor,
+html.mdt-aero body .modal .note-frame,
+html.mdt-aero body .modal .note-editing-area,
+html.mdt-aero body .modal .note-editable,
+html.mdt-aero body .modal .note-codable,
+html.mdt-aero body .modal .note-statusbar,
+html.mdt-aero body .modal .note-editable p,
+html.mdt-aero body .modal .note-editable div,
+html.mdt-aero body .modal .note-editable span {
+  background: ${g.fieldBg} !important;
+  background-color: ${g.fieldBg} !important;
+  background-image: none !important;
+  color: ${g.fieldInk} !important;
+}
+html.mdt-aero body .modal .note-editable * {
+  background-color: transparent !important;
+  color: ${g.fieldInk} !important;
+}
+html.mdt-aero body .modal .note-placeholder {
+  background: transparent !important;
+  color: ${g.fieldInk} !important;
+  opacity: 0.65 !important;
+}
+html.mdt-aero body .modal .chargeWrapper {
+  background: ${g.fieldBg} !important;
+  background-image: none !important;
+  border: 1px solid ${g.fieldBorder} !important;
+}
+html.mdt-aero body .modal .chargeWrapper .bootstrap-select > .dropdown-toggle,
+html.mdt-aero body .modal .chargeWrapper .form-control {
+  background: ${g.fieldBg} !important;
+  background-image: none !important;
+  color: ${g.fieldInk} !important;
+  border: 1px solid ${g.fieldBorder} !important;
+}
 html.mdt-aero body .note-toolbar, html.mdt-aero body .note-toolbar.card-header {
   background-image: linear-gradient(180deg, ${g.hdrHi} 0%, ${g.hdrLo} 100%) !important;
   border-bottom: 1px solid ${g.panelBorder} !important;
@@ -677,7 +712,6 @@ html.mdt-aero body .modal-header .close span,
 html.mdt-aero body .modal-content .close span {
   color: #FFFFFF !important;
   font-size: 12px !important;
-  line-height: 19px !important;
   vertical-align: middle !important;
 }
 html.mdt-aero body .modal-header {
@@ -1278,6 +1312,40 @@ html body .card hr, html body .panel hr {
   margin: 1px !important;
   vertical-align: middle !important;
 }
+html body .note-editable * {
+  background-image: none !important;
+}
+html body .bootstrap-select .dropdown-menu {
+  max-height: 340px !important;
+  min-width: 260px !important;
+  overflow: hidden !important;
+  z-index: 2000 !important;
+}
+html body .bootstrap-select .dropdown-menu > .inner,
+html body .bootstrap-select .dropdown-menu > ul.inner,
+html body .modal .dropdown-menu > .inner {
+  max-height: 300px !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+html body .bootstrap-select .dropdown-menu > .inner ul,
+html body .bootstrap-select .dropdown-menu > .inner > ul.inner {
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+}
+html body .bootstrap-select .dropdown-menu li,
+html body .bootstrap-select .dropdown-menu li a,
+html body .bootstrap-select .dropdown-menu .dropdown-item {
+  min-height: 20px !important;
+  height: auto !important;
+  padding: 3px 8px !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  line-height: 15px !important;
+}
 .bootstrap-select > .dropdown-toggle {
   height: 22px !important;
   min-height: 22px !important;
@@ -1545,6 +1613,29 @@ html body .note-statusbar {
 }
 html body .note-editable * {
   background-color: transparent !important;
+}
+html body .note-editor,
+html body .note-frame,
+html body .note-editing-area,
+html body .note-editable,
+html body .note-codable,
+html body .note-placeholder,
+html body .note-editable p,
+html body .note-editable div,
+html body .note-editable li {
+  text-align: left !important;
+}
+html body .note-editable [align="center"],
+html body .note-editable [style*="text-align: center"],
+html body .note-editable .text-center {
+  text-align: center !important;
+}
+html body .modal .modal-body .form-group:has(.note-editor),
+html body .modal .modal-body .bmd-form-group:has(.note-editor),
+html body .modal .modal-body [class*="col-"]:has(> .form-group > .note-editor),
+html body .modal .modal-body [class*="col-"]:has(> .note-editor) {
+  align-items: stretch !important;
+  text-align: left !important;
 }
 html body .note-toolbar,
 html body .note-toolbar.card-header {
@@ -2982,9 +3073,8 @@ html body .modal .modal-body .chargeWrapper {
   z-index: 1 !important;
   height: auto !important;
   min-height: 34px !important;
-  max-height: 190px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  max-height: none !important;
+  overflow: visible !important;
   border: 1px solid ${p.border} !important;
   background-color: ${p.panelAlt} !important;
   padding: 5px !important;
@@ -2994,9 +3084,66 @@ html body .modal .modal-body .chargeWrapper + * {
   position: relative !important;
 }
 html body .modal .modal-body .chargeWrapper > * {
+  box-sizing: border-box !important;
   width: 100% !important;
   max-width: 100% !important;
   flex: 0 0 auto !important;
+  margin: 0 0 4px 0 !important;
+}
+html body .modal .modal-body .chargeWrapper > *:last-child {
+  margin-bottom: 0 !important;
+}
+html body .modal .modal-body .chargeWrapper .row,
+html body .modal .modal-body .chargeWrapper .input-group,
+html body .modal .modal-body .chargeWrapper .form-group,
+html body .modal .modal-body .chargeWrapper .bmd-form-group {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+html body .modal .modal-body .chargeWrapper .bootstrap-select,
+html body .modal .modal-body .chargeWrapper .form-control,
+html body .modal .modal-body .chargeWrapper select {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+  margin: 0 !important;
+}
+html body .modal .modal-body .chargeWrapper .btn,
+html body .modal .modal-body .chargeWrapper .remove_button,
+html body .modal .modal-body .chargeWrapper .input-group-addon,
+html body .modal .modal-body .chargeWrapper .input-group-append,
+html body .modal .modal-body .chargeWrapper .input-group-prepend {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+html body .mdt-grip {
+  position: absolute !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: nwse-resize !important;
+  z-index: 12 !important;
+  background-image: linear-gradient(135deg, transparent 0 42%, ${p.border} 42% 52%, transparent 52% 66%, ${p.border} 66% 76%, transparent 76%) !important;
+}
+html body .modal-content,
+html body .swal2-popup {
+  position: relative !important;
+}
+html body .modal-dialog[data-mdt-sized="1"] {
+  transition: none !important;
 }
 
 html body .modal .modal-body .input-group-addon:has(> .form-group.row),
@@ -3319,9 +3466,9 @@ html body .leaflet-control-search .search-alert {
 html body .dropdown-menu.dropdown-menu-scroll {
   display: block !important;
   box-sizing: border-box !important;
-  min-width: 240px !important;
-  max-width: 420px !important;
-  max-height: 230px !important;
+  min-width: 280px !important;
+  max-width: 520px !important;
+  max-height: 320px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   margin: 0 !important;
@@ -6671,7 +6818,298 @@ function watchSourceTextareas() {
   }
 }
 
+let gripBox = null
+let gripStartX = 0
+let gripStartY = 0
+let gripW = 0
+let gripH = 0
+
+function addGrips() {
+  const list = document.querySelectorAll('.modal.show .modal-content, .modal.in .modal-content')
+  for (const box of list) {
+    if (box.querySelector('.mdt-grip')) continue
+    const g = document.createElement('div')
+    g.className = 'mdt-grip'
+    g.setAttribute('data-mdt-grip', '1')
+    g.setAttribute('title', 'Drag to resize')
+    box.appendChild(g)
+  }
+}
+
+function startGrip(e) {
+  const g = e.target && e.target.closest ? e.target.closest('.mdt-grip') : null
+  if (!g) return
+  const dlg = g.closest('.modal-dialog')
+  if (!dlg) return
+  const r = dlg.getBoundingClientRect()
+  gripBox = dlg
+  gripStartX = e.clientX
+  gripStartY = e.clientY
+  gripW = r.width
+  gripH = r.height
+  e.preventDefault()
+  e.stopImmediatePropagation()
+}
+
+function moveGrip(e) {
+  if (!gripBox) return
+  const w = Math.max(320, gripW + (e.clientX - gripStartX))
+  const h = Math.max(220, gripH + (e.clientY - gripStartY))
+  gripBox.style.setProperty('width', w + 'px', 'important')
+  gripBox.style.setProperty('max-width', w + 'px', 'important')
+  gripBox.setAttribute('data-mdt-sized', '1')
+  const body = gripBox.querySelector('.modal-body')
+  if (body) {
+    body.style.setProperty('max-height', Math.max(140, h - 108) + 'px', 'important')
+    body.style.setProperty('overflow-y', 'auto', 'important')
+  }
+  e.preventDefault()
+  e.stopImmediatePropagation()
+}
+
+function endGrip() {
+  gripBox = null
+}
+
+function clearGripSize(dlg) {
+  if (!dlg) return
+  dlg.style.removeProperty('width')
+  dlg.style.removeProperty('max-width')
+  dlg.removeAttribute('data-mdt-sized')
+  const body = dlg.querySelector('.modal-body')
+  if (body) {
+    body.style.removeProperty('max-height')
+    body.style.removeProperty('overflow-y')
+  }
+}
+
+const pinned = []
+const raised = []
+
+function raiseChain(menu) {
+  let n = menu.parentElement
+  while (n && n !== document.body && n !== document.documentElement) {
+    let cs = null
+    try {
+      cs = getComputedStyle(n)
+    } catch (err) {
+      break
+    }
+    if (cs && cs.position !== 'static' && n.getAttribute('data-mdt-raise') !== '1') {
+      n.setAttribute('data-mdt-raise', '1')
+      n.mdtOldZ = n.style.getPropertyValue('z-index')
+      n.style.setProperty('z-index', '2147483000', 'important')
+      raised.push(n)
+    }
+    if (n.classList && (n.classList.contains('modal-content') || n.classList.contains('modal'))) break
+    n = n.parentElement
+  }
+}
+
+function dropChain() {
+  while (raised.length) {
+    const el = raised.pop()
+    if (!el || !el.style) continue
+    el.removeAttribute('data-mdt-raise')
+    el.style.removeProperty('z-index')
+    if (el.mdtOldZ) el.style.setProperty('z-index', el.mdtOldZ)
+    el.mdtOldZ = ''
+  }
+}
+
+function pinOrigin(el) {
+  let n = el.parentElement
+  while (n && n !== document.body && n !== document.documentElement) {
+    let cs = null
+    try {
+      cs = getComputedStyle(n)
+    } catch (err) {
+      return null
+    }
+    if (cs && ((cs.transform && cs.transform !== 'none') || (cs.filter && cs.filter !== 'none') || (cs.perspective && cs.perspective !== 'none'))) return n
+    n = n.parentElement
+  }
+  return null
+}
+
+function isPickerMenu(menu) {
+  const host = menu && menu.parentElement
+  if (!host || !host.classList) return false
+  if (!host.classList.contains('bootstrap-select')) return false
+  if (menu.closest && (menu.closest('.note-toolbar') || menu.closest('.note-editor'))) return false
+  return true
+}
+
+function pinMenu(menu) {
+  const host = menu.parentElement
+  const tog = host.querySelector(':scope > .dropdown-toggle, :scope > button')
+  if (!tog || !tog.getBoundingClientRect) return
+  const r = tog.getBoundingClientRect()
+  if (!r.width && !r.height) return
+  const origin = pinOrigin(menu)
+  const o = origin ? origin.getBoundingClientRect() : null
+  const vh = window.innerHeight
+  const vw = window.innerWidth
+  const below = vh - r.bottom - 8
+  const above = r.top - 8
+  const up = below < 180 && above > below
+  const h = Math.min(340, Math.max(140, up ? above : below))
+  const w = Math.max(260, Math.min(520, r.width))
+  let left = r.left
+  if (left + w > vw - 6) left = Math.max(6, vw - w - 6)
+  const top = up ? r.top - h : r.bottom
+  const s = menu.style
+  s.setProperty('position', 'fixed', 'important')
+  s.setProperty('left', Math.round(left - (o ? o.left : 0)) + 'px', 'important')
+  s.setProperty('top', Math.round(top - (o ? o.top : 0)) + 'px', 'important')
+  s.setProperty('right', 'auto', 'important')
+  s.setProperty('bottom', 'auto', 'important')
+  s.setProperty('transform', 'none', 'important')
+  s.setProperty('margin', '0', 'important')
+  s.setProperty('z-index', '2147483000', 'important')
+  if (menu.getAttribute('data-mdt-pin') !== '1') {
+    menu.setAttribute('data-mdt-pin', '1')
+    pinned.push(menu)
+  }
+  raiseChain(menu)
+}
+
+function unpinMenu(menu) {
+  menu.removeAttribute('data-mdt-pin')
+  const keys = ['position', 'left', 'top', 'right', 'bottom', 'transform', 'margin', 'z-index']
+  keys.forEach((k) => menu.style.removeProperty(k))
+}
+
+function scanPickers() {
+  const menus = document.querySelectorAll('.bootstrap-select.show > .dropdown-menu, .bootstrap-select.open > .dropdown-menu')
+  menus.forEach((menu) => {
+    if (isPickerMenu(menu)) pinMenu(menu)
+  })
+  for (let i = pinned.length - 1; i >= 0; i--) {
+    const menu = pinned[i]
+    const host = menu.parentElement
+    const open = host && host.classList && (host.classList.contains('show') || host.classList.contains('open'))
+    if (!open || !document.body.contains(menu)) {
+      pinned.splice(i, 1)
+      unpinMenu(menu)
+    }
+  }
+  if (!pinned.length && raised.length) dropChain()
+}
+
+function watchPickers() {
+  window.addEventListener('resize', scanPickers, true)
+  window.addEventListener('scroll', scanPickers, true)
+  setInterval(scanPickers, 120)
+}
+
+function whiteBg(c) {
+  if (!c) return false
+  const m = String(c).match(/rgba?\(([^)]+)\)/)
+  if (!m) return false
+  const v = m[1].split(',').map((x) => parseFloat(x))
+  if (v.length > 3 && !(v[3] > 0.05)) return false
+  return v[0] > 234 && v[1] > 234 && v[2] > 234
+}
+
+function cleanNoteBg() {
+  const areas = document.querySelectorAll('.note-editable')
+  areas.forEach((area) => {
+    const kids = area.querySelectorAll('*')
+    kids.forEach((el) => {
+      if (!el.style || el.getAttribute('data-mdt-nobg') === '1') return
+      let cs = null
+      try {
+        cs = getComputedStyle(el)
+      } catch (err) {
+        return
+      }
+      if (!cs || !whiteBg(cs.backgroundColor)) return
+      el.style.setProperty('background-color', 'transparent', 'important')
+      el.style.setProperty('background-image', 'none', 'important')
+      el.setAttribute('data-mdt-nobg', '1')
+    })
+  })
+}
+
+const IMGUR_RE = /^https?:\/\/(i\.)?imgur\.com\//i
+
+function imgurAlts(url) {
+  const clean = url.replace(/^http:/i, 'https:')
+  const bare = clean.replace(/^https?:\/\//i, '')
+  return [
+    'https://images.weserv.nl/?url=' + encodeURIComponent(bare),
+    'https://proxy.duckduckgo.com/iu/?u=' + encodeURIComponent(clean) + '&f=1',
+    clean
+  ]
+}
+
+function stepImgur(img) {
+  if (img.mdtImgDone) return
+  const alts = img.mdtAlts || []
+  const next = (img.mdtAlt || 0) + 1
+  if (next >= alts.length) {
+    img.mdtImgDone = true
+    return
+  }
+  img.mdtAlt = next
+  img.src = alts[next]
+}
+
+function proxyImg(img) {
+  if (!img || !img.getAttribute) return
+  if (img.getAttribute('data-mdt-imgur') === '1') return
+  const src = img.getAttribute('src') || ''
+  if (!IMGUR_RE.test(src)) return
+  const alts = imgurAlts(src)
+  img.setAttribute('data-mdt-imgur', '1')
+  img.setAttribute('data-mdt-imgur-src', src)
+  img.mdtAlts = alts
+  img.mdtAlt = 0
+  img.mdtImgDone = false
+  img.addEventListener('error', () => stepImgur(img), false)
+  img.src = alts[0]
+}
+
+function fixImgur() {
+  const imgs = document.querySelectorAll('img[src]')
+  imgs.forEach(proxyImg)
+}
+
+function watchImgur() {
+  fixImgur()
+  try {
+    const obs = new MutationObserver(() => fixImgur())
+    obs.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] })
+  } catch (err) {
+    setInterval(fixImgur, 1200)
+  }
+  setInterval(fixImgur, 2500)
+}
+
+function watchNoteBg() {
+  document.addEventListener('input', cleanNoteBg, true)
+  document.addEventListener('paste', () => setTimeout(cleanNoteBg, 60), true)
+  setInterval(cleanNoteBg, 900)
+}
+
+function watchModalResize() {
+  document.addEventListener('mousedown', startGrip, true)
+  document.addEventListener('mousemove', moveGrip, true)
+  document.addEventListener('mouseup', endGrip, true)
+  document.addEventListener('shown.bs.modal', addGrips, true)
+  document.addEventListener('hidden.bs.modal', (e) => {
+    if (!e || !e.target || !e.target.querySelector) return
+    clearGripSize(e.target.querySelector('.modal-dialog'))
+  }, true)
+  setInterval(addGrips, 1500)
+}
+
 function watchModalDrag() {
+  watchModalResize()
+  watchPickers()
+  watchNoteBg()
+  watchImgur()
   document.addEventListener('mousedown', startModalDrag, true)
   document.addEventListener('mousemove', moveModalDrag, true)
   document.addEventListener('mouseup', endModalDrag, true)

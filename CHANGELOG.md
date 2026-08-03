@@ -1,5 +1,61 @@
 # Changelog
 
+## 1.0.3
+
+Images
+- Imgur images in APBs, records, warrants and everywhere else are now loaded through an image proxy, so pictures that are region blocked (the purple "Content not viewable in your region" placeholder) display normally.
+- If the first proxy fails the client automatically tries a second one, then the original link.
+
+Windows
+- Fixed the client freezing after restoring it from the tray with a single click. The window is re-enabled, un-minimised and focused properly instead of coming back in an unresponsive state.
+- Minimising to tray no longer leaves the window in a hidden-but-minimised state, which was the cause of the freeze.
+
+Paperwork
+- Charge and infraction pickers now open above the narrative editor and its toolbar instead of being painted behind them.
+- While a picker is open, the surrounding charge row is lifted out of its stacking context and restored again on close, so nothing else in the report window changes.
+
+- Fixed empty charge and infraction pickers introduced in 1.0.4. Menus are no longer detached from the page, so the option list renders normally again.
+- Fixed the Summernote colour palette, which appeared misplaced and blank in 1.0.4.
+- Charge and infraction pickers are now pinned to the screen while open, so they are no longer cut off by the edge of the report window and show the full list no matter how small the window is.
+- Removed the duplicated scrollbar in the pickers. Only the option list scrolls now.
+- Kept the 1.0.4 narrative fix that clears the stray white band at the top of the editor.
+
+- Charge and infraction pickers now open as floating lists that are no longer clipped by the report window, so the full list is visible and scrollable regardless of window size.
+- Removed the duplicated scrollbar inside charge and infraction pickers; only the option list scrolls now.
+- Picker lists flip above the field when there is not enough room below, and follow the field when the window is moved, resized or scrolled.
+- Long option labels wrap instead of being cut off.
+- Removed the stray white band that appeared at the top of the narrative editor.
+
+### Paperwork
+
+- Text typed into a narrative field is no longer shown centred while you write. It now sits to the left, matching how the record reads once it is submitted. Anything you deliberately centre yourself still stays centred.
+- Charge and infraction pickers open at a usable size again. The charge box no longer clips the list, so you can scroll the full set of charges instead of seeing a single line.
+- Long charge names wrap instead of being cut off.
+- Charge rows now line up inside their box: the pickers share the width evenly, the remove button stays at its natural size, and each row is spaced from the next.
+
+### Windows
+
+- Popped up windows can be resized. Grab the grip in the bottom right corner of any window and drag to make it wider, narrower, taller or shorter. The size resets when the window is closed.
+
+### Windows 7 Aero skins
+
+- Fixed the colours of the paperwork window. The narrative editor, its status bar and the charges box now use the same glass field colours as the rest of the window instead of staying dark.
+
+### Fixes
+
+- Form pages on the Classic and Windows 7 Aero skins now match the layout the MDC uses on its own default skin: each label sits on its own line above a full width field, rows keep their natural columns, and the map stays in its column on the right. The previous build let the skin squeeze labels and fields onto shared lines and cut off field text.
+
+### Fixes
+
+- Placeholder text in the narrative editor no longer sits on a filled block. Its background is transparent and it uses the skin's muted text colour, so it stays readable on the light Windows 7 and Classic skins as well as the dark ones.
+- Field placeholders across the MDC now follow the same rule, so they are never invisible against a white field.
+- The incident form now keeps the MDC's own field positioning. The client no longer stretches inputs to full width or forces every label onto its own line, so half-width fields, side by side rows such as Status and Date and Time, and the narrative column sit exactly where they do on the web MDC.
+
+### Fixes
+
+- Removed the empty duplicate text boxes that appeared above the Narrative and Further Details editors on the incident form. Those were the hidden source boxes the rich text editor keeps behind the scenes, and the client is no longer forcing them back into view.
+- The Upload Mugshot window now shows the picture you selected the moment you choose it, before the crop tool loads, so the window is never blank after an upload.
+- The startup sound now plays once per launch of the client. Refreshing a page with Ctrl+R no longer replays it.
 ## 1.0.2
 
 ### Mugshots
@@ -52,28 +108,6 @@
 ### Mugshots
 
 - The client now includes its own crop and resize tool for the Upload Mugshot window, so mugshots work even though the MDC's own crop library never loads inside the client. Pick a picture and a square crop frame appears over it: drag the frame to move it, drag any corner to resize it, and the small live preview updates as you go. Pressing Upload sends the cropped square rather than the whole picture.
-
-## 1.0.6
-
-### Fixes
-
-- Form pages on the Classic and Windows 7 Aero skins now match the layout the MDC uses on its own default skin: each label sits on its own line above a full width field, rows keep their natural columns, and the map stays in its column on the right. The previous build let the skin squeeze labels and fields onto shared lines and cut off field text.
-
-## 1.0.5
-
-### Fixes
-
-- Placeholder text in the narrative editor no longer sits on a filled block. Its background is transparent and it uses the skin's muted text colour, so it stays readable on the light Windows 7 and Classic skins as well as the dark ones.
-- Field placeholders across the MDC now follow the same rule, so they are never invisible against a white field.
-- The incident form now keeps the MDC's own field positioning. The client no longer stretches inputs to full width or forces every label onto its own line, so half-width fields, side by side rows such as Status and Date and Time, and the narrative column sit exactly where they do on the web MDC.
-
-## 1.0.3
-
-### Fixes
-
-- Removed the empty duplicate text boxes that appeared above the Narrative and Further Details editors on the incident form. Those were the hidden source boxes the rich text editor keeps behind the scenes, and the client is no longer forcing them back into view.
-- The Upload Mugshot window now shows the picture you selected the moment you choose it, before the crop tool loads, so the window is never blank after an upload.
-- The startup sound now plays once per launch of the client. Refreshing a page with Ctrl+R no longer replays it.
 
 ## 1.0.2
 
