@@ -2,10 +2,6 @@
 
 ## 1.0.4
 
-### Mugshots
-- Fixed the mugshot cropper. The skin was forcing layout positions onto the crop box and crop canvas at high priority, which overrode the positions Cropper.js writes inline, so the selection was pinned to the whole image and could not be moved or resized. Those overrides are gone and the site's own cropper stylesheet now does its job.
-- Choosing a second image no longer stacks a second cropper on top of the first: stale crop frames are cleared and the source image is reset before a new crop starts.
-
 ### Interface
 - Fixed the About dialog buttons: "Update Now" and "Open Release Page" no longer push their text outside the button box, and the update panel wraps cleanly in a narrow dialog.
 
