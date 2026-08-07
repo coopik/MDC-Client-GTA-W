@@ -1421,28 +1421,77 @@ function penalFilter() {
 }
 
 const NAV_ICONS = [
-  [/dashboard/i, '\u25A6'],
-  [/person\s*lookup|persons?|people/i, '\u263A'],
-  [/dmv|vehicle|plate/i, '\u26D0'],
-  [/wanted|warrant/i, '\u2691'],
-  [/incident|report/i, '\u2637'],
-  [/arrest|booking/i, '\u26D3'],
-  [/map|location/i, '\u2316'],
-  [/misc|other/i, '\u2630'],
-  [/changelog|version/i, '\u2261'],
-  [/law|penal|code/i, '\u2696'],
-  [/mail|email|message/i, '\u2709'],
-  [/call|dispatch/i, '\u260E'],
-  [/citation|ticket/i, '\u270E'],
-  [/note|memo/i, '\u2338'],
-  [/web|site/i, '\u2295']
+  [/sign\s*out|log\s*out|logout/i, 'fa-right-from-bracket', '\u23FB'],
+  [/dashboard|^home$/i, 'fa-gauge-high', '\u25A6'],
+  [/person\s*lookup|persons?|people|citizen/i, 'fa-id-card', '\u263A'],
+  [/apb|bolo|broadcast/i, 'fa-bullhorn', '\u2762'],
+  [/paperwork|generator/i, 'fa-file-pen', '\u270D'],
+  [/post\s*arrest|arrest|booking/i, 'fa-handcuffs', '\u26D3'],
+  [/active\s*warrant/i, 'fa-triangle-exclamation', '\u26A0'],
+  [/wanted|warrant/i, 'fa-scroll', '\u2691'],
+  [/emergency|incident|call\s*log/i, 'fa-tower-broadcast', '\u2637'],
+  [/dmv|vehicle|plate/i, 'fa-car', '\u26D0'],
+  [/map|location/i, 'fa-map-location-dot', '\u2316'],
+  [/database|records?/i, 'fa-database', '\u2338'],
+  [/report/i, 'fa-file-lines', '\u2637'],
+  [/changelog|version/i, 'fa-clock-rotate-left', '\u2261'],
+  [/law|penal|code/i, 'fa-scale-balanced', '\u2696'],
+  [/mail|email|message/i, 'fa-envelope', '\u2709'],
+  [/dispatch|phone/i, 'fa-phone', '\u260E'],
+  [/citation|ticket|fine/i, 'fa-receipt', '\u270E'],
+  [/profile|account|officer/i, 'fa-user', '\u263A'],
+  [/note|memo/i, 'fa-note-sticky', '\u2338'],
+  [/misc|other|menu/i, 'fa-bars', '\u2630'],
+  [/search|lookup|quer/i, 'fa-magnifying-glass', '\u2315'],
+  [/web|site|portal/i, 'fa-globe', '\u2295']
 ]
 
 function navIcon(label) {
   for (let i = 0; i < NAV_ICONS.length; i++) {
-    if (NAV_ICONS[i][0].test(label)) return NAV_ICONS[i][1]
+    if (NAV_ICONS[i][0].test(label)) return NAV_ICONS[i]
   }
-  return '\u25AB'
+  return [null, 'fa-circle-dot', '\u25AB']
+}
+
+function faLoaded(probe) {
+  let fam = ''
+  try {
+    fam = window.getComputedStyle(probe, '::before').fontFamily || ''
+  } catch (e) {
+    fam = ''
+  }
+  return /font\s*awesome/i.test(fam)
+}
+
+function checkFontAwesome() {
+  if (!document.body) return
+  const probe = document.createElement('i')
+  probe.className = 'fas fa-user'
+  probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden'
+  document.body.appendChild(probe)
+  let tries = 0
+  const test = () => {
+    const ok = faLoaded(probe)
+    document.body.classList.toggle('no-fa', !ok)
+    return ok
+  }
+  if (test()) {
+    probe.remove()
+    return
+  }
+  const timer = setInterval(() => {
+    tries++
+    if (test() || tries > 24) {
+      clearInterval(timer)
+      probe.remove()
+    }
+  }, 250)
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkFontAwesome)
+} else {
+  checkFontAwesome()
 }
 
 let navItems = []
@@ -1676,19 +1725,13 @@ function renderNav() {
     const chip = document.createElement('button')
     chip.className = 'navchip' + (item.url === navCurrent ? ' active' : '')
     chip.title = item.label + '\n' + item.url
-    if (/sign\s*out|log\s*out|logout/i.test(item.label)) {
-      const img = document.createElement('img')
-      img.className = 'naviconimg'
-      img.src = 'icons/logout.png'
-      img.alt = ''
-      chip.appendChild(img)
-      chip.classList.add('navchip-out')
-    } else {
-      const icon = document.createElement('span')
-      icon.className = 'navicon'
-      icon.textContent = navIcon(item.label)
-      chip.appendChild(icon)
-    }
+    const spec = navIcon(item.label)
+    const icon = document.createElement('i')
+    icon.className = 'navicon fas ' + spec[1]
+    icon.setAttribute('data-glyph', spec[2])
+    icon.setAttribute('aria-hidden', 'true')
+    chip.appendChild(icon)
+    if (/sign\s*out|log\s*out|logout/i.test(item.label)) chip.classList.add('navchip-out')
     const text = document.createElement('span')
     if (item.depth > 1) text.className = 'navsub'
     text.textContent = item.label

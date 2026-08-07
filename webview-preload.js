@@ -304,8 +304,8 @@ const GLASS = {
 function buildGlassCss(g) {
   const emb = g.dark ? 'none' : `0 1px 0 ${g.emboss}`
   const gloss = g.dark
-    ? 'linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 48%, rgba(0,0,0,0.16) 100%)'
-    : 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.14) 48%, rgba(0,0,0,0.07) 100%)'
+    ? 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.07) 49%, rgba(0,0,0,0.20) 50%, rgba(255,255,255,0.05) 100%)'
+    : 'linear-gradient(180deg, rgba(255,255,255,0.80) 0%, rgba(255,255,255,0.42) 49%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.34) 100%)'
   return `
 html.mdt-aero body {
   background-image: linear-gradient(180deg, ${g.pageHi} 0%, ${g.pageLo} 100%) !important;
@@ -1431,147 +1431,19 @@ html body #mugshotPreview {
   max-width: 100% !important;
   background: transparent !important;
 }
-html body .cropper-container {
-  position: relative !important;
-  display: block !important;
-  margin: 0 auto !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-  direction: ltr !important;
-  touch-action: none !important;
-  user-select: none !important;
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}
 html body .cropper-container img,
-html body .cropper-view-box img,
-html body .mugshotPreviewCropper img {
-  display: block !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-width: none !important;
-  max-height: none !important;
+html body .cropper-view-box img {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   background: none !important;
+  filter: none !important;
 }
-html body .cropper-wrap-box,
-html body .cropper-canvas,
-html body .cropper-drag-box,
-html body .cropper-crop-box,
-html body .cropper-modal {
-  position: absolute !important;
-  top: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-html body .cropper-wrap-box,
-html body .cropper-canvas {
-  overflow: hidden !important;
-  background: none !important;
-}
-html body .cropper-drag-box {
-  background-color: #FFFFFF !important;
-  opacity: 0 !important;
-}
-html body .cropper-modal {
-  background-color: #000000 !important;
-  opacity: 0.5 !important;
-}
-html body .cropper-view-box {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  overflow: hidden !important;
-  outline: 1px solid #39F !important;
-  outline-color: rgba(51, 153, 255, 0.75) !important;
-  background: none !important;
-}
-html body .cropper-dashed {
-  position: absolute !important;
-  display: block !important;
-  border: 0 dashed #EEEEEE !important;
-  opacity: 0.5 !important;
-  background: none !important;
-}
-html body .cropper-dashed.dashed-h {
-  top: 33.33333% !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 33.33333% !important;
-  border-top-width: 1px !important;
-  border-bottom-width: 1px !important;
-}
-html body .cropper-dashed.dashed-v {
-  top: 0 !important;
-  left: 33.33333% !important;
-  width: 33.33333% !important;
-  height: 100% !important;
-  border-right-width: 1px !important;
-  border-left-width: 1px !important;
-}
-html body .cropper-center {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  display: block !important;
-  width: 0 !important;
-  height: 0 !important;
-  opacity: 0.75 !important;
-  background: none !important;
-}
-html body .cropper-face,
-html body .cropper-line,
-html body .cropper-point {
-  position: absolute !important;
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  opacity: 0.1 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-html body .cropper-face {
-  top: 0 !important;
-  left: 0 !important;
-  background-color: #FFFFFF !important;
-  cursor: move !important;
-}
-html body .cropper-line { background-color: #39F !important; }
-html body .cropper-line.line-e { top: 0 !important; right: -3px !important; left: auto !important; width: 5px !important; cursor: ew-resize !important; }
-html body .cropper-line.line-n { top: -3px !important; left: 0 !important; height: 5px !important; cursor: ns-resize !important; }
-html body .cropper-line.line-w { top: 0 !important; left: -3px !important; width: 5px !important; cursor: ew-resize !important; }
-html body .cropper-line.line-s { bottom: -3px !important; top: auto !important; left: 0 !important; height: 5px !important; cursor: ns-resize !important; }
-html body .cropper-point {
-  width: 5px !important;
-  height: 5px !important;
-  background-color: #39F !important;
-  opacity: 0.75 !important;
-}
-html body .cropper-point.point-e { top: 50% !important; right: -3px !important; left: auto !important; margin-top: -3px !important; cursor: ew-resize !important; }
-html body .cropper-point.point-n { top: -3px !important; left: 50% !important; margin-left: -3px !important; cursor: ns-resize !important; }
-html body .cropper-point.point-w { top: 50% !important; left: -3px !important; margin-top: -3px !important; cursor: ew-resize !important; }
-html body .cropper-point.point-s { bottom: -3px !important; top: auto !important; left: 50% !important; margin-left: -3px !important; cursor: s-resize !important; }
-html body .cropper-point.point-ne { top: -3px !important; right: -3px !important; left: auto !important; cursor: nesw-resize !important; }
-html body .cropper-point.point-nw { top: -3px !important; left: -3px !important; cursor: nwse-resize !important; }
-html body .cropper-point.point-sw { bottom: -3px !important; top: auto !important; left: -3px !important; cursor: nesw-resize !important; }
-html body .cropper-point.point-se { right: -3px !important; bottom: -3px !important; top: auto !important; left: auto !important; width: 20px !important; height: 20px !important; opacity: 1 !important; cursor: nwse-resize !important; }
-html body #mugshotPreview:has(.cropper-container) > .cropper-hidden,
-html body .cropper-container ~ .cropper-hidden { display: none !important; }
-html body .cropper-hide { position: absolute !important; display: block !important; width: 0 !important; height: 0 !important; }
-html body .cropper-bg { background-image: none !important; background-color: ${p.panelAlt} !important; }
-html body .cropper-invisible { opacity: 0 !important; }
 html body .mugshotPreviewCropper {
   overflow: hidden !important;
   background: none !important;
   border: 1px solid ${p.border} !important;
+} !important;
 }
 
 html body .note-editor,
@@ -2253,7 +2125,7 @@ svg { fill: currentColor !important; }
 .uploadIcon { cursor: pointer !important; color: ${p.link} !important; }
 img { filter: none !important; }
 
-button, .btn, input[type="button"], input[type="submit"], input[type="reset"] {
+button:not(.note-color-btn), .btn:not(.note-color-btn), input[type="button"], input[type="submit"], input[type="reset"] {
   background-color: ${p.btnFace} !important;
   background-image: none !important;
   color: ${p.text} !important;
@@ -2577,7 +2449,28 @@ html body .modal[data-mdt-vanilla="1"] .card-header {
   background-color: ${p.header} !important;
   border-top: 1px solid ${p.border} !important;
 }
-.note-btn, .note-editor .btn { background-color: ${p.btnFace} !important; color: ${p.text} !important; border: 1px solid ${p.border} !important; }
+.note-btn:not(.note-color-btn), .note-editor .btn:not(.note-color-btn) { background-color: ${p.btnFace} !important; color: ${p.text} !important; border: 1px solid ${p.border} !important; }
+html body .note-editor .note-color .note-dropdown-menu,
+html body .note-editor .note-dropdown-menu:has(.note-color-palette) {
+  min-width: 336px !important;
+  width: auto !important;
+  max-height: none !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+html body .note-editor .note-color-btn[data-mdt-swatch] {
+  background-image: none !important;
+}
+html body .note-editor input[type="color"] {
+  -webkit-appearance: auto !important;
+  appearance: auto !important;
+  width: 100% !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  padding: 0 !important;
+  background: none !important;
+}
 
 html body .note-editor .note-toolbar,
 html body .note-toolbar.card-header {
@@ -7087,6 +6980,72 @@ function watchImgur() {
   setInterval(fixImgur, 2500)
 }
 
+function swatchColor(btn) {
+  const raw = btn.getAttribute('style') || ''
+  const m = raw.match(/background-color\s*:\s*([^;!]+)/i)
+  if (m) return m[1].trim()
+  const dv = btn.getAttribute('data-value') || ''
+  if (/^#/.test(dv) || /^rgb/i.test(dv)) return dv.trim()
+  const j = dv.match(/#[0-9a-fA-F]{3,8}/)
+  if (j) return j[0]
+  const bg = btn.getAttribute('data-backcolor') || btn.getAttribute('data-forecolor') || ''
+  return /^#|^rgb/i.test(bg) ? bg.trim() : ''
+}
+
+function paintSwatch(btn) {
+  const val = swatchColor(btn)
+  if (!val) return
+  if (btn.getAttribute('data-mdt-swatch') === val) return
+  btn.style.setProperty('background-color', val, 'important')
+  btn.style.setProperty('background-image', 'none', 'important')
+  btn.setAttribute('data-mdt-swatch', val)
+}
+
+function paintSwatches() {
+  if (!document.querySelector('.note-color-palette, .note-color')) return
+  const list = document.querySelectorAll('.note-color-btn, .note-color-palette button, .note-recent-color, .note-current-color-button')
+  for (let i = 0; i < list.length; i++) paintSwatch(list[i])
+}
+
+function resetVanillaCrop() {
+  const box = document.getElementById('mugshotPreview')
+  if (!box) return
+  const stale = box.querySelectorAll('.cropper-container')
+  for (let i = 0; i < stale.length; i++) stale[i].remove()
+  const img = document.getElementById('mugshotPreviewImage')
+  if (img) {
+    img.classList.remove('cropper-hidden')
+    img.removeAttribute('style')
+  }
+  const prev = box.querySelector('.mugshotPreviewCropper')
+  if (prev) prev.textContent = ''
+  box.style.removeProperty('display')
+}
+
+function watchCropReset() {
+  document.addEventListener('change', (e) => {
+    const t = e.target
+    if (!t || t.id !== 'fileMugshot') return
+    resetVanillaCrop()
+  }, true)
+  document.addEventListener('click', (e) => {
+    const t = e.target
+    if (!t || !t.closest) return
+    if (t.closest('a[data-target="#modalPicture"], [href="#modalPicture"]')) {
+      setTimeout(resetVanillaCrop, 60)
+    }
+  }, true)
+}
+
+function watchSwatches() {
+  paintSwatches()
+  document.addEventListener('click', () => {
+    setTimeout(paintSwatches, 30)
+    setTimeout(paintSwatches, 220)
+  }, true)
+  setInterval(paintSwatches, 1200)
+}
+
 function watchNoteBg() {
   document.addEventListener('input', cleanNoteBg, true)
   document.addEventListener('paste', () => setTimeout(cleanNoteBg, 60), true)
@@ -7110,6 +7069,8 @@ function watchModalDrag() {
   watchPickers()
   watchNoteBg()
   watchImgur()
+  watchSwatches()
+  watchCropReset()
   document.addEventListener('mousedown', startModalDrag, true)
   document.addEventListener('mousemove', moveModalDrag, true)
   document.addEventListener('mouseup', endModalDrag, true)
