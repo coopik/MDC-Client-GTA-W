@@ -172,7 +172,9 @@ function createWindow() {
     minHeight: 600,
     title: 'PatrolOne Mobile Client',
     icon: path.join(__dirname, 'build', 'icon.ico'),
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#E6E6E6',
+    titleBarStyle: 'hidden',
+    titleBarOverlay: { color: '#E2E2E2', symbolColor: '#222222', height: 36 },
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
@@ -253,8 +255,8 @@ app.on('web-contents-created', (_event, contents) => {
     contents.setWindowOpenHandler(({ url }) => {
       try {
         const host = new URL(url).host
-        if (host.endsWith('gta.world')) {
-          contents.loadURL(url)
+        if (host === 'gta.world' || host.endsWith('.gta.world')) {
+          if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('app:openPage', url)
           return { action: 'deny' }
         }
       } catch (_) {
@@ -450,6 +452,19 @@ ipcMain.handle('app:clearForumSession', async () => {
 ipcMain.handle('app:openExternal', async (_e, url) => {
   await shell.openExternal(String(url))
   return true
+})
+
+ipcMain.handle('app:setWindowTheme', (event, theme) => {
+  if (!mainWindow || event.sender !== mainWindow.webContents) return
+  const frames = {
+    p1: ['#E2E2E2', '#222222'],
+    aero: ['#C3DBEF', '#10222E'],
+    aerolapd: ['#193D88', '#FFFFFF'],
+    aerodark: ['#303030', '#F0F0F0'],
+    off: ['#D4D0C8', '#000000']
+  }
+  const colors = Object.hasOwn(frames, theme) ? frames[theme] : frames.p1
+  mainWindow.setTitleBarOverlay({ color: colors[0], symbolColor: colors[1], height: 36 })
 })
 
 ipcMain.handle('app:setTray', (_e, enabled) => setTrayEnabled(enabled))

@@ -1,0 +1,194 @@
+<div class="card card-profile-elements ">
+	<div class="card-header card-header-index card-header-dark">
+		<div class="card-title">
+			<h5 class="text-center mb-0"><i class="fas fa-fw fa-user-tag mr-2"></i>Linked Items</h5>
+		</div>
+	</div>
+	<div class="card-body">
+		<span>
+			<div class="row text-center">
+                                    <div class="col">
+                                        <h4><span class="badge">Linked APBs</span></h4>
+                                    </div>
+                                    <div class="col">
+                                        <h4><span class="badge">Linked Warrants</span></h4>
+                                    </div>
+                                    <div class="col">
+                                        <h4><span class="badge">Linked Calls</span></h4>
+                                    </div>
+                                    <div class="col">
+                                        <h4><span class="badge">Linked Incidents</span></h4>
+                                    </div>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col">
+                                        <input id="linkAPBVal" type="number" class="form-control w-50 mx-auto"
+                                            placeholder="APB ID"> <button id="linkAPB"
+                                            class="btn btn-primary">Link APB</button>
+                                    </div>
+                                    <div class="col">
+                                        <input id="linkWarrantVal" type="number" class="form-control w-50 mx-auto"
+                                            placeholder="WARRANT ID"> <button id="linkWarrant"
+                                            class="btn btn-primary">Link Warrant</button>
+                                    </div>
+                                    <div class="col">
+                                        <input id="linkCallVal" type="number" class="form-control w-50 mx-auto"
+                                            placeholder="CALL ID">
+                                        <button id="linkCall" type="button"
+                                            class="btn btn-primary">Add Call</button>
+                                    </div>
+                                    <div class="col">
+                                        <input id="linkIncidentVal" type="text" class="form-control w-50 mx-auto"
+                                            placeholder="INCIDENT ID">
+                                        <button id="linkIncident" type="button"
+                                            class="btn btn-primary">Add Incident</button>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row text-center">
+                                    <div id="apbIDCol" class="col">
+                                        <div hidden id="apbIDClone">
+                                            <h4><a href="#" class="badge badge-dark">APB #<span id="apbIDText">123</span>
+                                                    <button id="APBIDDelete" name="APBDeleteButton"
+                                                    class="btn btn-danger fa fa-trash p-1"></a>
+                                            </h4>
+                                        </div>
+                                                                            </div>
+                                    <div id="warrantIDCol" class="col">
+                                        <div hidden id="warrantIDClone">
+                                            <h4><a href="#" class="badge badge-dark">Warrant #<span id="warrantIDText">123</span>
+                                                    <button id="warrantIDDelete"
+                                                    name="warrantDeleteButton" class="btn btn-danger fa fa-trash p-1"></a>
+                                            </h4>
+                                        </div>
+                                                                            </div>
+                                    <div id="callIDCol" class="col">
+                                        <div hidden id="callClone">
+                                            <h4>
+                                                <a href="#" class="badge badge-dark">Call #<span id="callCloneID"></span>
+                                                    by
+                                                    <span id="callCloneCaller"></span> on <span id="callCloneDateTime"></span>
+                                                </a><button id="callDelete" name="callDeleteButton"
+                                                    class="btn btn-danger fa fa-trash p-1"><br>
+                                            </h4>
+                                        </div>
+                                                                            </div>
+                                    <div id="incidentIDCol" class="col">
+                                        <div hidden id="incidentIDClone">
+                                            <h4>
+                                                <a href="#" class="badge badge-dark">Incident #<span
+                                                        id="incidentCloneID"></span>
+                                                </a><button id="incidentIDDelete" name="incidentIDDelete"
+                                                    class="btn btn-danger fa fa-trash p-1"><br>
+                                            </h4>
+                                        </div>
+                                                                            </div>
+                                </div>
+		</span>
+	</div>
+</div>
+<div class="card card-profile-elements ">
+	<div class="card-header card-header-index card-header-dark">
+		<div class="card-title">
+			<h5 class="text-center mb-0"><i class="fas fa-fw fa-user-tag mr-2"></i>Person(s) <button id="addNewPerson"
+                                    class="btn btn-success fa fa-plus-circle px-2 float-right"></button><br>
+                                <span
+                                    class="badge badge-dark mt-2">This field is optional. It will not appear if you leave it blank.</span></h5>
+		</div>
+	</div>
+	<div class="card-body">
+		<span>
+			<div id="personsBricklayer" class="bricklayer">
+                                    <div hidden id="personsBricklayerClone">
+                                        <div class="card card-profile-elements ">
+	<div class="card-header card-header-index card-header-dark">
+		<div class="card-title">
+			<h5 class="text-center mb-0"><i class="fas fa-fw fa-user-tag mr-2"></i><span id="personNameText">Person</span> <button id="deleteButton"
+                                                    class="btn btn-danger fa fa-trash p-2 float-right" name="deleteButton"></button><br></h5>
+		</div>
+	</div>
+	<div class="card-body">
+		<span>
+			<div class="row text-center">
+                                                    <div class="col-lg">
+                                                        <h4 class="card-text">
+                                                            <img id="personMugshot" class="personPhotograph mx-auto mb-2"
+                                                                src="/img/persons/No-Avatar.png">
+                                                            <span id="affiliationText"
+                                                                class="badge badge-dark">Victim</span>
+                                                            <input type="text" class="form-control mx-auto w-50 personName"
+                                                                placeholder="John Doe" id="personName" name="personName"
+                                                                data-found="false" maxlength="64">
+                                                            <span class="badge text-info"> Leave the field blank if unknown!</span>
+                                                                <br>
+                                                            <span hidden id="personFeedback" class="badge text-success"> Person
+                                                                Found! </span><br>
+
+                                                            <div class="btn-group d-block text-center">
+                                                                <button type="button" class="btn btn-dark px-5 dropdown-toggle"
+                                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                                                    name ="personAffiliation" id="affiliationButton" value="1">
+                                                                    Victim
+                                                                    <div class="ripple-container"></div>
+                                                                </button>
+                                                                <div class="dropdown-menu" x-placement="bottom-start"
+                                                                    style="position: absolute; top: 42px; left: 0px; will-change: top, left;">
+                                                                    <a data-colour="dark"
+                                                                        class="dropdown-item mb-1 p-2 personAffiliationOption"
+                                                                        href="#" value="1" name="personAffiliation">
+                                                                        <span class="badge badge-dark">
+                                                                            <h6 class="mb-0">Victim</h6>
+                                                                        </span>
+                                                                    </a>
+                                                                    <a data-colour="danger"
+                                                                        class="dropdown-item mb-1 p-2 personAffiliationOption"
+                                                                        href="#" value="2" name="personAffiliation">
+                                                                        <span class="badge badge-danger">
+                                                                            <h6 class="mb-0">Suspect</h6>
+                                                                        </span>
+                                                                    </a>
+                                                                    <a data-colour="success"
+                                                                        class="dropdown-item mb-1 p-2 personAffiliationOption"
+                                                                        href="#" value="3" name="personAffiliation">
+                                                                        <span class="badge badge-success">
+                                                                            <h6 class="mb-0">Witness</h6>
+                                                                        </span>
+                                                                    </a>
+                                                                    <a data-colour="primary"
+                                                                        class="dropdown-item mb-1 p-2 personAffiliationOption"
+                                                                        href="#" value="4" name="personAffiliation">
+                                                                        <span class="badge badge-primary">
+                                                                            <h6 class="mb-0">Informant
+                                                                            </h6>
+                                                                        </span>
+                                                                    </a>
+                                                                    <a data-colour="info"
+                                                                        class="dropdown-item mb-1 p-2 personAffiliationOption"
+                                                                        href="#" value="5" name="personAffiliation">
+                                                                        <span class="badge badge-info">
+                                                                            <h6 class="mb-0">
+                                                                                Involved Other</h6>
+                                                                        </span>
+                                                                    </a>
+                                                                    <a data-colour="success"
+                                                                        class="dropdown-item mb-1 p-2 personAffiliationOption"
+                                                                        href="#" value="6" name="personAffiliation">
+                                                                        <span class="badge badge-success">
+                                                                            <h6 class="mb-0">
+                                                                                Reporting Party</h6>
+                                                                        </span>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                            <strong>Further Details</strong>:
+                                                            <textarea id="suspectFurtherDetails" name="suspectFurtherDetails"></textarea>
+                                                        </h4>
+                                                    </div>
+                                                </div>
+		</span>
+	</div>
+</div>                                    </div>
+                                </div>
+		</span>
+	</div>
+</div>

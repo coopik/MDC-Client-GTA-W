@@ -1,0 +1,528 @@
+<div aria-hidden="true" aria-labelledby="modalAddArrestReport" class="modal fade" id="source-add-arrest" role="dialog" tabindex="-1">
+<div class="modal-dialog modal-lg" role="document">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Add Arrest Report and Charges</h5>
+<button aria-label="Close" class="close" data-dismiss="modal" type="button">
+<i class="fas fa-fw fa-times text-danger"></i>
+</button>
+</div>
+<div class="modal-body modal-scroll">
+<div class="row">
+<div class="col-3">
+<div class="form-group">
+<h6 class="d-block text-center">Type</h6>
+<input hidden="" id="arrestType" type="text" value="6"/>
+<div class="btn-group d-block text-center">
+<button aria-expanded="false" aria-haspopup="true" class="btn btn-primary px-5 dropdown-toggle" data-toggle="dropdown" id="arrestTypeText" type="button">
+                                        Arrest Report
+                                    </button>
+<div class="dropdown-menu">
+<a class="dropdown-item mb-1 p-2" href="#" name="arrestTypeOption" value="6">
+<span class="text-purple">
+<h6 class="mb-0">Arrest Report</h6>
+</span>
+</a>
+<a class="dropdown-item mb-1 p-2" href="#" name="arrestTypeOption" value="10">
+<span class="text-purple">
+<h6 class="mb-0">Charge Report</h6>
+</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="col-2">
+<div class="form-group">
+<h6 class="d-block text-center">Location</h6>
+<input hidden="" id="arrestStatus" type="text" value="5"/>
+<div class="btn-group d-block text-center">
+<button aria-expanded="false" aria-haspopup="true" class="mapModalButton btn btn-info" data-source="arrest" data-target="#mapModal" data-toggle="modal" id="arrestStatusLocation" type="button">
+                                        Select Location
+                                    </button>
+</div>
+</div>
+</div>
+<div class="col-2">
+<div class="form-group">
+<h6 class="d-block text-center">Status</h6>
+<input hidden="" id="arrestStatus" type="text" value="5"/>
+<div class="btn-group d-block text-center">
+<button aria-expanded="false" aria-haspopup="true" class="btn btn-warning px-5 dropdown-toggle" data-toggle="dropdown" id="arrestStatusText" type="button">
+                                        Closed
+                                    </button>
+<div class="dropdown-menu">
+<a class="dropdown-item mb-1 p-2" href="#" name="arrestStatusOption" value="5">
+<span class="badge badge-dark">
+<h6 class="mb-0">Closed</h6>
+</span>
+</a>
+<a class="dropdown-item mb-1 p-2" href="#" name="arrestStatusOption" value="3">
+<span class="badge badge-danger">
+<h6 class="mb-0">Wanted</h6>
+</span>
+</a>
+<a class="dropdown-item mb-1 p-2" href="#" name="arrestStatusOption" value="2">
+<span class="badge badge-warning">
+<h6 class="mb-0">Investigation</h6>
+</span>
+</a>
+<a class="dropdown-item mb-1 p-2" href="#" name="arrestStatusOption" value="1">
+<span class="badge badge-primary">
+<h6 class="mb-0">Outstanding</h6>
+</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="col-2">
+<div class="form-group">
+<h6 class="d-block text-center">Confidential Level</h6>
+<input hidden="" id="arrestLevel" type="text" value="0"/>
+<div class="btn-group d-block text-center">
+<button aria-expanded="false" aria-haspopup="true" class="btn btn-danger px-5 dropdown-toggle" data-toggle="dropdown" id="arrestLevelText" type="button">Generic</button>
+<div class="dropdown-menu">
+<a class="dropdown-item mb-1 px-3" href="#" name="arrestLevelOption" value="0">
+                                            Generic
+                                        </a>
+<a class="dropdown-item mb-1 px-3" href="#" name="arrestLevelOption" value="1">
+                                            Supervisory
+                                        </a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="form-group" id="bondGroup" style="display: none;">
+<div class="row">
+<div class="col-4">
+<h6 class="d-block text-center">Bond Authorized</h6>
+<div class="d-block text-center">
+<input class="form-check-input" id="bondCheckbox" type="checkbox"/>
+                                    Authorize Bond
+                                </div>
+</div>
+<div class="col-4">
+<h6 class="d-block text-center">Date of Bond</h6>
+<div class="input-group">
+<div class="input-group-prepend">
+<div class="input-group-text"><i class="fas fa-fw fa-calendar"></i></div>
+</div>
+<input class="form-control datetimepicker" id="bondDatepicker" placeholder="YYYY-MM-DD" type="text"/>
+</div>
+</div>
+<div class="col-4">
+<h6 class="d-block text-center">Bond Price</h6>
+<div class="input-group">
+<div class="input-group-prepend">
+<div class="input-group-text">$</div>
+</div>
+<input class="form-control" id="bondPrice" placeholder="1000" type="text"/>
+</div>
+</div>
+</div>
+</div>
+<div class="form-group" id="oocInfoGroup" style="display: none;">
+<div class="row">
+<div class="col-6">
+<h6 class="d-block text-center">(( Forum Name ))</h6>
+<div class="input-group">
+<div class="input-group-prepend">
+<div class="input-group-text"><i class="fas fa-fw fa-user"></i></div>
+</div>
+<input class="form-control" id="forumName" placeholder="Username" type="text" value=""/>
+</div>
+</div>
+<div class="col-6">
+<h6 class="d-block text-center">(( Discord Name ))</h6>
+<div class="input-group">
+<div class="input-group-prepend">
+<div class="input-group-text"><i class="fas fa-fw fa-discord"></i></div>
+</div>
+<input class="form-control" id="discordName" placeholder="Username#0000" type="text" value=""/>
+</div>
+</div>
+</div>
+</div>
+<div class="form-group">
+<h6 class="d-block text-center">Charges</h6>
+<div class="input-group-addon">
+<button class="btn btn-info penalCode" style="display: block;margin-left: auto;margin-right: auto;width: 15%;" type="button">
+<i class="mr-1 fas fa-fw fa-gavel"></i>Penal Code </button>
+<button class="btn btn-success addCharge" style="display: block;margin-left: auto;margin-right: auto;width: 15%;" type="button">
+<i class="mr-1 fas fa-fw fa-plus-square"></i>Charge </button>
+</div>
+<p><strong>Time: <span id="totalDays">0</span> Days <span id="totalHours">0</span> Hours <span id="totalMins">0</span> Mins</strong></p>
+<div id="arrestCopy" style="display:none;">
+<div class="form-group row col-12">
+<div class="input-group mb-3 col-5">
+<div class="input-group-prepend">
+<span class="input-group-text"><i class="fas fa-fw fa-gavel"></i></span>
+</div>
+<select class="form-control chargeSelect" data-live-search="true" data-style="btn-charge" id="charge[]" name="charge[]" required="required">
+<option disabled="" selected="" value="">Charge</option>
+<option data-class-a="" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-dark'&gt;000&lt;/span&gt;UNKNOWN CHARGE" data-time-days="0" data-time-hours="0" data-time-mins="0" disabled="" value="000">
+</option><option data-class-a="1" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;001&lt;/span&gt;Treason" data-time-days="9999" data-time-hours="0" data-time-mins="0" value="001">
+</option><option data-class-a="1" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;002&lt;/span&gt;Espionage" data-time-days="9999" data-time-hours="0" data-time-mins="0" value="002">
+</option><option data-class-a="1" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;003&lt;/span&gt;Domestic Terrorism" data-time-days="9999" data-time-hours="0" data-time-mins="0" value="003">
+</option><option data-class-a="1" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;004&lt;/span&gt;Domestic Terror Threats" data-time-days="9999" data-time-hours="0" data-time-mins="0" value="004">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;101&lt;/span&gt;Tax Evasion" data-time-days="2" data-time-hours="0" data-time-mins="0" value="101">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;102&lt;/span&gt;Voter Fraud" data-time-days="2" data-time-hours="0" data-time-mins="0" value="102">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;103&lt;/span&gt;Corruption of Public Office" data-time-days="4" data-time-hours="0" data-time-mins="0" value="103">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;104&lt;/span&gt;Neglect of Public Duty" data-time-days="3" data-time-hours="0" data-time-mins="0" value="104">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;105&lt;/span&gt;Bribery of a Public Official" data-time-days="3" data-time-hours="0" data-time-mins="0" value="105">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;106&lt;/span&gt;Incitement To Riot" data-time-days="0" data-time-hours="6" data-time-mins="0" value="106">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;107&lt;/span&gt;Unlawful Assembly" data-time-days="0" data-time-hours="3" data-time-mins="0" value="107">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;108&lt;/span&gt;Tampering with Evidence" data-time-days="0" data-time-hours="4" data-time-mins="0" value="108">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;109&lt;/span&gt;Intimidating a Witness or Victim" data-time-days="2" data-time-hours="0" data-time-mins="0" value="109">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;110&lt;/span&gt;Contempt of Court" data-time-days="4" data-time-hours="0" data-time-mins="0" value="110">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;111&lt;/span&gt;Perjury" data-time-days="0" data-time-hours="5" data-time-mins="0" value="111">
+</option><option data-class-a="1" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;112F&lt;/span&gt;Obstruction of Public Duty (Felony)" data-time-days="0" data-time-hours="0" data-time-mins="25" value="112F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;112M&lt;/span&gt;Obstruction of Public Duty (Misdemeanor)" data-time-days="0" data-time-hours="0" data-time-mins="25" value="112M">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;113M&lt;/span&gt;Obstructing a Peace Officer's Animal (Misdemeanor)" data-time-days="0" data-time-hours="12" data-time-mins="0" value="113M">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;113F&lt;/span&gt;Obstructing a Peace Officer's Animal (Felony)" data-time-days="3" data-time-hours="0" data-time-mins="0" value="113F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;114&lt;/span&gt;Escape From Lawful Custody" data-time-days="7" data-time-hours="0" data-time-mins="0" value="114">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;115&lt;/span&gt;Evading a Peace Officer" data-time-days="1" data-time-hours="0" data-time-mins="0" value="115">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;116&lt;/span&gt;Resisting Arrest" data-time-days="0" data-time-hours="6" data-time-mins="0" value="116">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;117&lt;/span&gt;Lying to Government Agents" data-time-days="0" data-time-hours="8" data-time-mins="0" value="117">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;118&lt;/span&gt;Misuse of an Emergency Hotline" data-time-days="0" data-time-hours="1" data-time-mins="0" value="118">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;119&lt;/span&gt;False Impersonation" data-time-days="0" data-time-hours="4" data-time-mins="0" value="119">
+</option><option data-class-a="1" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;120&lt;/span&gt;Assault &amp; Battery on a Government Worker" data-time-days="2" data-time-hours="0" data-time-mins="0" value="120">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;121&lt;/span&gt;Forgery" data-time-days="2" data-time-hours="0" data-time-mins="0" value="121">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;122M&lt;/span&gt;Fraud" data-time-days="0" data-time-hours="6" data-time-mins="0" value="122M">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;122F&lt;/span&gt;Fraud" data-time-days="2" data-time-hours="0" data-time-mins="0" value="122F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;123&lt;/span&gt;Money Laundering" data-time-days="2" data-time-hours="0" data-time-mins="0" value="123">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;124&lt;/span&gt;Defacing U.S. Currency" data-time-days="1" data-time-hours="0" data-time-mins="0" value="124">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;125&lt;/span&gt;Disturbing the Peace" data-time-days="0" data-time-hours="1" data-time-mins="0" value="125">
+</option><option data-class-a="1" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;126&lt;/span&gt;Racketeering" data-time-days="4" data-time-hours="0" data-time-mins="0" value="126">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;127&lt;/span&gt;Violation of EFCE Act - Signal Jamming" data-time-days="0" data-time-hours="6" data-time-mins="0" value="127">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;128&lt;/span&gt;Violation of EFCE Act - Card Skimming" data-time-days="0" data-time-hours="6" data-time-mins="0" value="128">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;129&lt;/span&gt;Violation of EFCE Act - Vehicle Tracking" data-time-days="1" data-time-hours="0" data-time-mins="0" value="129">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;130&lt;/span&gt;Rescuing A Prisoner" data-time-days="7" data-time-hours="0" data-time-mins="0" value="130">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;131&lt;/span&gt;Bringing Contraband Into A Correctional Facility" data-time-days="0" data-time-hours="0" data-time-mins="0" value="131">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;132&lt;/span&gt;Possession Of Communications In A Correctional Facility" data-time-days="0" data-time-hours="0" data-time-mins="0" value="132">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;133&lt;/span&gt;Possession Of Tobacco In A Correctional Facility" data-time-days="0" data-time-hours="0" data-time-mins="0" value="133">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;134&lt;/span&gt;Possession Of Handcuff Keys In A Correctional Facility" data-time-days="0" data-time-hours="1" data-time-mins="0" value="134">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;135&lt;/span&gt;Murder of a Peace Officer Canine" data-time-days="7" data-time-hours="0" data-time-mins="0" value="135">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;136&lt;/span&gt;Aggravated Battery of a Peace Officer Canine" data-time-days="2" data-time-hours="0" data-time-mins="0" value="136">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;137&lt;/span&gt;Battery of a Peace Officer Canine" data-time-days="0" data-time-hours="6" data-time-mins="0" value="137">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;138&lt;/span&gt;Obstruction of a Peace Officer Canine" data-time-days="0" data-time-hours="0" data-time-mins="25" value="138">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;139&lt;/span&gt;Misuse of the Mobile Data Computer" data-time-days="3" data-time-hours="0" data-time-mins="0" value="139">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;140&lt;/span&gt;Unauthorized Sharing of Information from the Mobile Data Computer" data-time-days="4" data-time-hours="0" data-time-mins="0" value="140">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;141&lt;/span&gt;Unlawful Communication with an Inmate" data-time-days="0" data-time-hours="18" data-time-mins="0" value="141">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;142M&lt;/span&gt;Failure to Appear at Court (Misdeamanor)" data-time-days="2" data-time-hours="0" data-time-mins="0" value="142M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;142F&lt;/span&gt;Failure to Appear at Court (Felony)" data-time-days="6" data-time-hours="0" data-time-mins="0" value="142F">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;201&lt;/span&gt;Capital Murder" data-time-days="20" data-time-hours="6" data-time-mins="0" value="201">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;202&lt;/span&gt;First Degree Murder" data-time-days="18" data-time-hours="0" data-time-mins="0" value="202">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;203&lt;/span&gt;Second Degree Murder" data-time-days="15" data-time-hours="0" data-time-mins="0" value="203">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;204&lt;/span&gt;Voluntary Manslaughter" data-time-days="5" data-time-hours="0" data-time-mins="0" value="204">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;205&lt;/span&gt;Involuntary Manslaughter" data-time-days="3" data-time-hours="0" data-time-mins="0" value="205">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;206&lt;/span&gt;Assault" data-time-days="0" data-time-hours="3" data-time-mins="0" value="206">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;207&lt;/span&gt;Assault with a Deadly Weapon" data-time-days="3" data-time-hours="0" data-time-mins="0" value="207">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;208&lt;/span&gt;Battery" data-time-days="0" data-time-hours="7" data-time-mins="0" value="208">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;209&lt;/span&gt;Aggravated Battery" data-time-days="2" data-time-hours="0" data-time-mins="0" value="209">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;210&lt;/span&gt;Kidnapping" data-time-days="5" data-time-hours="0" data-time-mins="0" value="210">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;211&lt;/span&gt;Human Trafficking" data-time-days="6" data-time-hours="0" data-time-mins="0" value="211">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;212&lt;/span&gt;Unlawful Imprisonment" data-time-days="2" data-time-hours="0" data-time-mins="0" value="212">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;213&lt;/span&gt;Torture" data-time-days="6" data-time-hours="0" data-time-mins="0" value="213">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;214&lt;/span&gt;Criminal Threats" data-time-days="0" data-time-hours="3" data-time-mins="0" value="214">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;215&lt;/span&gt;Robbery" data-time-days="2" data-time-hours="0" data-time-mins="0" value="215">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;216&lt;/span&gt;Armed Robbery" data-time-days="4" data-time-hours="0" data-time-mins="0" value="216">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;217&lt;/span&gt;Rape" data-time-days="2" data-time-hours="0" data-time-mins="0" value="217">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;218&lt;/span&gt;Statutory Rape" data-time-days="4" data-time-hours="0" data-time-mins="0" value="218">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;219&lt;/span&gt;Sexual Battery" data-time-days="3" data-time-hours="0" data-time-mins="0" value="219">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;220&lt;/span&gt;Harassment" data-time-days="0" data-time-hours="6" data-time-mins="0" value="220">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;221&lt;/span&gt;Domestic Violence" data-time-days="0" data-time-hours="6" data-time-mins="0" value="221">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;222&lt;/span&gt;Assault with Caustic Chemicals" data-time-days="4" data-time-hours="0" data-time-mins="0" value="222">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;301&lt;/span&gt;Arson" data-time-days="7" data-time-hours="0" data-time-mins="0" value="301">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;302&lt;/span&gt;Burglary" data-time-days="2" data-time-hours="0" data-time-mins="0" value="302">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;303&lt;/span&gt;Home Invasion" data-time-days="4" data-time-hours="0" data-time-mins="0" value="303">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;304&lt;/span&gt;Grand Theft" data-time-days="0" data-time-hours="4" data-time-mins="0" value="304">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;305&lt;/span&gt;Petty Theft" data-time-days="0" data-time-hours="2" data-time-mins="0" value="305">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;306&lt;/span&gt;Grand Theft Auto" data-time-days="2" data-time-hours="0" data-time-mins="0" value="306">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;307&lt;/span&gt;Grand Theft Of A Firearm" data-time-days="2" data-time-hours="0" data-time-mins="0" value="307">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;308&lt;/span&gt;Possession of Burglary Tools" data-time-days="0" data-time-hours="1" data-time-mins="0" value="308">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;309&lt;/span&gt;Receiving Stolen Property" data-time-days="0" data-time-hours="3" data-time-mins="0" value="309">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;310&lt;/span&gt;Trespassing" data-time-days="0" data-time-hours="1" data-time-mins="0" value="310">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;311&lt;/span&gt;Vandalism" data-time-days="0" data-time-hours="1" data-time-mins="0" value="311">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;312M&lt;/span&gt;Embezzlement" data-time-days="0" data-time-hours="6" data-time-mins="0" value="312M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;312F&lt;/span&gt;Felony Embezzlement" data-time-days="1" data-time-hours="0" data-time-mins="0" value="312F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;313M&lt;/span&gt;Vehicle Registration Theft" data-time-days="0" data-time-hours="3" data-time-mins="0" value="313M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;313F&lt;/span&gt;Vehicle Registration Theft" data-time-days="1" data-time-hours="0" data-time-mins="0" value="313F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;314M&lt;/span&gt;Vandalism of Prison Property (Misdemeanor)" data-time-days="0" data-time-hours="6" data-time-mins="0" value="314M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;314F&lt;/span&gt;Vandalism of Prison Property (Felony)" data-time-days="1" data-time-hours="0" data-time-mins="0" value="314F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;401&lt;/span&gt;Driving Without a Valid License" data-time-days="0" data-time-hours="0" data-time-mins="30" value="401">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;402&lt;/span&gt;Driving On A Suspended License" data-time-days="0" data-time-hours="0" data-time-mins="45" value="402">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;403&lt;/span&gt;Failure to Produce Driver's License" data-time-days="0" data-time-hours="0" data-time-mins="0" value="403">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;404&lt;/span&gt;Failure to Produce Vehicle Registration" data-time-days="0" data-time-hours="0" data-time-mins="0" value="404">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;405&lt;/span&gt;Failure to Produce Proof of Insurance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="405">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;406&lt;/span&gt;Unregistered Vehicle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="406">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;407&lt;/span&gt;No Insurance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="407">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;408&lt;/span&gt;Hit and Run" data-time-days="0" data-time-hours="6" data-time-mins="0" value="408">
+</option><option data-class-a="1" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;408F&lt;/span&gt;Hit and Run (Felony)" data-time-days="0" data-time-hours="12" data-time-mins="0" value="408F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;409&lt;/span&gt;Reckless Operation Of an Off-Road or Naval Vehicle" data-time-days="0" data-time-hours="1" data-time-mins="0" value="409">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;410&lt;/span&gt;Speeding" data-time-days="0" data-time-hours="0" data-time-mins="0" value="410">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;411&lt;/span&gt;Excessive Speeding" data-time-days="0" data-time-hours="0" data-time-mins="0" value="411">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;412&lt;/span&gt;Failure to Yield/Stop to a Traffic Control Device" data-time-days="0" data-time-hours="0" data-time-mins="0" value="412">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;413&lt;/span&gt;Failure to Yield at Intersection" data-time-days="0" data-time-hours="0" data-time-mins="0" value="413">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;414&lt;/span&gt;Failure to Yield Entering Roadway" data-time-days="0" data-time-hours="0" data-time-mins="0" value="414">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;415&lt;/span&gt;Failure to Yield for Crosswalk" data-time-days="0" data-time-hours="0" data-time-mins="0" value="415">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;416&lt;/span&gt;Failure to Yield to an Emergency Vehicle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="416">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;417&lt;/span&gt;Improper Lane Entry while Turning" data-time-days="0" data-time-hours="0" data-time-mins="0" value="417">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;418&lt;/span&gt;Prohibited Parking" data-time-days="0" data-time-hours="0" data-time-mins="0" value="418">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;419&lt;/span&gt;Reckless Driving" data-time-days="0" data-time-hours="1" data-time-mins="0" value="419">
+</option><option data-class-a="1" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;420&lt;/span&gt;Vehicular Endangerment" data-time-days="1" data-time-hours="0" data-time-mins="0" value="420">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;421&lt;/span&gt;Drive Without Headlights" data-time-days="0" data-time-hours="0" data-time-mins="0" value="421">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;422&lt;/span&gt;Unsafe Reversing" data-time-days="0" data-time-hours="0" data-time-mins="0" value="422">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;423&lt;/span&gt;Obstructing Traffic" data-time-days="0" data-time-hours="0" data-time-mins="0" value="423">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;424&lt;/span&gt;Driving Against One-way Traffic" data-time-days="0" data-time-hours="0" data-time-mins="0" value="424">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;425&lt;/span&gt;Imprudent Driving" data-time-days="0" data-time-hours="0" data-time-mins="0" value="425">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;426&lt;/span&gt;Use of an Electronic Device while Driving" data-time-days="0" data-time-hours="0" data-time-mins="0" value="426">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;427&lt;/span&gt;Vehicular Noise Violation" data-time-days="0" data-time-hours="0" data-time-mins="0" value="427">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;428&lt;/span&gt;Illegal Usage of Hydraulics" data-time-days="0" data-time-hours="0" data-time-mins="0" value="428">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;429&lt;/span&gt;Tinted Windows" data-time-days="0" data-time-hours="0" data-time-mins="0" value="429">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;430&lt;/span&gt;Impaired Driving [DUI]" data-time-days="0" data-time-hours="3" data-time-mins="0" value="430">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;431&lt;/span&gt;Refusal to Submit to Testing" data-time-days="0" data-time-hours="3" data-time-mins="0" value="431">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;432M&lt;/span&gt;Motor Vehicle Contest (Misdemeanor)" data-time-days="0" data-time-hours="1" data-time-mins="0" value="432M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;432F&lt;/span&gt;Motor Vehicle Contest (Felony)" data-time-days="1" data-time-hours="0" data-time-mins="0" value="432F">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;433&lt;/span&gt;Jaywalking" data-time-days="0" data-time-hours="0" data-time-mins="0" value="433">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;434&lt;/span&gt;Possession of Open Container" data-time-days="0" data-time-hours="0" data-time-mins="0" value="434">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;435&lt;/span&gt;Failure to Wear a Seatbelt/Safety Equipment" data-time-days="0" data-time-hours="0" data-time-mins="0" value="435">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;436&lt;/span&gt;Operation of Unsafe Motor Vehicle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="436">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;437&lt;/span&gt;Operating an Aircraft Without A License" data-time-days="2" data-time-hours="0" data-time-mins="0" value="437">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;438&lt;/span&gt;Reckless Operation Of An Aircraft" data-time-days="2" data-time-hours="0" data-time-mins="0" value="438">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;439&lt;/span&gt;Failure To Adhere To ATC" data-time-days="0" data-time-hours="1" data-time-mins="0" value="439">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;440&lt;/span&gt;Aerial Evasion" data-time-days="2" data-time-hours="0" data-time-mins="0" value="440">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;441&lt;/span&gt;Negligent Operation of Bicycle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="441">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;442&lt;/span&gt;Operation of an Unauthorized Vehicle on Vespucci Beach" data-time-days="0" data-time-hours="0" data-time-mins="0" value="442">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;443&lt;/span&gt;Street Takeover" data-time-days="1" data-time-hours="0" data-time-mins="0" value="443">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;501&lt;/span&gt;Indecent Exposure" data-time-days="0" data-time-hours="6" data-time-mins="0" value="501">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;502&lt;/span&gt;Lewd or Dissolute Conduct in Public" data-time-days="0" data-time-hours="6" data-time-mins="0" value="502">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;503&lt;/span&gt;Prostitution" data-time-days="0" data-time-hours="6" data-time-mins="0" value="503">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;504&lt;/span&gt;Pandering/Pimping" data-time-days="2" data-time-hours="0" data-time-mins="0" value="504">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;505&lt;/span&gt;Stalking" data-time-days="1" data-time-hours="0" data-time-mins="0" value="505">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;506M&lt;/span&gt;Misdemeanor Gaming Fraud" data-time-days="0" data-time-hours="12" data-time-mins="0" value="506M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;506F&lt;/span&gt;Felony Gaming Fraud" data-time-days="2" data-time-hours="0" data-time-mins="0" value="506F">
+</option><option data-class-a="1" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;507&lt;/span&gt;Child Abuse" data-time-days="4" data-time-hours="0" data-time-mins="0" value="507">
+</option><option data-class-a="1" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;508&lt;/span&gt;Child Neglect" data-time-days="2" data-time-hours="0" data-time-mins="0" value="508">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;509&lt;/span&gt;Sale of Alcohol / Tobacco to a Minor" data-time-days="0" data-time-hours="2" data-time-mins="0" value="509">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;510&lt;/span&gt;Minor Alcohol / Tobacco Violation" data-time-days="0" data-time-hours="1" data-time-mins="0" value="510">
+</option><option data-class-a="1" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;511&lt;/span&gt;Animal Abuse" data-time-days="2" data-time-hours="0" data-time-mins="0" value="511">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;512&lt;/span&gt;Sexual Activity With An Inmate" data-time-days="2" data-time-hours="0" data-time-mins="0" value="512">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;601&lt;/span&gt;Manufacturing A Controlled Substance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="601">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;602&lt;/span&gt;Possession Of A Controlled Substance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="602">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;603&lt;/span&gt;Possession Of A Controlled Substance with Intent to Distribute" data-time-days="0" data-time-hours="0" data-time-mins="0" value="603">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;604&lt;/span&gt;Criminal Sale Of a Controlled Substance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="604">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;605&lt;/span&gt;Drug Smuggling" data-time-days="0" data-time-hours="0" data-time-mins="0" value="605">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;606&lt;/span&gt;Drug Trafficking" data-time-days="0" data-time-hours="0" data-time-mins="0" value="606">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;607&lt;/span&gt;Possession of Drug Paraphernalia" data-time-days="0" data-time-hours="0" data-time-mins="0" value="607">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;609&lt;/span&gt;Eavesdropping" data-time-days="2" data-time-hours="0" data-time-mins="0" value="609">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;610&lt;/span&gt;Facial Obstruction" data-time-days="0" data-time-hours="1" data-time-mins="0" value="610">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;611&lt;/span&gt;Fire Code Violation" data-time-days="0" data-time-hours="0" data-time-mins="0" value="611">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;612&lt;/span&gt;Littering" data-time-days="0" data-time-hours="0" data-time-mins="0" value="612">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;613&lt;/span&gt;SRCB Violation" data-time-days="0" data-time-hours="10" data-time-mins="0" value="613">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;701&lt;/span&gt;Criminal Possession of a Firearm" data-time-days="0" data-time-hours="3" data-time-mins="0" value="701">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;702&lt;/span&gt;Possession of a Prohibited Firearm" data-time-days="2" data-time-hours="0" data-time-mins="0" value="702">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;703&lt;/span&gt;Aggravated Firearm Possession" data-time-days="4" data-time-hours="0" data-time-mins="0" value="703">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;704&lt;/span&gt;Possession of an Explosive or Incendiary Device" data-time-days="4" data-time-hours="0" data-time-mins="0" value="704">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;705&lt;/span&gt;Unlicensed Sale of Firearm or Explosives" data-time-days="2" data-time-hours="0" data-time-mins="0" value="705">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;706&lt;/span&gt;Brandishing a Deadly Weapon" data-time-days="1" data-time-hours="0" data-time-mins="0" value="706">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;707&lt;/span&gt;Discharging A Firearm in Public" data-time-days="2" data-time-hours="0" data-time-mins="0" value="707">
+</option><option data-class-a="1" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-danger'&gt;708&lt;/span&gt;Discharging A Firearm From A Motor Vehicle" data-time-days="2" data-time-hours="0" data-time-mins="0" value="708">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;709&lt;/span&gt;Reckless Handling of Firearms" data-time-days="0" data-time-hours="6" data-time-mins="0" value="709">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;710&lt;/span&gt;SHAFT Code Violation" data-time-days="0" data-time-hours="3" data-time-mins="0" value="710">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;711&lt;/span&gt;Possession of a Firearm by Convicted Felon" data-time-days="1" data-time-hours="0" data-time-mins="0" value="711">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;712&lt;/span&gt;Unlawful Possession of Ammunition" data-time-days="1" data-time-hours="0" data-time-mins="0" value="712">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-danger'&gt;713&lt;/span&gt;Possession Of Deadly Weapons In A Correctional Facility" data-time-days="7" data-time-hours="0" data-time-mins="0" value="713">
+</option>
+</select>
+</div>
+<div class="input-group mb-3 col-3">
+<div class="input-group-prepend">
+<span class="input-group-text"><i class="fas fa-fw fa-ellipsis-v"></i></span>
+</div>
+<select class="form-control chargeSelect" data-style="btn-charge" id="sentencingAddition[]" name="sentencingAddition[]" required="required">
+<option disabled="" selected="" value="">
+                                            Addition</option>
+<option value="offender">Offender</option>
+<option value="accomplice">Accomplice</option>
+<option value="accessory">Accessory</option>
+<option value="conspiracy">Conspiracy</option>
+<option value="attempt">Attempt</option>
+<option value="solicitation">Solicitation</option>
+<option value="bail_violation">Parole Violation</option>
+</select>
+</div>
+<div class="input-group mb-3 col-3">
+<div class="input-group-prepend">
+<span class="input-group-text"><i class="fas fa-fw fa-ellipsis-v"></i></span>
+</div>
+<select class="form-control chargeSelect" data-style="btn-charge" id="class[]" name="class[]" required="required">
+<option disabled="" selected="" value="">Class</option>
+<option disabled="" value="A">Class A</option>
+<option disabled="" value="B">Class B</option>
+<option disabled="" value="C">Class C</option>
+</select>
+</div>
+<div class="col-1">
+<button class="btn btn-danger remove_button" type="button">
+<i class="fas fa-fw fa-minus-square m-0"></i> </button>
+</div>
+</div>
+</div>
+<div id="chargeCopy" style="display:none;">
+<div class="form-group row col-12">
+<div class="input-group mb-3 col-5">
+<div class="input-group-prepend">
+<span class="input-group-text"><i class="fas fa-fw fa-gavel"></i></span>
+</div>
+<select class="form-control chargeSelect" data-live-search="true" data-style="btn-charge" id="charge[]" name="charge[]" required="required">
+<option disabled="" selected="" value="">Charge</option>
+<option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;107&lt;/span&gt;Unlawful Assembly" data-time-days="0" data-time-hours="3" data-time-mins="0" value="107">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;110&lt;/span&gt;Contempt of Court" data-time-days="4" data-time-hours="0" data-time-mins="0" value="110">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;112M&lt;/span&gt;Obstruction of Public Duty (Misdemeanor)" data-time-days="0" data-time-hours="0" data-time-mins="25" value="112M">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;113M&lt;/span&gt;Obstructing a Peace Officer's Animal (Misdemeanor)" data-time-days="0" data-time-hours="12" data-time-mins="0" value="113M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;116&lt;/span&gt;Resisting Arrest" data-time-days="0" data-time-hours="6" data-time-mins="0" value="116">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;117&lt;/span&gt;Lying to Government Agents" data-time-days="0" data-time-hours="8" data-time-mins="0" value="117">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;118&lt;/span&gt;Misuse of an Emergency Hotline" data-time-days="0" data-time-hours="1" data-time-mins="0" value="118">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;119&lt;/span&gt;False Impersonation" data-time-days="0" data-time-hours="4" data-time-mins="0" value="119">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;121&lt;/span&gt;Forgery" data-time-days="2" data-time-hours="0" data-time-mins="0" value="121">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;122M&lt;/span&gt;Fraud" data-time-days="0" data-time-hours="6" data-time-mins="0" value="122M">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;124&lt;/span&gt;Defacing U.S. Currency" data-time-days="1" data-time-hours="0" data-time-mins="0" value="124">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;125&lt;/span&gt;Disturbing the Peace" data-time-days="0" data-time-hours="1" data-time-mins="0" value="125">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;132&lt;/span&gt;Possession Of Communications In A Correctional Facility" data-time-days="0" data-time-hours="0" data-time-mins="0" value="132">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;133&lt;/span&gt;Possession Of Tobacco In A Correctional Facility" data-time-days="0" data-time-hours="0" data-time-mins="0" value="133">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;134&lt;/span&gt;Possession Of Handcuff Keys In A Correctional Facility" data-time-days="0" data-time-hours="1" data-time-mins="0" value="134">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;137&lt;/span&gt;Battery of a Peace Officer Canine" data-time-days="0" data-time-hours="6" data-time-mins="0" value="137">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;138&lt;/span&gt;Obstruction of a Peace Officer Canine" data-time-days="0" data-time-hours="0" data-time-mins="25" value="138">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;141&lt;/span&gt;Unlawful Communication with an Inmate" data-time-days="0" data-time-hours="18" data-time-mins="0" value="141">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;142M&lt;/span&gt;Failure to Appear at Court (Misdeamanor)" data-time-days="2" data-time-hours="0" data-time-mins="0" value="142M">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;206&lt;/span&gt;Assault" data-time-days="0" data-time-hours="3" data-time-mins="0" value="206">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;208&lt;/span&gt;Battery" data-time-days="0" data-time-hours="7" data-time-mins="0" value="208">
+</option><option data-class-a="" data-class-b="1" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;212&lt;/span&gt;Unlawful Imprisonment" data-time-days="2" data-time-hours="0" data-time-mins="0" value="212">
+</option><option data-class-a="1" data-class-b="" data-class-c="" data-content="&lt;span class='mr-2 badge badge-warning'&gt;214&lt;/span&gt;Criminal Threats" data-time-days="0" data-time-hours="3" data-time-mins="0" value="214">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;220&lt;/span&gt;Harassment" data-time-days="0" data-time-hours="6" data-time-mins="0" value="220">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;221&lt;/span&gt;Domestic Violence" data-time-days="0" data-time-hours="6" data-time-mins="0" value="221">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;305&lt;/span&gt;Petty Theft" data-time-days="0" data-time-hours="2" data-time-mins="0" value="305">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;308&lt;/span&gt;Possession of Burglary Tools" data-time-days="0" data-time-hours="1" data-time-mins="0" value="308">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;309&lt;/span&gt;Receiving Stolen Property" data-time-days="0" data-time-hours="3" data-time-mins="0" value="309">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;310&lt;/span&gt;Trespassing" data-time-days="0" data-time-hours="1" data-time-mins="0" value="310">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;311&lt;/span&gt;Vandalism" data-time-days="0" data-time-hours="1" data-time-mins="0" value="311">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;312M&lt;/span&gt;Embezzlement" data-time-days="0" data-time-hours="6" data-time-mins="0" value="312M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;313M&lt;/span&gt;Vehicle Registration Theft" data-time-days="0" data-time-hours="3" data-time-mins="0" value="313M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;314M&lt;/span&gt;Vandalism of Prison Property (Misdemeanor)" data-time-days="0" data-time-hours="6" data-time-mins="0" value="314M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;401&lt;/span&gt;Driving Without a Valid License" data-time-days="0" data-time-hours="0" data-time-mins="30" value="401">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;402&lt;/span&gt;Driving On A Suspended License" data-time-days="0" data-time-hours="0" data-time-mins="45" value="402">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;403&lt;/span&gt;Failure to Produce Driver's License" data-time-days="0" data-time-hours="0" data-time-mins="0" value="403">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;404&lt;/span&gt;Failure to Produce Vehicle Registration" data-time-days="0" data-time-hours="0" data-time-mins="0" value="404">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;405&lt;/span&gt;Failure to Produce Proof of Insurance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="405">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;406&lt;/span&gt;Unregistered Vehicle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="406">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;407&lt;/span&gt;No Insurance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="407">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;408&lt;/span&gt;Hit and Run" data-time-days="0" data-time-hours="6" data-time-mins="0" value="408">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;409&lt;/span&gt;Reckless Operation Of an Off-Road or Naval Vehicle" data-time-days="0" data-time-hours="1" data-time-mins="0" value="409">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;410&lt;/span&gt;Speeding" data-time-days="0" data-time-hours="0" data-time-mins="0" value="410">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;411&lt;/span&gt;Excessive Speeding" data-time-days="0" data-time-hours="0" data-time-mins="0" value="411">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;412&lt;/span&gt;Failure to Yield/Stop to a Traffic Control Device" data-time-days="0" data-time-hours="0" data-time-mins="0" value="412">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;413&lt;/span&gt;Failure to Yield at Intersection" data-time-days="0" data-time-hours="0" data-time-mins="0" value="413">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;414&lt;/span&gt;Failure to Yield Entering Roadway" data-time-days="0" data-time-hours="0" data-time-mins="0" value="414">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;415&lt;/span&gt;Failure to Yield for Crosswalk" data-time-days="0" data-time-hours="0" data-time-mins="0" value="415">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;416&lt;/span&gt;Failure to Yield to an Emergency Vehicle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="416">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;417&lt;/span&gt;Improper Lane Entry while Turning" data-time-days="0" data-time-hours="0" data-time-mins="0" value="417">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;418&lt;/span&gt;Prohibited Parking" data-time-days="0" data-time-hours="0" data-time-mins="0" value="418">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;419&lt;/span&gt;Reckless Driving" data-time-days="0" data-time-hours="1" data-time-mins="0" value="419">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;421&lt;/span&gt;Drive Without Headlights" data-time-days="0" data-time-hours="0" data-time-mins="0" value="421">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;422&lt;/span&gt;Unsafe Reversing" data-time-days="0" data-time-hours="0" data-time-mins="0" value="422">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;423&lt;/span&gt;Obstructing Traffic" data-time-days="0" data-time-hours="0" data-time-mins="0" value="423">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;424&lt;/span&gt;Driving Against One-way Traffic" data-time-days="0" data-time-hours="0" data-time-mins="0" value="424">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;425&lt;/span&gt;Imprudent Driving" data-time-days="0" data-time-hours="0" data-time-mins="0" value="425">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;426&lt;/span&gt;Use of an Electronic Device while Driving" data-time-days="0" data-time-hours="0" data-time-mins="0" value="426">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;427&lt;/span&gt;Vehicular Noise Violation" data-time-days="0" data-time-hours="0" data-time-mins="0" value="427">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;428&lt;/span&gt;Illegal Usage of Hydraulics" data-time-days="0" data-time-hours="0" data-time-mins="0" value="428">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;429&lt;/span&gt;Tinted Windows" data-time-days="0" data-time-hours="0" data-time-mins="0" value="429">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;430&lt;/span&gt;Impaired Driving [DUI]" data-time-days="0" data-time-hours="3" data-time-mins="0" value="430">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;431&lt;/span&gt;Refusal to Submit to Testing" data-time-days="0" data-time-hours="3" data-time-mins="0" value="431">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;432M&lt;/span&gt;Motor Vehicle Contest (Misdemeanor)" data-time-days="0" data-time-hours="1" data-time-mins="0" value="432M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;433&lt;/span&gt;Jaywalking" data-time-days="0" data-time-hours="0" data-time-mins="0" value="433">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;434&lt;/span&gt;Possession of Open Container" data-time-days="0" data-time-hours="0" data-time-mins="0" value="434">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;435&lt;/span&gt;Failure to Wear a Seatbelt/Safety Equipment" data-time-days="0" data-time-hours="0" data-time-mins="0" value="435">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;436&lt;/span&gt;Operation of Unsafe Motor Vehicle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="436">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;437&lt;/span&gt;Operating an Aircraft Without A License" data-time-days="2" data-time-hours="0" data-time-mins="0" value="437">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;441&lt;/span&gt;Negligent Operation of Bicycle" data-time-days="0" data-time-hours="0" data-time-mins="0" value="441">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;442&lt;/span&gt;Operation of an Unauthorized Vehicle on Vespucci Beach" data-time-days="0" data-time-hours="0" data-time-mins="0" value="442">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;501&lt;/span&gt;Indecent Exposure" data-time-days="0" data-time-hours="6" data-time-mins="0" value="501">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;502&lt;/span&gt;Lewd or Dissolute Conduct in Public" data-time-days="0" data-time-hours="6" data-time-mins="0" value="502">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;503&lt;/span&gt;Prostitution" data-time-days="0" data-time-hours="6" data-time-mins="0" value="503">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;505&lt;/span&gt;Stalking" data-time-days="1" data-time-hours="0" data-time-mins="0" value="505">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;506M&lt;/span&gt;Misdemeanor Gaming Fraud" data-time-days="0" data-time-hours="12" data-time-mins="0" value="506M">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;509&lt;/span&gt;Sale of Alcohol / Tobacco to a Minor" data-time-days="0" data-time-hours="2" data-time-mins="0" value="509">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;510&lt;/span&gt;Minor Alcohol / Tobacco Violation" data-time-days="0" data-time-hours="1" data-time-mins="0" value="510">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;602&lt;/span&gt;Possession Of A Controlled Substance" data-time-days="0" data-time-hours="0" data-time-mins="0" value="602">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;603&lt;/span&gt;Possession Of A Controlled Substance with Intent to Distribute" data-time-days="0" data-time-hours="0" data-time-mins="0" value="603">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;607&lt;/span&gt;Possession of Drug Paraphernalia" data-time-days="0" data-time-hours="0" data-time-mins="0" value="607">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;610&lt;/span&gt;Facial Obstruction" data-time-days="0" data-time-hours="1" data-time-mins="0" value="610">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;611&lt;/span&gt;Fire Code Violation" data-time-days="0" data-time-hours="0" data-time-mins="0" value="611">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-success'&gt;612&lt;/span&gt;Littering" data-time-days="0" data-time-hours="0" data-time-mins="0" value="612">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;613&lt;/span&gt;SRCB Violation" data-time-days="0" data-time-hours="10" data-time-mins="0" value="613">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;701&lt;/span&gt;Criminal Possession of a Firearm" data-time-days="0" data-time-hours="3" data-time-mins="0" value="701">
+</option><option data-class-a="" data-class-b="1" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;709&lt;/span&gt;Reckless Handling of Firearms" data-time-days="0" data-time-hours="6" data-time-mins="0" value="709">
+</option><option data-class-a="" data-class-b="" data-class-c="1" data-content="&lt;span class='mr-2 badge badge-warning'&gt;710&lt;/span&gt;SHAFT Code Violation" data-time-days="0" data-time-hours="3" data-time-mins="0" value="710">
+</option>
+</select>
+</div>
+<div class="input-group mb-3 col-3">
+<div class="input-group-prepend">
+<span class="input-group-text"><i class="fas fa-fw fa-ellipsis-v"></i></span>
+</div>
+<select class="form-control chargeSelect" data-style="btn-charge" id="sentencingAddition[]" name="sentencingAddition[]" required="required">
+<option disabled="" selected="" value="">
+                                            Addition</option>
+<option value="offender">Offender</option>
+<option value="accomplice">Accomplice</option>
+<option value="accessory">Accessory</option>
+<option value="conspiracy">Conspiracy</option>
+<option value="attempt">Attempt</option>
+<option value="solicitation">Solicitation</option>
+<option value="bail_violation">Parole Violation</option>
+</select>
+</div>
+<div class="input-group mb-3 col-3">
+<div class="input-group-prepend">
+<span class="input-group-text"><i class="fas fa-fw fa-ellipsis-v"></i></span>
+</div>
+<select class="form-control chargeSelect" data-style="btn-charge" id="class[]" name="class[]" required="required">
+<option disabled="" selected="" value="">Class</option>
+<option value="A">Class A</option>
+<option value="B">Class B</option>
+<option value="C">Class C</option>
+</select>
+</div>
+<div class="col-1">
+<button class="btn btn-danger remove_button" type="button">
+<i class="fas fa-fw fa-minus-square m-0"></i> </button>
+</div>
+</div>
+</div>
+<div class="input-group-addon chargeWrapper">
+</div>
+</div>
+<hr/>
+<div class="form-group">
+<h6 class="d-block text-center">Narrative</h6>
+<textarea class="form-control" id="arrestReport" type="text"></textarea>
+</div>
+<hr/>
+<div class="form-group" id="notesForDAGroup" style="display:none;">
+<h6 class="d-block text-center">Notes for the District Attorney</h6>
+<span class="d-block text-center text-secondary">(This field is not mandatory)</span>
+<textarea class="form-control" id="notesForDA" type="text"></textarea>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-primary" data-dismiss="modal" id="addArrest" type="button">
+<i class="fas fa-fw fa-plus mr-1"></i>Submit
+                    </button>
+</div>
+</div>
+</div>
+</div>

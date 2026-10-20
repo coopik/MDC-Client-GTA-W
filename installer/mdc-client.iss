@@ -1,5 +1,5 @@
 #define AppName "PatrolOne Mobile Client"
-#define AppVersion "1.0.4"
+#define AppVersion "1.1.2"
 #define AppPublisher "PatrolOne Mobile Client"
 #define AppExe "PatrolOne Mobile Client.exe"
 #define SourceDir "..\dist\win-unpacked"

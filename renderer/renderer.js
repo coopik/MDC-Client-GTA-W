@@ -1,13 +1,16 @@
 'use strict'
 
+let dialogRoot = null
+
 function el(id) {
-  const node = document.getElementById(id)
+  const scoped = dialogRoot && dialogRoot.querySelector('[data-dialog-id="' + id + '"]')
+  const node = scoped || document.getElementById(id)
   if (!node) console.warn('[shell] missing element #' + id)
   return node
 }
 
-function on(node, event, fn) {
-  if (node && node.addEventListener) node.addEventListener(event, fn)
+function on(node, event, fn, options) {
+  if (node && node.addEventListener) node.addEventListener(event, fn, options)
 }
 
 function boot(label, fn) {
@@ -20,6 +23,15 @@ function boot(label, fn) {
 
 let wv = el('mdc')
 const pcv = el('penal')
+const laws = {
+  penal: { el: pcv, title: 'San Andreas Penal Code', short: 'Penal Code', url: 'https://forum.gta.world/en/topic/78852-san-andreas-penal-code/', query: '' },
+  depa: { el: el('depa'), title: 'Drug Enforcement & Prevention Act of 2020 (DEPA)', short: 'DEPA', url: 'https://forum.gta.world/en/topic/30297-drug-enforcement-prevention-act-of-2020-depa/', query: '' },
+  shaft: { el: el('shaft'), title: 'State Handling of All Firearms and Training Act of 2021 (SHAFT ACT)', short: 'SHAFT Act', url: 'https://forum.gta.world/en/topic/62646-state-handling-of-all-firearms-and-training-act-of-2021-shaft-act/', query: '' }
+}
+
+function allLawViews() {
+  return Object.values(laws).map((law) => law.el).filter(Boolean)
+}
 const pcBar = el('pc-bar')
 const pcSearch = el('pc-search')
 const tabNav = el('tab-nav')
@@ -28,7 +40,7 @@ const hdrCtl = el('hdr-ctl')
 let activeTab = 'mdc'
 
 function activeView() {
-  return activeTab === 'penal' && pcv ? pcv : wv
+  return laws[activeTab] ? laws[activeTab].el : wv
 }
 
 const PAGE_PARTITION = 'persist:gtaw-mdc'
@@ -51,7 +63,7 @@ function clipLabel(text) {
 
 function pathLabel(url) {
   try {
-    const parts = new URL(url).pathname.split('/').filter(Boolean)
+    const parts = new URL(url).pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part))
     if (!parts.length) return 'Dashboard'
     const last = parts[parts.length - 1]
     if (/^\d+$/.test(last)) {
@@ -103,7 +115,89 @@ function openPage(url) {
   playSound('click')
 }
 
+function clearRecordDocks() {
+  pages.forEach(page=>{clearTimeout(page.recordRestoreTimer);page.recordDock=[];page.recordQueue=[];page.pendingRecord=null})
+  renderRecordDock()
+}
+function closeDockRecord(page,record) {
+  page.recordDock=(page.recordDock||[]).filter(r=>r.key!==record.key)
+  try {page.el.send('mdt:record-dock',{action:'close',id:record.id,record})} catch(_) {}
+  renderRecordDock()
+}
+function requestDockRecord(page,record) {
+  if(record.pending) return
+  record.pending=true
+  page.recordQueue=page.recordQueue||[]
+  page.recordQueue.push(record.key)
+  pumpRecordDock(page)
+  renderRecordDock()
+}
+function sendDockRecord(page) {
+  const record=(page.recordDock||[]).find(r=>r.key===page.pendingRecord?.key)
+  if(!record) return
+  clearTimeout(page.recordRestoreTimer)
+  page.recordRestoreTimer=setTimeout(()=>finishDockRecord(page,{key:record.key,success:false}),15000)
+  try {page.el.send('mdt:record-dock',{action:'restore',id:record.id,record})} catch(_) {finishDockRecord(page,{key:record.key,success:false})}
+}
+function pumpRecordDock(page) {
+  if(page.pendingRecord) return
+  const key=page.recordQueue?.shift()
+  if(!key) return
+  page.pendingRecord={key,fallback:false}
+  sendDockRecord(page)
+}
+function finishDockRecord(page,result) {
+  if(page.pendingRecord?.key!==result.key) return
+  clearTimeout(page.recordRestoreTimer)
+  const record=(page.recordDock||[]).find(r=>r.key===result.key)
+  if(!result.success&&record&&!page.pendingRecord.fallback) {
+    try {
+      const url=new URL(record.url)
+      if(url.protocol==='https:'&&url.hostname==='mdc.gta.world'&&url.href!==page.el.getURL()) {
+        page.pendingRecord.fallback=true
+        page.el.loadURL(url.href)
+        return
+      }
+    } catch(_) {}
+  }
+  if(result.success) page.recordDock=page.recordDock.filter(r=>r.key!==result.key)
+  else {if(record) record.pending=false;setStatus('Record could not be reopened. Its dock tab has been kept; try again.')}
+  page.pendingRecord=null
+  if(page.id===activePageId) renderRecordDock()
+  pumpRecordDock(page)
+}
+
+function renderRecordDock() {
+  const dock = document.getElementById('record-dock')
+  if (!dock) return
+  const page = findPage(activePageId)
+  const records = activeTab === 'mdc' && page && page.recordDock || []
+  dock.textContent = ''
+  records.forEach(record => {
+    const tab = document.createElement('div')
+    tab.className = 'record-tab'+(record.active?' active':'')
+    const restore = document.createElement('button')
+    restore.className = 'record-restore'
+    restore.textContent = '\u25a4 ' + record.title
+    restore.title = record.title
+    if (record.color) {tab.style.borderLeft = '3px solid '+record.color;tab.style.setProperty('--record-color',record.color)}
+    const close = document.createElement('button')
+    close.className = 'record-close'
+    close.textContent = '\u00d7'
+    close.setAttribute('aria-label','Close '+record.title)
+    restore.disabled=!!record.pending
+    close.disabled=!!record.pending
+    restore.addEventListener('click',()=>requestDockRecord(page,record))
+    close.addEventListener('click',()=>closeDockRecord(page,record))
+    tab.append(restore,close)
+    dock.appendChild(tab)
+  })
+  dock.classList.toggle('hidden',!records.length)
+  document.dispatchEvent(new Event('mdc:chrome-changed'))
+}
+
 function showPage(id) {
+  closeHeaderMenu()
   const page = findPage(id)
   if (!page || !page.el) return
   activePageId = page.id
@@ -112,10 +206,9 @@ function showPage(id) {
     v.classList.toggle('wv-off', activeTab !== 'mdc' || v !== page.el)
   })
   renderPageBar()
-  try {
-    if (address) address.value = page.el.getURL()
-  } catch (_) {
-  }
+  renderRecordDock()
+  navCurrent = page.url
+  renderNav()
   updateNav()
   document.dispatchEvent(new Event('mdc:chrome-changed'))
 }
@@ -126,6 +219,12 @@ function closePage(id) {
   if (idx < 0) return
   const page = pages[idx]
   pages.splice(idx, 1)
+  clearTimeout(page.recordRestoreTimer)
+  const owner=pages[Math.max(0,idx-1)]
+  if(owner) {
+    owner.recordDock=owner.recordDock||[]
+    ;(page.recordDock||[]).forEach(r=>{r.pending=false;if(!owner.recordDock.some(n=>n.key===r.key)) owner.recordDock.push(r)})
+  }
   try {
     if (page.el && page.el.parentNode) page.el.parentNode.removeChild(page.el)
   } catch (_) {
@@ -184,16 +283,10 @@ function renderPageBar() {
   bar.classList.toggle('hidden', activeTab !== 'mdc')
 }
 
-const address = el('address')
-const addrGroup = el('addr-group')
-const lookupGroup = el('lookup-group')
-const toolbar = el('toolbar')
 const statusbar = el('statusbar')
 const sbStatus = el('sb-status')
 const sbTheme = el('sb-theme')
 const sbClock = el('sb-clock')
-const qName = el('q-name')
-const qPlate = el('q-plate')
 const findbar = el('findbar')
 const findInput = el('find-input')
 const findCase = el('find-case')
@@ -202,17 +295,14 @@ const findCount = el('find-count')
 const HOME = 'https://mdc.gta.world/'
 const RECORD_URL = 'https://mdc.gta.world/record/'
 const DMV_URL = 'https://mdc.gta.world/dmv/'
-const PENAL_URL = 'https://forum.gta.world/en/topic/78852-san-andreas-penal-code/'
 
 const APP_NAME = 'PatrolOne Mobile Client'
 const REPO_URL = 'https://github.com/coopik/MDC-Client-GTA-W'
 
-const SKIN_CLASSES = ['dark', 'lapd', 'aero', 'aerolapd', 'aerodark', 'off']
+const SKIN_CLASSES = ['p1', 'aero', 'aerolapd', 'aerodark', 'off']
 
 const THEMES = {
-  light: 'Classic Light',
-  dark: 'Classic Dark',
-  lapd: 'LAPD Mobile',
+  p1: 'PatrolOne default',
   aero: 'Windows 7 Aero',
   aerolapd: 'Windows 7 Aero LAPD',
   aerodark: 'Windows 7 Aero Dark',
@@ -220,7 +310,32 @@ const THEMES = {
 }
 
 let appInfo = {}
-let zoom = 0
+const MIN_ZOOM = Math.log(.5) / Math.log(1.2)
+const MAX_ZOOM = Math.log(2) / Math.log(1.2)
+let zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Number(localStorage.getItem('mdc.zoom')) || 0))
+let zoomFrame = 0
+
+function setZoom(next) {
+  if (!Number.isFinite(next)) return
+  zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, next))
+  localStorage.setItem('mdc.zoom', String(zoom))
+  const apply = () => {
+    zoomFrame = 0
+    allPageViews().concat(allLawViews()).forEach((v) => {
+      try { v.setZoomLevel(zoom) } catch (_) {}
+    })
+    document.dispatchEvent(new Event('mdc:chrome-changed'))
+  }
+  if (typeof requestAnimationFrame === 'function') {
+    if (!zoomFrame) zoomFrame = requestAnimationFrame(apply)
+  } else apply()
+  setStatus('Zoom: ' + Math.round(Math.pow(1.2, zoom) * 100) + '%')
+}
+
+function stepZoom(direction) {
+  const percent = Math.round(Math.pow(1.2, zoom) * 10) * 10
+  setZoom(Math.log(Math.max(50, Math.min(200, percent + direction * 10)) / 100) / Math.log(1.2))
+}
 
 function prefBool(key, dflt) {
   try {
@@ -249,13 +364,12 @@ function savePref(key, val) {
 
 const view = {
   theme: (function () {
-    const t = prefStr('theme', 'light')
-    return THEMES[t] ? t : 'light'
+    const t = prefStr('theme', 'p1')
+    const next = Object.hasOwn(THEMES, t) ? t : 'p1'
+    savePref('theme', next)
+    return next
   })(),
-  toolbar: prefBool('toolbar', true),
 
-  lookupFields: prefBool('lookupFields', false),
-  addressBar: prefBool('addressBar', false),
   statusBar: prefBool('statusBar', true),
   sidebar: prefBool('sidebar', false),
   navBar: prefBool('navBar', true),
@@ -272,6 +386,64 @@ const view = {
   minimizeToTray: prefBool('minimizeToTray', false)
 }
 
+const p1State = { officer: '', apbs: null, state: 'Ready' }
+
+function renderP1() {
+  try {
+    renderP1Now()
+  } catch (_) {
+  }
+}
+
+function renderP1Now() {
+  const set = (id, text) => {
+    const node = document.getElementById(id)
+    if (node && node.textContent !== text) node.textContent = text
+  }
+  set('p1-unit', p1State.officer || 'Mobile Data Computer')
+  set('p1-alerts', String(typeof alertCount === 'number' ? alertCount : 0))
+  set('p1-apbs', p1State.apbs === null ? '-' : p1State.apbs.toLocaleString('en-US'))
+  set('p1-pages', String(typeof pages !== 'undefined' && pages.length ? pages.length : 1))
+  set('p1-state', p1State.state)
+  const d = new Date()
+  let tz = ''
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(d)
+    const hit = parts.find((x) => x.type === 'timeZoneName')
+    tz = hit ? ' ' + hit.value : ''
+  } catch (_) {
+  }
+  set('p1-date', d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }))
+  set('p1-time', pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + tz)
+}
+
+function updateActionBar() {
+  const current = activeView()
+  const back = document.getElementById('p1a-back')
+  const forward = document.getElementById('p1a-forward')
+  let canBack = false
+  let canForward = false
+  try {
+    canBack = !!current && typeof current.canGoBack === 'function' && current.canGoBack()
+    canForward = !!current && typeof current.canGoForward === 'function' && current.canGoForward()
+  } catch (_) {}
+  if (back) back.disabled = !canBack
+  if (forward) forward.disabled = !canForward
+  ;[['p1a-map', /emergency map/i], ['p1a-paperwork', /paperwork/i]].forEach(([id, match]) => {
+    const button = document.getElementById(id)
+    if (button) button.disabled = !navItems.some((item) => match.test(item.label))
+  })
+}
+
+function applyP1Chrome() {
+  const on = view.theme !== 'off'
+  const strip = document.getElementById('p1-status')
+  const bar = document.getElementById('p1-actions')
+  if (strip) strip.classList.toggle('hidden', !on)
+  if (bar) bar.classList.toggle('hidden', !on)
+  if (on) renderP1()
+}
+
 if (prefStr('navChips', '') !== '1') {
   view.navBar = true
   view.sidebar = false
@@ -280,7 +452,7 @@ if (prefStr('navChips', '') !== '1') {
   savePref('navChips', '1')
 }
 
-if (view.navBar && view.sidebar) {
+if (view.theme !== 'off' && view.navBar && view.sidebar) {
   view.sidebar = false
   savePref('sidebar', false)
 }
@@ -303,6 +475,8 @@ const CLOSE_ACTIONS = {
   exit: true,
   signout: true
 }
+
+const NAV_ACTIONS = new Set(['home', 'newpage', 'reload', 'back', 'forward', 'tabmdc', 'tabpenal', 'tabdepa', 'tabshaft'])
 
 const SOUND_GAP = {
   click: 320,
@@ -344,17 +518,12 @@ function playSound(name) {
 }
 
 const CHECKABLE = [
-  { id: 'mi-toolbar', key: 'toolbar', label: 'Toolbar', accel: '' },
-  { id: 'mi-lookup', key: 'lookupFields', label: 'Lookup Fields', accel: '' },
-  { id: 'mi-addr', key: 'addressBar', label: 'Address Bar', accel: 'F9' },
   { id: 'mi-status', key: 'statusBar', label: 'Status Bar', accel: '' },
   { id: 'mi-sidebar', key: 'sidebar', label: 'MDC Side Panel', accel: 'F10' }
 ]
 
 const THEME_ITEMS = [
-  { id: 'mi-theme-light', theme: 'light', label: 'Classic Light Skin', accel: 'F8' },
-  { id: 'mi-theme-dark', theme: 'dark', label: 'Classic Dark Skin', accel: '' },
-  { id: 'mi-theme-lapd', theme: 'lapd', label: 'LAPD Mobile Skin', accel: '' },
+  { id: 'mi-theme-p1', theme: 'p1', label: 'PatrolOne default Skin', accel: 'F8' },
   { id: 'mi-theme-aero', theme: 'aero', label: 'Windows 7 Aero Skin', accel: '' },
   { id: 'mi-theme-aerolapd', theme: 'aerolapd', label: 'Windows 7 Aero LAPD Skin', accel: '' },
   { id: 'mi-theme-aerodark', theme: 'aerodark', label: 'Windows 7 Aero Dark Skin', accel: '' },
@@ -375,7 +544,9 @@ function markItem(node, marked, label, accel) {
 
 function renderChecks() {
   CHECKABLE.forEach((item) => {
-    markItem(document.getElementById(item.id), view[item.key], item.label, item.accel)
+    const node = document.getElementById(item.id)
+    markItem(node, view[item.key], item.label, item.accel)
+    if (node && item.key === 'sidebar') node.classList.toggle('disabled', view.theme === 'off' || view.navBar)
   })
   THEME_ITEMS.forEach((item) => {
     markItem(document.getElementById(item.id), view.theme === item.theme, item.label, item.accel)
@@ -386,8 +557,8 @@ function pushPresence() {
   if (!window.mdt || typeof window.mdt.setPresence !== 'function') return
   let where = 'Mobile Data Computer'
   try {
-    if (activeTab === 'penal') {
-      where = 'Reading the penal code'
+    if (laws[activeTab]) {
+      where = 'Reading ' + laws[activeTab].short
     } else {
       const page = findPage(activePageId)
       if (page) where = pageLabel(page) || where
@@ -405,29 +576,23 @@ function pushPresence() {
 }
 
 function applyView() {
-  if (view.navBar && view.sidebar) {
+  if (view.theme !== 'off' && view.navBar && view.sidebar) {
     view.sidebar = false
     savePref('sidebar', false)
-  }
-  const sidebarBtn = document.getElementById('btn-sidebar')
-  if (sidebarBtn) {
-    sidebarBtn.disabled = !!view.navBar
-    sidebarBtn.title = view.navBar
-      ? 'Unavailable while the navigation bar is on (Tools > Options)'
-      : 'Show or hide the MDC side panel (F10)'
   }
   renderNav()
   renderQuickBar()
   if (hdrCtl) hdrCtl.classList.toggle('hidden', view.theme === 'off')
   if (view.theme === 'off') closeHeaderMenu()
-  if (toolbar) toolbar.classList.toggle('hidden', !view.toolbar)
   if (statusbar) statusbar.classList.toggle('hidden', !view.statusBar)
-  if (addrGroup) addrGroup.classList.toggle('hidden', !view.addressBar)
-  if (lookupGroup) lookupGroup.classList.toggle('hidden', !view.lookupFields)
   SKIN_CLASSES.forEach((name) => {
     document.body.classList.toggle('theme-' + name, view.theme === name)
   })
   if (sbTheme) sbTheme.textContent = 'Skin: ' + THEMES[view.theme]
+  document.body.classList.toggle('dispatch-layout', view.theme !== 'off')
+  document.body.classList.toggle('glass-layout', view.theme.startsWith('aero'))
+  if (window.mdt && window.mdt.setWindowTheme) window.mdt.setWindowTheme(view.theme)
+  applyP1Chrome()
   applySidebar()
   applyDrag()
   renderAlerts()
@@ -442,7 +607,7 @@ function applyView() {
 }
 
 function toggle(key) {
-  if (key === 'sidebar' && view.navBar) {
+  if (key === 'sidebar' && view.theme !== 'off' && view.navBar) {
     setStatus('Side panel is unavailable while the navigation bar is on. Turn it off in Tools > Options.')
     playSound('alert')
     return
@@ -457,14 +622,14 @@ function toggle(key) {
 }
 
 function setTheme(next) {
-  view.theme = THEMES[next] ? next : 'light'
+  view.theme = Object.hasOwn(THEMES, next) ? next : 'p1'
   savePref('theme', view.theme)
   applyView()
   applySkin()
 }
 
 function cycleTheme() {
-  const order = ['light', 'dark', 'lapd', 'aero', 'aerolapd', 'aerodark', 'off']
+  const order = Object.keys(THEMES)
   setTheme(order[(order.indexOf(view.theme) + 1) % order.length])
 }
 
@@ -475,10 +640,9 @@ function applySkin() {
     } catch (_) {
     }
   })
-  try {
-    if (pcv) pcv.send('mdt:set-skin', view.theme)
-  } catch (_) {
-  }
+  allLawViews().forEach((v) => {
+    try { v.send('mdt:set-skin', view.theme) } catch (_) {}
+  })
 }
 
 function applySidebar() {
@@ -507,23 +671,26 @@ function tick() {
   if (!sbClock) return
   const d = new Date()
   sbClock.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
+  if (view.theme !== 'off') renderP1()
 }
 
-function setStatus(t) { if (sbStatus) sbStatus.textContent = t }
+function setStatus(t) {
+  if (sbStatus) sbStatus.textContent = t
+  p1State.state = String(t || '')
+  renderP1()
+}
 
-function runName() {
-  if (!qName) return
-  const q = qName.value.trim()
-  if (!q) { qName.focus(); return }
+function runName(value) {
+  const q = String(value || '').trim()
+  if (!q) return
   setStatus('Name check: ' + q)
   histAdd({ url: RECORD_URL + encodeURIComponent(q), label: q, kind: 'Name check', query: q })
   wv.loadURL(RECORD_URL + encodeURIComponent(q))
 }
 
-function runPlate() {
-  if (!qPlate) return
-  const q = qPlate.value.trim().replace(/[\s-]/g, '').toUpperCase()
-  if (!q) { qPlate.focus(); return }
+function runPlate(value) {
+  const q = String(value || '').trim().replace(/[\s-]/g, '').toUpperCase()
+  if (!q) return
   setStatus('Plate check: ' + q)
   histAdd({ url: DMV_URL + encodeURIComponent(q), label: q, kind: 'Plate check', query: q })
   wv.loadURL(DMV_URL + encodeURIComponent(q))
@@ -584,51 +751,127 @@ function doFind(forward) {
 
 function findOpen() { return !!(findbar && !findbar.classList.contains('hidden')) }
 
-const backdrop = el('modal-backdrop')
-const dialogTitle = el('dialog-title-text')
-const dialogBody = el('dialog-body')
+let backdrop = el('modal-backdrop')
+let dialogTitle = el('dialog-title-text')
+let dialogBody = el('dialog-body')
+const dialogRoots = backdrop ? [backdrop] : []
+const dialogTemplate = backdrop && typeof backdrop.cloneNode === 'function' ? backdrop.cloneNode(true) : null
+let dialogLevel = 200
 
 
 let dragPos = null
+let dialogDragFrame = 0
 
 function dialogEl() {
   return backdrop ? backdrop.querySelector('.dialog') : null
 }
 
 function resetDialogPos() {
+  endDialogDrag()
+  endDialogResize()
   const box = dialogEl()
   if (!box) return
+  if (box.mdtDialogSize) {
+    box.mdtDialogSize.forEach(([prop, value]) => { box.style[prop] = value })
+    delete box.mdtDialogSize
+  }
   box.style.left = ''
   box.style.top = ''
   box.style.position = ''
+  box.style.transform = ''
   box.classList.remove('dragged')
 }
 
 function startDialogDrag(e) {
   if (!view.dragWindows || !e || e.button !== 0) return
   const box = dialogEl()
-  if (!box) return
-  if (e.target && e.target.closest && e.target.closest('button')) return
+  if (!box || (e.target.closest && e.target.closest('button'))) return
   const rect = box.getBoundingClientRect()
   box.classList.add('dragged')
+  box.style.willChange = 'transform'
   box.style.position = 'fixed'
   box.style.left = rect.left + 'px'
   box.style.top = rect.top + 'px'
-  dragPos = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, box: box }
+  box.style.transform = ''
+  const handle = e.currentTarget
+  handle.setPointerCapture(e.pointerId)
+  const header = handle.getBoundingClientRect()
+  dragPos = { sx:e.clientX, sy:e.clientY, left:header.left, top:header.top, width:header.width, height:header.height, box, handle, pointer:e.pointerId, x:0, y:0 }
   e.preventDefault()
 }
 
-function moveDialogDrag(e) {
+function paintDialogDrag() {
+  dialogDragFrame = 0
   if (!dragPos) return
-  const box = dragPos.box
-  const x = Math.min(Math.max(e.clientX - dragPos.dx, 60 - box.offsetWidth), window.innerWidth - 60)
-  const y = Math.min(Math.max(e.clientY - dragPos.dy, 0), window.innerHeight - 28)
-  box.style.left = x + 'px'
-  box.style.top = y + 'px'
+  dragPos.box.style.transform = 'translate3d(' + dragPos.x + 'px,' + dragPos.y + 'px,0)'
+}
+
+function moveDialogDrag(e) {
+  if (!dragPos || e.pointerId !== dragPos.pointer) return
+  dragPos.x = Math.min(Math.max(e.clientX - dragPos.sx, -dragPos.left), Math.max(0, innerWidth - dragPos.width) - dragPos.left)
+  dragPos.y = Math.min(Math.max(e.clientY - dragPos.sy, -dragPos.top), Math.max(0, innerHeight - dragPos.height) - dragPos.top)
+  if (!dialogDragFrame) dialogDragFrame = requestAnimationFrame(paintDialogDrag)
 }
 
 function endDialogDrag() {
+  if (!dragPos) return
+  if (dialogDragFrame) cancelAnimationFrame(dialogDragFrame)
+  paintDialogDrag()
+  dragPos.box.style.willChange = ''
+  if (dragPos.handle.hasPointerCapture(dragPos.pointer)) dragPos.handle.releasePointerCapture(dragPos.pointer)
   dragPos = null
+}
+
+let dialogResize = null
+let dialogResizeFrame = 0
+
+function startDialogResize(e) {
+  if (e.button !== 0) return
+  const box = e.currentTarget.closest('.dialog')
+  if (box.classList.contains('fixed-size')) return
+  const r = box.getBoundingClientRect()
+  if (!box.mdtDialogSize) box.mdtDialogSize = ['width','height','maxWidth','maxHeight'].map(prop=>[prop,box.style[prop]])
+  box.style.position = 'fixed'
+  box.style.left = r.left+'px'
+  box.style.top = r.top+'px'
+  box.style.transform = ''
+  const handle = e.currentTarget
+  const header = box.querySelector('.dialog-title').getBoundingClientRect()
+  const footer = box.querySelector('.dialog-buttons').getBoundingClientRect()
+  dialogResize = {box,handle,id:e.pointerId,x:e.clientX,y:e.clientY,left:r.left,top:r.top,width:r.width,height:r.height,minHeight:header.height+footer.height+40,nextWidth:r.width,nextHeight:r.height}
+  handle.setPointerCapture(e.pointerId)
+  handle.setAttribute('data-resizing','1')
+  e.preventDefault()
+}
+
+function paintDialogResize() {
+  dialogResizeFrame = 0
+  if (!dialogResize) return
+  const state = dialogResize
+  state.box.style.maxWidth = 'none'
+  state.box.style.maxHeight = 'none'
+  state.box.style.width = state.nextWidth+'px'
+  state.box.style.height = state.nextHeight+'px'
+}
+
+function moveDialogResize(e) {
+  if (!dialogResize || e.pointerId !== dialogResize.id) return
+  const state = dialogResize
+  const minWidth = Math.min(280,innerWidth)
+  state.nextWidth = Math.min(Math.max(minWidth,state.width+e.clientX-state.x),Math.max(minWidth,innerWidth-state.left))
+  state.nextHeight = Math.min(Math.max(state.minHeight,state.height+e.clientY-state.y),Math.max(state.minHeight,innerHeight-state.top))
+  if (!dialogResizeFrame) dialogResizeFrame = requestAnimationFrame(paintDialogResize)
+  e.preventDefault()
+}
+
+function endDialogResize() {
+  if (!dialogResize) return
+  if (dialogResizeFrame) cancelAnimationFrame(dialogResizeFrame)
+  paintDialogResize()
+  const state = dialogResize
+  state.handle.removeAttribute('data-resizing')
+  if (state.handle.hasPointerCapture(state.id)) state.handle.releasePointerCapture(state.id)
+  dialogResize = null
 }
 
 function applyDrag() {
@@ -639,21 +882,78 @@ function applyDrag() {
     }
   })
   try {
-    if (pcv) pcv.send('mdt:set-drag', !!view.dragWindows)
+    allLawViews().forEach((v) => { try { v.send('mdt:set-drag', !!view.dragWindows) } catch (_) {} })
   } catch (_) {
   }
 }
 
+function rememberDialogIds(root) {
+  const index = dialogRoots.indexOf(root)
+  const nodes = [root].concat(Array.from(root.querySelectorAll('[id]')))
+  nodes.forEach((node) => {
+    const alias = node.dataset.dialogId || node.id
+    if (!alias) return
+    node.dataset.dialogId = alias
+    node.id = root === backdrop ? alias : alias + '-window-' + index
+  })
+  root.querySelectorAll('label[for]').forEach((label) => {
+    const alias = label.dataset.dialogFor || label.getAttribute('for')
+    label.dataset.dialogFor = alias
+    label.setAttribute('for', root === backdrop ? alias : alias + '-window-' + index)
+  })
+}
+
+function activateDialog(root) {
+  if (!root) return
+  backdrop = root
+  dialogRoot = root
+  dialogRoots.forEach(rememberDialogIds)
+  dialogTitle = root.querySelector('[data-dialog-id="dialog-title-text"]') || el('dialog-title-text')
+  dialogBody = root.querySelector('[data-dialog-id="dialog-body"]') || el('dialog-body')
+  root.style.zIndex = String(++dialogLevel)
+}
+
+function wireDialog(root) {
+  const close = root.querySelector('.dialog-close')
+  const ok = root.querySelector('.dialog-buttons button')
+  on(close, 'click', () => closeDialog(root))
+  on(ok, 'click', () => closeDialog(root))
+  on(root.querySelector('.dialog-title'), 'pointerdown', startDialogDrag)
+  const grip = document.createElement('div')
+  grip.className = 'dialog-resize'
+  grip.title = 'Drag to resize'
+  root.querySelector('.dialog').appendChild(grip)
+  on(grip, 'pointerdown', startDialogResize)
+}
+
 function openDialog(title, html) {
+  closeHeaderMenu()
   if (!backdrop) return
+  let root = dialogRoots.find((node) => !node.classList.contains('hidden') && node.dataset.dialogTitle === title)
+  if (!root) root = dialogRoots.find((node) => node.classList.contains('hidden'))
+  if (!root && dialogTemplate) {
+    root = dialogTemplate.cloneNode(true)
+    dialogRoots.push(root)
+    document.body.appendChild(root)
+    wireDialog(root)
+  }
+  activateDialog(root || backdrop)
+  backdrop.dataset.dialogTitle = title
   if (dialogTitle) dialogTitle.textContent = title
   if (dialogBody) dialogBody.innerHTML = html
+  rememberDialogIds(backdrop)
   resetDialogPos()
+  dialogEl().classList.toggle('fixed-size', !/^(History|Options|Keyboard Shortcuts|Layout Report)$/.test(title))
   backdrop.classList.remove('hidden')
 }
 
-function closeDialog() {
-  if (backdrop) backdrop.classList.add('hidden')
+function closeDialog(root) {
+  const target = root && root.classList ? root : backdrop
+  endDialogDrag()
+  endDialogResize()
+  if (target) target.classList.add('hidden')
+  const remaining = dialogRoots.filter((node) => !node.classList.contains('hidden')).sort((a,b) => Number(b.style.zIndex)-Number(a.style.zIndex))
+  if (remaining.length) activateDialog(remaining[0])
 }
 
 function row(label, value) {
@@ -729,6 +1029,7 @@ function histLoad() {
 }
 
 function histSave() {
+  renderQuickBar()
   try {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(histList.slice(0, HISTORY_MAX)))
   } catch (_) {
@@ -832,6 +1133,8 @@ function showHistory() {
     '<div class="hist-tools">' +
     '<label class="fld-label" for="hist-q">Search history:</label>' +
     '<input type="text" id="hist-q" class="fld" size="30" placeholder="Name, plate, record number, page or date">' +
+    '<label class="fld-label" for="hist-kind">Show:</label>' +
+    '<select class="fld" id="hist-kind"><option value="">All visits</option><option value="subjects">Subjects and vehicles</option><option value="incidents">Incidents and warrants</option></select>' +
     '<span class="tspacer"></span>' +
     '<button class="btn-sm" id="hist-clear">Clear History</button>' +
     '</div>' +
@@ -867,7 +1170,9 @@ function showHistory() {
 
   function histRows() {
     const q = (input && input.value ? input.value : '').trim().toLowerCase()
-    return histList.filter((entry) => histMatch(entry, q))
+    const kind = el('hist-kind')
+    const filter = kind ? kind.value : ''
+    return histList.filter((entry) => histMatch(entry, q) && (!filter || (filter === 'subjects' ? /^(Record|Vehicle|Name check|Plate check)$/.test(entry.kind) : /^(Incident|Warrant|APB)$/.test(entry.kind))))
   }
 
   function paint() {
@@ -902,13 +1207,15 @@ function showHistory() {
     }
     list.scrollTop = 0
     list.innerHTML = shown.map((entry) =>
-      '<div class="hist-row" data-url="' + esc(entry.url) + '" title="' + esc(entry.url) + '">' +
+      '<button type="button" class="hist-row" data-url="' + esc(entry.url) + '" title="' + esc(entry.url) + '">' +
+      '<img class="hist-icon" src="' + navIcon(entry.kind === 'Record' ? 'Person' : entry.kind) + '" alt="">' +
       '<span class="hist-when">' + esc(histWhen(entry.at)) + '</span>' +
       '<span class="hist-kind">' + esc(entry.kind || 'Page') + '</span>' +
       '<span class="hist-what">' + esc(entry.label || entry.query || entry.url) + '</span>' +
-      '</div>').join('')
+      '</button>').join('')
   }
 
+  on(el('hist-kind'), 'change', () => { page = 1; paint() })
   if (input) {
     input.addEventListener('input', () => {
       page = 1
@@ -948,7 +1255,8 @@ function showHistory() {
       if (!url) return
       closeDialog()
       if (/forum\.gta\.world/.test(url)) {
-        showTab('penal')
+        const lawKey = Object.keys(laws).find((key) => url.startsWith(laws[key].url)) || 'penal'
+        showTab(lawKey)
       } else {
         showTab('mdc')
         try {
@@ -1002,13 +1310,8 @@ function promptLookup(which) {
     const q = input.value.trim()
     if (!q) { input.focus(); return }
     closeDialog()
-    if (plate) {
-      if (qPlate) qPlate.value = q
-      runPlate()
-    } else {
-      if (qName) qName.value = q
-      runName()
-    }
+    if (plate) runPlate(q)
+    else runName(q)
   }
   on(el('ask-go'), 'click', submit)
   on(input, 'keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit() } })
@@ -1017,10 +1320,13 @@ function promptLookup(which) {
 
 const KEY_ACTIONS = [
   { action: 'keyhelp', label: 'Keyboard shortcuts', combo: 'F1' },
+  { action: 'tabmdc', label: 'Mobile Data Computer tab', combo: 'Ctrl+1' },
+  { action: 'tabpenal', label: 'Penal Code tab', combo: 'Ctrl+2' },
+  { action: 'tabdepa', label: 'DEPA tab', combo: 'Ctrl+3' },
+  { action: 'tabshaft', label: 'SHAFT Act tab', combo: 'Ctrl+4' },
   { action: 'findnext', label: 'Find next', combo: 'F3' },
   { action: 'reload', label: 'Reload page', combo: 'F5' },
   { action: 'cycletheme', label: 'Next skin', combo: 'F8' },
-  { action: 'toggleaddr', label: 'Show or hide the address bar', combo: 'F9' },
   { action: 'togglesidebar', label: 'Show or hide the MDC side panel', combo: 'F10' },
   { action: 'find', label: 'Find on page', combo: 'Ctrl+F' },
   { action: 'namecheck', label: 'Name check window', combo: 'Ctrl+N' },
@@ -1056,35 +1362,36 @@ function keysSave() {
 }
 
 function keyItem(action) {
-  for (let i = 0; i < KEY_ACTIONS.length; i++) {
-    if (KEY_ACTIONS[i].action === action) return KEY_ACTIONS[i]
+  const items = keyActions()
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].action === action) return items[i]
   }
   return null
 }
 
 function comboFor(action) {
   const item = keyItem(action)
-  return keymap[action] || (item ? item.combo : '')
+  return Object.hasOwn(keymap, action) ? keymap[action] : (item ? item.combo : '')
 }
 
 function comboOf(e) {
-  const raw = e.key || ''
-  if (!raw || ['Control', 'Alt', 'Shift', 'Meta', 'OS'].indexOf(raw) >= 0) return ''
-  let name = raw.length === 1 ? raw.toUpperCase() : raw
-  name = name.replace(/^Arrow/, '')
-  if (name === ' ') name = 'Space'
-  let out = ''
-  if (e.ctrlKey) out += 'Ctrl+'
-  if (e.altKey) out += 'Alt+'
-  if (e.shiftKey && (name.length > 1 || e.ctrlKey || e.altKey)) out += 'Shift+'
-  return out + name
+  return window.mdtInput.comboOf(e)
+}
+
+function navAction(item) {
+  try { const url = new URL(item.url); return 'nav:' + url.pathname + url.search } catch (_) { return 'nav:' + item.url }
+}
+
+function keyActions() {
+  return KEY_ACTIONS.concat(navItems.map((item) => ({ action: navAction(item), label: 'Navigation: ' + item.label, combo: '' })))
 }
 
 function actionForCombo(combo) {
   if (!combo) return ''
   const want = combo.toLowerCase()
-  for (let i = 0; i < KEY_ACTIONS.length; i++) {
-    if (comboFor(KEY_ACTIONS[i].action).toLowerCase() === want) return KEY_ACTIONS[i].action
+  const items = keyActions()
+  for (let i = 0; i < items.length; i++) {
+    if (comboFor(items[i].action).toLowerCase() === want) return items[i].action
   }
   return ''
 }
@@ -1107,17 +1414,28 @@ function keysForViews() {
   const plain = {}
   const ctrl = {}
   const mouse = {}
-  KEY_ACTIONS.forEach((item) => {
+  const combos = {}
+  keyActions().forEach((item) => {
     const combo = comboFor(item.action)
+    if (combo) combos[combo] = item.action
     const single = /^Ctrl\+(.)$/i.exec(combo)
     if (/^Mouse[245]$/i.test(combo)) mouse[combo] = item.action
     else if (/^F\d+$/i.test(combo)) plain[combo.toUpperCase()] = item.action
     else if (single) ctrl[single[1].toLowerCase()] = item.action
   })
-  return { plain, ctrl, mouse }
+  if (ctrl['+']) ctrl['='] = ctrl['+']
+  return { plain, ctrl, mouse, combos }
 }
 
 function sendKeys() {
+  document.querySelectorAll('.menu-item[data-action]').forEach((item) => {
+    const action = item.getAttribute('data-action')
+    if (!keyItem(action)) return
+    let label = item.querySelector('.accel')
+    const combo = comboFor(action)
+    if (!label && combo) { label = document.createElement('span'); label.className = 'accel'; item.appendChild(label) }
+    if (label) label.textContent = mouseLabel(combo)
+  })
   const payload = keysForViews()
   allPageViews().forEach((v) => {
     try {
@@ -1126,16 +1444,16 @@ function sendKeys() {
     }
   })
   try {
-    if (pcv) pcv.send('mdt:set-keys', payload)
+    allLawViews().forEach((v) => { try { v.send('mdt:set-keys', payload) } catch (_) {} })
   } catch (_) {
   }
 }
 
 function showKeys() {
-  const rows = KEY_ACTIONS.map((item) =>
+  const rows = keyActions().map((item) =>
     '<tr><td>' + esc(item.label) + '</td>' +
     '<td class="key-combo">' + esc(/^Mouse[245]$/.test(comboFor(item.action)) ? mouseLabel(comboFor(item.action)) : comboFor(item.action)) + '</td>' +
-    '<td><button class="btn-sm key-set" data-key="' + item.action + '">Change</button></td></tr>'
+    '<td><button class="btn-sm key-set" data-key="' + esc(item.action) + '">Change</button> <button class="btn-sm key-clear" data-key="' + esc(item.action) + '">Clear</button></td></tr>'
   ).join('')
 
   openDialog('Keyboard Shortcuts',
@@ -1163,12 +1481,13 @@ function showKeys() {
     const assign = (combo) => {
       stop()
       const clash = actionForCombo(combo)
-      if (clash && clash !== action) delete keymap[clash]
+      if (clash && clash !== action) keymap[clash] = ''
       const item = keyItem(action)
       if (item && item.combo.toLowerCase() === combo.toLowerCase()) delete keymap[action]
       else keymap[action] = combo
       keysSave()
       sendKeys()
+      renderNav()
       showKeys()
       const after = el('key-status')
       if (after) {
@@ -1207,10 +1526,14 @@ function showKeys() {
   dialogBody.querySelectorAll('.key-set').forEach((btn) => {
     on(btn, 'click', () => arm(btn.getAttribute('data-key'), btn))
   })
+  dialogBody.querySelectorAll('.key-clear').forEach((btn) => {
+    on(btn, 'click', () => { keymap[btn.getAttribute('data-key')] = ''; keysSave(); sendKeys(); renderNav(); showKeys() })
+  })
   on(el('key-reset'), 'click', () => {
     keymap = {}
     keysSave()
     sendKeys()
+    renderNav()
     showKeys()
     const after = el('key-status')
     if (after) after.textContent = 'Defaults restored.'
@@ -1321,31 +1644,33 @@ function showOptions() {
 
   openDialog('Options',
     '<fieldset class="opt-group"><legend>Appearance</legend>' +
-    radio('light') + radio('dark') + radio('lapd') + radio('aero') +
+    radio('p1') + radio('aero') +
     radio('aerolapd') + radio('aerodark') + radio('off') +
     '<p class="opt-note">F8 cycles through the skins. The three Windows 7 Aero ' +
     'skins give the client, the MDC and every popped-up window the glass ' +
     'gradients, rounded panels and blue highlights of a Windows 7 era ' +
-    'terminal, in light, patrol navy or graphite. LAPD Mobile repaints the ' +
-    'whole MDC, the penal code tab and the client chrome in patrol colours.</p>' +
+    'terminal, in light, patrol navy or graphite. All custom skins share the ' +
+    'icon navigation, recent records rail, status strip and bottom action bar. ' +
+    'PatrolOne default lays the client out like a dispatch terminal: a black icon bar ' +
+    'for the MDC pages, recent records on the left, a status strip and an action ' +
+    'bar along the bottom.</p>' +
     '</fieldset>' +
-    '<fieldset class="opt-group"><legend>Quick shortcuts</legend>' +
-    check('quickLinks', 'Quick shortcuts bar (icon buttons under the tabs)') +
-    '<p class="opt-note">Large icon buttons for Home, Query, Traffic, C6, Calls ' +
-    'and Dispatch, shown under the tab strip on any custom skin.</p>' +
+    '<fieldset class="opt-group"><legend>Recent records</legend>' +
+    check('quickLinks', 'Recent records rail', view.theme === 'off') +
+    '<p class="opt-note">Return to the last twelve subjects, vehicles, warrants and incidents ' +
+    'from History. Click to reuse an open record page; right-click opens another page.</p>' +
     '</fieldset>' +
     '<fieldset class="opt-group"><legend>Layout</legend>' +
-    check('toolbar', 'Toolbar') +
-    check('lookupFields', 'Lookup fields (duplicates the MDC search boxes)') +
-    check('addressBar', 'Address bar') +
     check('statusBar', 'Status bar') +
-    check('navBar', 'MDC navigation bar (side panel links as tabs)') +
-    check('sidebar', 'MDC side panel (F10)', view.navBar) +
-    '<p class="opt-note">' + (view.navBar
+    check('navBar', 'MDC navigation bar (side panel links as tabs)', view.theme === 'off') +
+    check('sidebar', 'MDC side panel (F10)', view.theme === 'off' || view.navBar) +
+    '<p class="opt-note">' + (view.theme === 'off'
+      ? 'Original MDC keeps the site layout, sidebar and search boxes. These layout settings apply to custom skins.'
+      : view.navBar
       ? 'The navigation bar is on, so the side panel is hidden and locked. Clear the navigation bar to go back to using the side panel.'
       : 'The navigation bar puts the side panel links in the tab strip next to Penal Code. Turning it on hides and locks the side panel.') +
     '</p>' +
-    check('searchBoxes', 'MDC search boxes (Search Person and Search Vehicle)') +
+    check('searchBoxes', 'MDC search boxes (Search Person and Search Vehicle)', view.theme === 'off') +
     '</fieldset>' +
     '<fieldset class="opt-group"><legend>Sounds</legend>' +
     check('sounds', 'Interface sounds') +
@@ -1404,111 +1729,126 @@ function showOptions() {
   })
 }
 
-function applyPenalSkin() {
-  if (!pcv || !pcv.send) return
-  try {
-    pcv.send('mdt:set-skin', view.theme)
-  } catch (_) {
-  }
-}
-
 function penalFilter() {
-  if (!pcv || !pcv.send) return
+  const law = laws[activeTab]
+  if (!law || !law.el || !law.el.send) return
+  law.query = pcSearch ? String(pcSearch.value || '') : ''
   try {
-    pcv.send('mdt:penal-filter', pcSearch ? String(pcSearch.value || '') : '')
+    law.el.send('mdt:penal-filter', law.query)
   } catch (_) {
   }
 }
 
 const NAV_ICONS = [
-  [/sign\s*out|log\s*out|logout/i, 'fa-right-from-bracket', '\u23FB'],
-  [/dashboard|^home$/i, 'fa-gauge-high', '\u25A6'],
-  [/person\s*lookup|persons?|people|citizen/i, 'fa-id-card', '\u263A'],
-  [/apb|bolo|broadcast/i, 'fa-bullhorn', '\u2762'],
-  [/paperwork|generator/i, 'fa-file-pen', '\u270D'],
-  [/post\s*arrest|arrest|booking/i, 'fa-handcuffs', '\u26D3'],
-  [/active\s*warrant/i, 'fa-triangle-exclamation', '\u26A0'],
-  [/wanted|warrant/i, 'fa-scroll', '\u2691'],
-  [/emergency|incident|call\s*log/i, 'fa-tower-broadcast', '\u2637'],
-  [/dmv|vehicle|plate/i, 'fa-car', '\u26D0'],
-  [/map|location/i, 'fa-map-location-dot', '\u2316'],
-  [/database|records?/i, 'fa-database', '\u2338'],
-  [/report/i, 'fa-file-lines', '\u2637'],
-  [/changelog|version/i, 'fa-clock-rotate-left', '\u2261'],
-  [/law|penal|code/i, 'fa-scale-balanced', '\u2696'],
-  [/mail|email|message/i, 'fa-envelope', '\u2709'],
-  [/dispatch|phone/i, 'fa-phone', '\u260E'],
-  [/citation|ticket|fine/i, 'fa-receipt', '\u270E'],
-  [/profile|account|officer/i, 'fa-user', '\u263A'],
-  [/note|memo/i, 'fa-note-sticky', '\u2338'],
-  [/misc|other|menu/i, 'fa-bars', '\u2630'],
-  [/search|lookup|quer/i, 'fa-magnifying-glass', '\u2315'],
-  [/web|site|portal/i, 'fa-globe', '\u2295']
+  [/sign\s*out|log\s*out|logout/i, 'signout'],
+  [/dashboard|^home$/i, 'home'],
+  [/person\s*lookup|persons?|people|citizen/i, 'person'],
+  [/vehicle.*map/i, 'vehicle-map'],
+  [/emergency.*map|map|location/i, 'map'],
+  [/apb|bolo|broadcast/i, 'apb'],
+  [/paperwork|generator|report|citation|ticket|fine/i, 'report'],
+  [/online.*warrant/i, 'warrant-online'],
+  [/active.*warrant/i, 'warrant-active'],
+  [/warrant.*database/i, 'warrant-database'],
+  [/arrest|booking|wanted|warrant/i, 'warrant'],
+  [/emergency|incident|call\s*log/i, 'incident'],
+  [/dmv|vehicle|plate/i, 'vehicle'],
+  [/database|records?|misc|other|menu/i, 'folder'],
+  [/changelog|version|history/i, 'history'],
+  [/law|penal|code/i, 'code'],
+  [/mail|email|message/i, 'mail'],
+  [/dispatch|phone/i, 'radio'],
+  [/profile|account|officer/i, 'profile'],
+  [/search|lookup|quer/i, 'search']
 ]
 
 function navIcon(label) {
-  for (let i = 0; i < NAV_ICONS.length; i++) {
-    if (NAV_ICONS[i][0].test(label)) return NAV_ICONS[i]
-  }
-  return [null, 'fa-circle-dot', '\u25AB']
-}
-
-function faLoaded(probe) {
-  let fam = ''
-  try {
-    fam = window.getComputedStyle(probe, '::before').fontFamily || ''
-  } catch (e) {
-    fam = ''
-  }
-  return /font\s*awesome/i.test(fam)
-}
-
-function checkFontAwesome() {
-  if (!document.body) return
-  const probe = document.createElement('i')
-  probe.className = 'fas fa-user'
-  probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden'
-  document.body.appendChild(probe)
-  let tries = 0
-  const test = () => {
-    const ok = faLoaded(probe)
-    document.body.classList.toggle('no-fa', !ok)
-    return ok
-  }
-  if (test()) {
-    probe.remove()
-    return
-  }
-  const timer = setInterval(() => {
-    tries++
-    if (test() || tries > 24) {
-      clearInterval(timer)
-      probe.remove()
-    }
-  }, 250)
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', checkFontAwesome)
-} else {
-  checkFontAwesome()
+  const item = NAV_ICONS.find(([match]) => match.test(label))
+  return 'icons/dispatch/' + (item ? item[1] : 'folder') + '.svg'
 }
 
 let navItems = []
 let navCurrent = ''
 
-const QUICK_BUTTONS = [
-  { icon: 'home.png', label: 'Home', match: /dashboard|^home$/i, url: HOME },
-  { icon: 'query.png', label: 'Query', match: /person lookup/i, url: HOME },
-  { icon: 'traffic.png', label: 'Traffic', match: /dmv database/i, url: DMV_URL },
-  { icon: 'c6.png', label: 'C6', match: /vehicle map/i, url: 'https://mdc.gta.world/map/vehicles' },
-  { icon: 'calls.png', label: 'Calls', match: /incident database/i, url: 'https://mdc.gta.world/emergency/list' },
-  { icon: 'dispatch.png', label: 'Dispatch', match: /active warrants|warrants database|online warrants/i, url: HOME }
-]
+function recentRecords() {
+  const seen = new Set()
+  return histList.filter((entry) => {
+    if (!/^(Record|Vehicle|Name check|Plate check|Warrant|Incident|APB)$/.test(entry.kind) || seen.has(entry.url)) return false
+    seen.add(entry.url)
+    return true
+  }).slice(0, 12)
+}
 
-function quickTarget(btn) {
-  const hit = navItems.find((item) => btn.match.test(item.label))
-  return hit ? hit.url : btn.url
+let quickWidth = Number(localStorage.getItem('mdc.quickWidth')) || 0
+
+function scaleRailContent() {
+  const scale = quickWidth ? Math.max(.75, Math.min(1.8, quickWidth / (view.theme === 'p1' ? 140 : 164))) : 1
+  document.body.style.setProperty('--rail-scale', String(scale))
+}
+
+function setRailWidth(width, save) {
+  quickWidth = Math.round(Math.max(100, Math.min(360, innerWidth * .4, width)))
+  document.body.style.setProperty('--rail-width', quickWidth + 'px')
+  scaleRailContent()
+  if (save !== false) localStorage.setItem('mdc.quickWidth', String(quickWidth))
+  const handle = quickBar && quickBar.querySelector('.quickresize')
+  if (handle) handle.setAttribute('aria-valuenow', String(quickWidth))
+  document.dispatchEvent(new Event('mdc:chrome-changed'))
+}
+
+function railResizeHandle() {
+  const handle = document.createElement('button')
+  handle.className = 'quickresize'
+  handle.type = 'button'
+  handle.setAttribute('role','separator')
+  handle.setAttribute('aria-orientation','vertical')
+  handle.setAttribute('aria-label','Resize recent records')
+  handle.setAttribute('aria-valuemin','100')
+  handle.setAttribute('aria-valuemax','360')
+  handle.title = 'Drag to resize the rail and text. Alt+Left / Alt+Right while focused resizes both; Alt+Home resets.'
+  let drag = null
+  let frame = 0
+  let shield = null
+  const move = (e) => { if (!drag) return; drag.x=e.clientX; if (!frame) frame=requestAnimationFrame(paint) }
+  const paint = () => { frame = 0; if (drag) setRailWidth(drag.width + drag.x - drag.start, false) }
+  const finish = () => {
+    if (!drag) return
+    if (frame) cancelAnimationFrame(frame)
+    paint()
+    const id = drag.id
+    drag = null
+    document.body.classList.remove('rail-sizing')
+    window.removeEventListener('blur',finish)
+    if (shield) { shield.remove(); shield = null }
+    if (handle.hasPointerCapture(id)) handle.releasePointerCapture(id)
+    localStorage.setItem('mdc.quickWidth', String(quickWidth))
+  }
+  on(handle,'pointerdown',(e) => {
+    if (e.button !== 0) return
+    handle.focus()
+    document.body.classList.add('rail-sizing')
+    window.addEventListener('blur',finish)
+    drag = {width:quickBar.getBoundingClientRect().width,start:e.clientX,x:e.clientX,id:e.pointerId}
+    shield = document.createElement('div')
+    shield.className = 'rail-shield'
+    on(shield,'pointermove',move)
+    on(shield,'pointerup',finish)
+    on(shield,'pointercancel',finish)
+    document.body.appendChild(shield)
+    handle.setPointerCapture(e.pointerId)
+    e.preventDefault()
+  })
+  on(handle,'pointermove',move)
+  on(handle,'pointerup',finish)
+  on(handle,'pointercancel',finish)
+  on(handle,'lostpointercapture',finish)
+  on(handle,'keydown',(e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    e.preventDefault()
+    setRailWidth((quickWidth || quickBar.getBoundingClientRect().width) + (e.key === 'ArrowLeft' ? -12 : 12))
+  })
+  return handle
 }
 
 function renderQuickBar() {
@@ -1519,50 +1859,65 @@ function renderQuickBar() {
   if (!on) return
   const caption = document.createElement('span')
   caption.className = 'quickcap'
-  caption.textContent = 'Quick shortcuts'
+  caption.textContent = 'Recent records'
   quickBar.appendChild(caption)
+  quickBar.appendChild(railResizeHandle())
+  scaleRailContent()
+  if (quickWidth) document.body.style.setProperty('--rail-width', quickWidth + 'px')
   const row = document.createElement('div')
   row.className = 'quickrow'
   quickBar.appendChild(row)
-  QUICK_BUTTONS.forEach((btn) => {
+  const records = recentRecords()
+  if (!records.length) {
+    const empty = document.createElement('p')
+    empty.className = 'quickempty'
+    empty.textContent = view.historyLog ? 'Opened subjects, vehicles and incidents appear here.' : 'Enable History in Options to keep recent records here.'
+    row.appendChild(empty)
+  }
+  records.forEach((entry) => {
     const node = document.createElement('button')
-    node.className = 'quickbtn'
-    node.title = btn.label
+    node.className = 'quickbtn' + (entry.url === navCurrent ? ' active' : '')
+    node.title = entry.kind + ': ' + (entry.label || pathLabel(entry.url)) + '\n' + histWhen(entry.at)
+    node.setAttribute('aria-label', node.title)
     const img = document.createElement('img')
     img.className = 'quickicon'
-    img.src = 'icons/' + btn.icon
+    img.src = navIcon(entry.kind === 'Record' || entry.kind === 'Name check' ? 'Person' : entry.kind)
     img.alt = ''
     node.appendChild(img)
     const text = document.createElement('span')
     text.className = 'quicklabel'
-    text.textContent = btn.label
+    text.textContent = entry.label || entry.query || pathLabel(entry.url)
+    const detail = document.createElement('small')
+    detail.textContent = entry.kind + ' | ' + histWhen(entry.at)
+    text.appendChild(detail)
     node.appendChild(text)
     node.addEventListener('click', () => {
-      const url = quickTarget(btn)
-      navCurrent = url
+      const existing = pages.find((page) => page.url === entry.url)
       showTab('mdc')
-      try {
-        wv.send('mdt:nav-go', url)
-      } catch (_) {
-      }
-      setStatus(btn.label)
-      playSound('click')
-      renderNav()
+      if (existing) showPage(existing.id)
+      else wv.loadURL(entry.url)
+      playSound('nav')
     })
     node.addEventListener('contextmenu', (ev) => {
       ev.preventDefault()
-      openPage(quickTarget(btn))
-      setStatus(btn.label + ' (new page)')
+      openPage(entry.url)
     })
     row.appendChild(node)
   })
+  const history = document.createElement('button')
+  history.className = 'quickbtn quickhistory'
+  history.innerHTML = '<img class="quickicon" src="icons/dispatch/history.svg" alt=""><span>Search history</span>'
+  history.addEventListener('click', showHistory)
+  quickBar.appendChild(history)
 }
 
 const hdrPop = el('hdr-popup')
 let hdrOpen = ''
 
 function closeHeaderMenu() {
+  if (hdrOpen) {try {wv.send('mdt:header-panel-state',false)} catch (_) {}}
   hdrOpen = ''
+  for(const id of ['hb-bell','hb-history'])el(id)?.setAttribute('aria-expanded','false')
   if (hdrPop) {
     hdrPop.classList.remove('open')
     hdrPop.textContent = ''
@@ -1577,6 +1932,8 @@ let alertGreeted = false
 function alertBadgeEl() {
   const btn = el('hb-bell')
   if (!btn) return null
+  const count = el('p1-alerts')
+  if (count) return count
   let badge = btn.querySelector('.hbadge')
   if (!badge) {
     badge = document.createElement('span')
@@ -1645,45 +2002,76 @@ function setAlerts(value) {
   if (grew && view.alertBadge) playSound('notify')
 }
 
-function clearAlerts() {
-  alertCount = 0
-  setAlertAck(0)
-  renderAlerts()
-}
-
 function headerCtlClick(kind) {
   if (hdrOpen === kind) {
     closeHeaderMenu()
     return
   }
   closeHeaderMenu()
-  hdrOpen = kind
-  const btn = el('hb-' + (kind === 'bell' ? 'bell' : kind === 'menu' ? 'menu' : 'history'))
-  if (btn) btn.classList.add('active')
   showTab('mdc')
+  hdrOpen = kind
+  renderHeaderMenu(kind, null)
+  const btn = el('hb-' + (kind === 'bell' ? 'bell' : 'history'))
+  if (btn) btn.classList.add('active')
   playSound('click')
   try {
+    wv.send('mdt:header-panel-state', true)
     wv.send('mdt:header-menu-request', kind)
   } catch (_) {
   }
+}
+
+const notificationTones = {primary:'#9C27B0',secondary:'#6C757D',success:'#4CAF50',danger:'#F44336',warning:'#FF9800',info:'#00BCD4',light:'#F8F9FA',dark:'#343A40',muted:'#6C757D'}
+function notificationInk(color, background) {
+  const parse=value=>{
+    const hex=/^#([a-f0-9]{3}|[a-f0-9]{6})$/i.exec(value.trim())
+    if(hex){const h=hex[1].length===3?hex[1].split('').map(c=>c+c).join(''):hex[1];return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16))}
+    const rgb=/^rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)/i.exec(value)
+    return rgb?rgb.slice(1,4).map(Number):null
+  }
+  const fg=parse(color),bg=parse(background)
+  if(!fg||!bg)return null
+  const luminance=rgb=>rgb.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0)
+  const b=luminance(bg),target=b>.179?0:255
+  for(let step=0;step<=100;step++) {
+    const rgb=fg.map(v=>Math.round(v+(target-v)*step/100)),l=luminance(rgb)
+    if((Math.max(l,b)+.05)/(Math.min(l,b)+.05)>=4.5)return 'rgb('+rgb.join(',')+')'
+  }
+  return target?'#FFFFFF':'#000000'
 }
 
 function renderHeaderMenu(kind, items) {
   if (!hdrPop || hdrOpen !== kind) return
   hdrPop.textContent = ''
   const list = Array.isArray(items) ? items : []
+  const heading = document.createElement('div')
+  heading.className = 'hdrpop-heading'
+  heading.textContent = kind === 'bell' ? 'MDC notifications' : 'MDC history'
+  hdrPop.appendChild(heading)
   if (!list.length) {
     const empty = document.createElement('div')
     empty.className = 'hdrpop-empty'
-    empty.textContent = 'Nothing to show.'
+    empty.textContent = items === null ? 'Loading from the MDC...' : 'No notifications available on this page.'
     hdrPop.appendChild(empty)
   }
   list.forEach((item) => {
     const row = document.createElement('button')
-    row.className = 'hdrpop-item'
+    row.className = 'hdrpop-item' + (item.unread ? ' unread' : '')
+    row.title = item.label || item.sub || ''
     const label = document.createElement('span')
     label.className = 'hdrpop-label'
-    label.textContent = item.label || item.sub || ''
+    const text=item.label||item.sub||''
+    const parts=Array.isArray(item.parts)&&item.parts.map(p=>String(p.text||'')).join('')===text?item.parts:null
+    if(!parts)label.textContent=text
+    else {
+      const background=getComputedStyle(hdrPop).backgroundColor,hover=getComputedStyle(document.body).getPropertyValue('--hover')
+      parts.forEach(part=>{
+        const source=String(part.color||'')||notificationTones[part.tone]
+        const ink=source&&notificationInk(source,background),over=source&&notificationInk(source,hover)
+        if(!ink)label.appendChild(document.createTextNode(String(part.text||'')))
+        else {const span=document.createElement('span');span.className='hdrpop-colored';span.dataset.tone=part.tone||'authored';span.textContent=String(part.text||'');span.style.setProperty('--notify-ink',ink);span.style.setProperty('--notify-hover-ink',over||ink);label.appendChild(span)}
+      })
+    }
     row.appendChild(label)
     if (item.sub) {
       const sub = document.createElement('span')
@@ -1702,19 +2090,34 @@ function renderHeaderMenu(kind, items) {
     hdrPop.appendChild(row)
   })
   hdrPop.classList.add('open')
+  el('hb-'+(kind==='bell'?'bell':'history'))?.setAttribute('aria-expanded','true')
 }
 
 function wireHeaderCtl() {
-  on(el('hb-history'), 'click', (e) => { e.stopPropagation(); headerCtlClick('history') })
-  on(el('hb-bell'), 'click', (e) => { e.stopPropagation(); clearAlerts(); headerCtlClick('bell') })
-  on(el('hb-menu'), 'click', (e) => { e.stopPropagation(); headerCtlClick('menu') })
+  const outside = (e) => {if(hdrOpen&&!hdrPop?.contains(e.target)&&!e.target.closest?.('#hb-bell, #hb-history'))closeHeaderMenu()}
+  on(document, 'pointerdown', outside, true)
+  on(document, 'click', outside, true)
+  on(window, 'blur', closeHeaderMenu)
+  on(el('hb-history'), 'click', (e) => { e.stopPropagation(); closeHeaderMenu(); showHistory() })
+  on(el('hb-bell'), 'click', (e) => { e.stopPropagation(); headerCtlClick('bell') })
   on(document, 'click', (e) => {
     if (!hdrOpen) return
     if (hdrPop && hdrPop.contains(e.target)) return
     closeHeaderMenu()
   })
   on(document, 'keydown', (e) => {
-    if (e.key === 'Escape' && hdrOpen) closeHeaderMenu()
+    if (!hdrOpen) return
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      closeHeaderMenu()
+      el('hb-bell').focus()
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const rows = hdrPop ? Array.from(hdrPop.querySelectorAll('.hdrpop-item')) : []
+      if (!rows.length) return
+      e.preventDefault()
+      const index = rows.indexOf(document.activeElement)
+      rows[(index + (e.key === 'ArrowDown' ? 1 : rows.length - 1) + rows.length) % rows.length].focus()
+    }
   })
 }
 
@@ -1725,10 +2128,10 @@ function renderNav() {
     const chip = document.createElement('button')
     chip.className = 'navchip' + (item.url === navCurrent ? ' active' : '')
     chip.title = item.label + '\n' + item.url
-    const spec = navIcon(item.label)
-    const icon = document.createElement('i')
-    icon.className = 'navicon fas ' + spec[1]
-    icon.setAttribute('data-glyph', spec[2])
+    const icon = document.createElement('img')
+    icon.className = 'navicon'
+    icon.src = navIcon(item.label)
+    icon.alt = ''
     icon.setAttribute('aria-hidden', 'true')
     chip.appendChild(icon)
     if (/sign\s*out|log\s*out|logout/i.test(item.label)) chip.classList.add('navchip-out')
@@ -1736,6 +2139,14 @@ function renderNav() {
     if (item.depth > 1) text.className = 'navsub'
     text.textContent = item.label
     chip.appendChild(text)
+    const binding = comboFor(navAction(item))
+    if (binding) {
+      const badge = document.createElement('span')
+      badge.className = 'navkey'
+      badge.textContent = binding
+      chip.appendChild(badge)
+      chip.title = item.label + ' (' + binding + ')\n' + item.url
+    }
     chip.addEventListener('click', () => {
       navCurrent = item.url
       showTab('mdc')
@@ -1754,7 +2165,7 @@ function renderNav() {
     })
     tabNav.appendChild(chip)
   })
-  tabNav.classList.toggle('hidden', !navItems.length || !view.navBar)
+  tabNav.classList.toggle('hidden', view.theme === 'off' || !navItems.length || !view.navBar)
 }
 
 function setNav(items) {
@@ -1767,33 +2178,48 @@ function setNav(items) {
     }
   }
   navItems = list
+  sendKeys()
   renderNav()
+  renderQuickBar()
+  updateActionBar()
 }
 
 function showTab(name) {
-  activeTab = name === 'penal' ? 'penal' : 'mdc'
-  const penal = activeTab === 'penal'
-  if (pcv) {
-    pcv.classList.toggle('wv-off', !penal)
-    if (penal && pcv.getAttribute('data-loaded') !== '1') {
-      pcv.setAttribute('data-loaded', '1')
+  if (name !== activeTab) closeHeaderMenu()
+  activeTab = Object.hasOwn(laws, name) ? name : 'mdc'
+  const law = laws[activeTab]
+  const penal = !!law
+  Object.entries(laws).forEach(([key, item]) => {
+    const v = item.el
+    if (!v) return
+    v.classList.toggle('wv-off', key !== activeTab)
+    if (key === activeTab && v.getAttribute('data-loaded') !== '1') {
+      v.setAttribute('data-loaded', '1')
       try {
-        pcv.loadURL(PENAL_URL)
+        v.loadURL(item.url)
       } catch (_) {
       }
     }
-  }
+    const tab = document.getElementById('tab-' + key)
+    if (tab) tab.classList.toggle('active', key === activeTab)
+  })
   allPageViews().forEach((v) => {
     if (v) v.classList.toggle('wv-off', penal || v !== wv)
   })
   renderPageBar()
+  renderRecordDock()
   if (pcBar) pcBar.classList.toggle('hidden', !penal)
   const tabMdc = document.getElementById('tab-mdc')
-  const tabPenal = document.getElementById('tab-penal')
   if (tabMdc) tabMdc.classList.toggle('active', !penal)
-  if (tabPenal) tabPenal.classList.toggle('active', penal)
+  if (law && pcSearch) {
+    pcSearch.value = law.query
+    pcSearch.placeholder = 'Search ' + law.short
+    const label = document.querySelector('label[for="pc-search"]')
+    if (label) label.textContent = 'Search ' + law.short + ':'
+  }
   document.dispatchEvent(new Event('mdc:chrome-changed'))
-  setStatus(penal ? 'San Andreas Penal Code' : 'Ready')
+  updateActionBar()
+  setStatus(penal ? law.title : 'Ready')
   if (penal && pcSearch) pcSearch.focus()
 }
 
@@ -1805,11 +2231,13 @@ const actions = {
   stop: () => activeView().stop(),
   back: () => { const v = activeView(); if (v.canGoBack()) v.goBack() },
   forward: () => { const v = activeView(); if (v.canGoForward()) v.goForward() },
-  zoomin: () => { zoom = Math.min(zoom + 0.5, 3); activeView().setZoomLevel(zoom) },
-  zoomout: () => { zoom = Math.max(zoom - 0.5, -3); activeView().setZoomLevel(zoom) },
-  zoomreset: () => { zoom = 0; activeView().setZoomLevel(0) },
+  zoomin: () => stepZoom(1),
+  zoomout: () => stepZoom(-1),
+  zoomreset: () => setZoom(0),
   tabmdc: () => showTab('mdc'),
   tabpenal: () => showTab('penal'),
+  tabdepa: () => showTab('depa'),
+  tabshaft: () => showTab('shaft'),
   penalsignout: async () => {
     const r = await window.mdt.messageBox({
       type: 'warning',
@@ -1823,17 +2251,14 @@ const actions = {
     if (r === 0) {
       await window.mdt.clearForumSession()
       setStatus('Forum session cleared')
-      if (pcv) {
-        try {
-          pcv.loadURL(PENAL_URL)
-        } catch (_) {
+      Object.values(laws).forEach((law) => {
+        if (law.el && law.el.getAttribute('data-loaded') === '1') {
+          try { law.el.loadURL(law.url) } catch (_) {}
         }
-      }
+      })
     }
   },
-  themelight: () => setTheme('light'),
-  themedark: () => setTheme('dark'),
-  themelapd: () => setTheme('lapd'),
+  themep1: () => setTheme('p1'),
   themeaero: () => setTheme('aero'),
   themeaerolapd: () => setTheme('aerolapd'),
   themeaerodark: () => setTheme('aerodark'),
@@ -1844,20 +2269,13 @@ const actions = {
   openrepo: () => window.mdt.openExternal(REPO_URL),
   themeoff: () => setTheme('off'),
   cycletheme: () => cycleTheme(),
-  toggletoolbar: () => toggle('toolbar'),
-  toggleaddr: () => toggle('addressBar'),
-  togglelookup: () => toggle('lookupFields'),
   togglestatus: () => toggle('statusBar'),
   togglesidebar: () => toggle('sidebar'),
   togglenavbar: () => toggle('navBar'),
   find: () => openFind(),
   findnext: () => { if (findOpen()) doFind(true) },
-  focusname: () => {
-    if (view.lookupFields && qName) { qName.focus(); qName.select() } else promptLookup('name')
-  },
-  focusplate: () => {
-    if (view.lookupFields && qPlate) { qPlate.focus(); qPlate.select() } else promptLookup('plate')
-  },
+  focusname: () => promptLookup('name'),
+  focusplate: () => promptLookup('plate'),
   devtools: () => activeView().openDevTools(),
   layoutreport: () => {
     setStatus('Measuring page layout...')
@@ -1884,6 +2302,7 @@ const actions = {
         'No password is stored by this application.'
     })
     if (r === 0) {
+      clearRecordDocks()
       await window.mdt.clearSession()
       setStatus('Session cleared')
       wv.loadURL(HOME)
@@ -1892,9 +2311,17 @@ const actions = {
 }
 
 function run(action) {
+  const destination = navItems.find((item) => navAction(item) === action)
+  if (destination) {
+    playSound('nav')
+    showTab('mdc')
+    wv.send('mdt:nav-go', destination.url)
+    setStatus(destination.label)
+    return
+  }
   const fn = actions[action]
   if (!fn) return
-  playSound(CLOSE_ACTIONS[action] ? 'close' : 'click')
+  playSound(NAV_ACTIONS.has(action) ? 'nav' : CLOSE_ACTIONS[action] ? 'close' : 'click')
   try {
     fn()
   } catch (err) {
@@ -1917,6 +2344,7 @@ boot('menubar', () => {
     const label = menu.querySelector('.menu-label')
     on(label, 'click', (e) => {
       e.stopPropagation()
+      closeHeaderMenu()
       const wasOpen = menu.classList.contains('open')
       closeMenus()
       if (!wasOpen) {
@@ -1961,29 +2389,6 @@ boot('menubar', () => {
   document.addEventListener('click', closeMenus)
 })
 
-boot('toolbar', () => {
-  const map = {
-    'btn-back': 'back',
-    'btn-forward': 'forward',
-    'btn-refresh': 'reload',
-    'btn-stop': 'stop',
-    'btn-home': 'home',
-    'btn-namecheck': 'namecheck',
-    'btn-platecheck': 'platecheck',
-    'btn-history': 'history',
-    'btn-newpage': 'newpage',
-    'btn-settings': 'options'
-  }
-  Object.keys(map).forEach((id) => {
-    on(document.getElementById(id), 'click', () => run(map[id]))
-  })
-
-  on(el('go-name'), 'click', runName)
-  on(el('go-plate'), 'click', runPlate)
-  on(qName, 'keydown', (e) => { if (e.key === 'Enter') runName() })
-  on(qPlate, 'keydown', (e) => { if (e.key === 'Enter') runPlate() })
-})
-
 boot('header-controls', () => {
   wireHeaderCtl()
 })
@@ -2001,28 +2406,45 @@ boot('findbar', () => {
 })
 
 boot('dialog', () => {
-  on(el('dialog-ok'), 'click', closeDialog)
-  on(el('dialog-close'), 'click', closeDialog)
-
-  const title = backdrop ? backdrop.querySelector('.dialog-title') : null
-  on(title, 'mousedown', startDialogDrag)
-  on(window, 'mousemove', moveDialogDrag)
-  on(window, 'mouseup', endDialogDrag)
+  if (backdrop) { rememberDialogIds(backdrop); wireDialog(backdrop) }
+  for (const type of ['pointerdown','click','input','change','keydown','focusin']) on(document, type, (e) => {
+    const root = e.target && e.target.closest && e.target.closest('.modal-backdrop')
+    if (root && root !== backdrop && dialogRoots.includes(root)) activateDialog(root)
+  }, true)
+  on(window, 'pointermove', moveDialogDrag)
+  on(window, 'pointerup', endDialogDrag)
+  on(window, 'pointercancel', endDialogDrag)
+  on(window, 'blur', endDialogDrag)
+  on(window, 'pointermove', moveDialogResize)
+  on(window, 'pointerup', endDialogResize)
+  on(window, 'pointercancel', endDialogResize)
+  on(window, 'blur', endDialogResize)
 })
 
 function wirePage(wv, page) {
   const isActive = () => activeTab === 'mdc' && !!page && page.id === activePageId
+  on(wv, 'focus', () => {if(isActive())closeHeaderMenu()})
 
   on(wv, 'did-start-loading', () => {
+    if (isActive()) closeHeaderMenu()
     if (isActive()) setStatus('Opening mdc.gta.world...')
   })
 
+  on(wv, 'did-start-navigation', e => {
+    if (e.isMainFrame && !e.isInPlace) {
+      page.recordDocument=null
+      if(/\/(?:logout|signout)(?:[/?#]|$)/i.test(e.url||'')) clearRecordDocks()
+    }
+  })
   on(wv, 'dom-ready', () => {
     try {
+      wv.setZoomLevel(zoom)
       wv.send('mdt:set-skin', view.theme)
       wv.send('mdt:set-drag', !!view.dragWindows)
-      wv.send('mdt:set-sidebar', !!view.sidebar)
-      wv.send('mdt:set-search-boxes', !!view.searchBoxes)
+      wv.send('mdt:record-dock-sync')
+      if(page.pendingRecord) setTimeout(()=>sendDockRecord(page),250)
+      wv.send('mdt:set-sidebar', !view.sidebar)
+      wv.send('mdt:set-search-boxes', !view.searchBoxes)
     } catch (_) {
     }
   })
@@ -2057,14 +2479,16 @@ function wirePage(wv, page) {
     if (page) page.url = e.url
     histAdd({ url: e.url, label: page ? pageLabel(page) : '' })
     if (!isActive()) return
-    if (address) address.value = e.url
+    navCurrent = e.url
+    renderNav()
     updateNav()
   })
 
   on(wv, 'did-navigate-in-page', (e) => {
     if (page) page.url = e.url
     if (!isActive()) return
-    if (address) address.value = e.url
+    navCurrent = e.url
+    renderNav()
     updateNav()
   })
 
@@ -2072,13 +2496,35 @@ function wirePage(wv, page) {
     if (page) page.title = e.title || 'Page'
     if (page) histLabel(page.url, pageLabel(page))
     renderPageBar()
+    renderRecordDock()
     if (!isActive()) return
     document.title = APP_NAME
     setStatus(e.title || 'Ready')
   })
 
   on(wv, 'ipc-message', (e) => {
+    if(e.channel==='mdt:record-dock') {
+      const incoming=Array.isArray(e.args[0])?e.args[0]:[]
+      page.recordDock=page.recordDock||[]
+      incoming.forEach(record=>{
+        if(!record.key||!/^\d+$/.test(String(record.recordId))) return
+        page.recordDock.forEach(r=>r.active=false)
+        const existing=page.recordDock.find(r=>r.key===record.key)
+        if(existing) Object.assign(existing,record)
+        else page.recordDock.push(record)
+      })
+      if(isActive()) renderRecordDock()
+      return
+    }
+    if(e.channel==='mdt:record-ready') {page.recordDocument=e.args[0]?.documentId;return}
+    if(e.channel==='mdt:record-dock-result') {finishDockRecord(page,e.args[0]||{});return}
+    if(e.channel==='mdt:record-signout') {clearRecordDocks();return}
+    if(e.channel==='mdt:record-minimize-warning') {
+      window.mdt.messageBox({type:'warning',buttons:['Minimize','Cancel'],defaultId:1,cancelId:1,title:'Minimize record with an editor',message:'This record contains editable fields.',detail:'The fields stay alive on this page, but navigation or reloading will lose unsaved edits. Restoring after navigation reloads the saved record.'}).then(answer=>{if(answer===0) wv.send('mdt:record-minimize-approved',e.args[0]?.recordId)})
+      return
+    }
     if (!isActive()) return
+    if (e.channel === 'mdt:dismiss-header-panel') {closeHeaderMenu();return}
     if (e.channel === 'mdt:page-info') {
       const info = (e.args && e.args[0]) || {}
 
@@ -2087,6 +2533,9 @@ function wirePage(wv, page) {
           ? 'Skin: not applied (sign-in)'
           : 'Skin: ' + THEMES[view.theme]
       }
+      if (info.officer) p1State.officer = String(info.officer)
+      if (typeof info.apbs === 'number') p1State.apbs = info.apbs
+      renderP1()
       if (info.subject && page) histLabel(page.url, info.subject)
       if (info.subject) setStatus('Record: ' + info.subject)
       else if (info.officer) setStatus('Signed in: ' + info.officer)
@@ -2147,20 +2596,49 @@ boot('webview', () => {
   activePageId = first.id
   wirePage(wv, first)
   renderPageBar()
+  renderRecordDock()
 })
 
 function updateNav() {
-  try {
-    const back = document.getElementById('btn-back')
-    const fwd = document.getElementById('btn-forward')
-    if (back) back.disabled = !wv.canGoBack()
-    if (fwd) fwd.disabled = !wv.canGoForward()
-  } catch (_) {
-  }
+  updateActionBar()
 }
 
-boot('sidebar-button', () => {
-  on(el('btn-sidebar'), 'click', () => run('togglesidebar'))
+boot('p1-actions', () => {
+  on(el('p1a-back'), 'click', () => run('back'))
+  on(el('p1a-forward'), 'click', () => run('forward'))
+  on(el('p1a-reload'), 'click', () => run('reload'))
+  const goNav = (re) => {
+    const hit = navItems.find((item) => re.test(item.label))
+    if (!hit) return
+    const url = hit.url
+    navCurrent = url
+    showTab('mdc')
+    try {
+      wv.send('mdt:nav-go', url)
+    } catch (_) {
+    }
+    playSound('nav')
+    renderNav()
+  }
+  on(el('p1a-map'), 'click', () => {
+    goNav(/emergency map/i)
+    setStatus('Emergency Map')
+  })
+  on(el('p1a-paperwork'), 'click', () => {
+    goNav(/paperwork/i)
+    setStatus('Paperwork Generators')
+  })
+  on(el('p1a-detach'), 'click', () => {
+    let url = HOME
+    try {
+      url = wv.getURL() || HOME
+    } catch (_) {
+    }
+    openPage(url)
+    setStatus('Opened as a new page')
+  })
+  applyP1Chrome()
+  updateActionBar()
 })
 
 boot('sizing', () => {
@@ -2171,14 +2649,15 @@ boot('sizing', () => {
     const w = content.clientWidth
     const h = content.clientHeight
     if (w <= 0 || h <= 0) return
-    ;allPageViews().concat([pcv]).forEach((v) => {
+    ;allPageViews().concat(allLawViews()).forEach((v) => {
       if (!v || !v.style) return
-      v.style.width = w + 'px'
-      v.style.height = h + 'px'
+      if (v.style.width !== w + 'px') v.style.width = w + 'px'
+      if (v.style.height !== h + 'px') v.style.height = h + 'px'
     })
   }
 
   sizeWebview()
+  if (typeof ResizeObserver === 'function') new ResizeObserver(sizeWebview).observe(content)
   if (window.addEventListener) window.addEventListener('resize', sizeWebview)
 
   document.addEventListener('mdc:chrome-changed', sizeWebview)
@@ -2200,8 +2679,20 @@ boot('sounds', () => {
   }, true)
 })
 
+boot('rail-sizing', () => {
+  on(quickBar, 'keydown', (e) => {
+    if (!e.altKey || e.ctrlKey) return
+    const key = e.key
+    if (!['ArrowLeft','ArrowRight','Home'].includes(key)) return
+    e.preventDefault()
+    e.stopPropagation()
+    setRailWidth(key === 'Home' ? (view.theme === 'p1' ? 140 : 164) : (quickWidth || quickBar.getBoundingClientRect().width) + (key === 'ArrowLeft' ? -24 : 24))
+  })
+})
+
 boot('keyboard', () => {
   document.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented) return
     const typing = ['INPUT', 'TEXTAREA'].includes((e.target && e.target.tagName) || '')
 
     if (e.key === 'Escape') {
@@ -2249,6 +2740,7 @@ boot('init', () => {
   setInterval(sendKeys, 4000)
   if (view.updateCheck) setTimeout(() => runUpdateCheck(true), 4000)
   applyView()
+  if (window.mdt && window.mdt.onOpenPage) window.mdt.onOpenPage(openPage)
   if (window.mdt && window.mdt.onWake) window.mdt.onWake(wakeViews)
   let played = false
   try {
@@ -2270,19 +2762,26 @@ boot('init', () => {
   }
 })
 
-boot('penal', () => {
+function bindLawView(key, law) {
+  const pcv = law.el
   if (!pcv) return
 
-  on(pcv, 'did-start-loading', () => setStatus('Opening forum.gta.world...'))
+  on(pcv, 'dom-ready', () => {
+    pcv.setZoomLevel(zoom)
+    pcv.send('mdt:set-skin', view.theme)
+    sendKeys()
+  })
+
+  on(pcv, 'did-start-loading', () => { if (activeTab === key) setStatus('Opening forum.gta.world...') })
 
   on(pcv, 'did-stop-loading', () => {
-    applyPenalSkin()
-    penalFilter()
+    pcv.send('mdt:set-skin', view.theme)
+    pcv.send('mdt:penal-filter', law.query)
   })
 
   on(pcv, 'did-fail-load', (e) => {
     if (e.errorCode === -3) return
-    setStatus('Penal code error ' + e.errorCode + ': ' + e.errorDescription)
+    if (activeTab === key) setStatus(law.short + ' error ' + e.errorCode + ': ' + e.errorDescription)
     playSound('error')
   })
 
@@ -2297,14 +2796,15 @@ boot('penal', () => {
     }
     if (e.channel === 'mdt:penal-info') {
       const info = (e.args && e.args[0]) || {}
-      if (activeTab !== 'penal') return
-      setStatus(info.signedIn ? 'San Andreas Penal Code' : 'Forum sign-in required')
+      if (activeTab !== key) return
+      setStatus(info.signedIn ? law.title : 'Forum sign-in required')
       return
     }
     if (e.channel === 'mdt:penal-result') {
+      if (activeTab !== key) return
       const r = (e.args && e.args[0]) || {}
-      if (!r.query) setStatus('San Andreas Penal Code')
-      else setStatus('Penal code: ' + r.shown + ' of ' + r.total + ' sections match "' + r.query + '"')
+      if (!r.query) setStatus(law.title)
+      else setStatus(law.short + ': ' + r.shown + ' of ' + r.total + ' sections match "' + r.query + '"')
     }
   })
 
@@ -2313,11 +2813,17 @@ boot('penal', () => {
     if (!findCount) return
     findCount.textContent = r.matches ? (r.activeMatchOrdinal || 0) + ' of ' + r.matches : 'No matches'
   })
+}
+
+boot('law pages', () => {
+  Object.entries(laws).forEach(([key, law]) => bindLawView(key, law))
 })
 
 boot('tabs', () => {
   on(document.getElementById('tab-mdc'), 'click', () => run('tabmdc'))
   on(document.getElementById('tab-penal'), 'click', () => run('tabpenal'))
+  on(document.getElementById('tab-depa'), 'click', () => run('tabdepa'))
+  on(document.getElementById('tab-shaft'), 'click', () => run('tabshaft'))
   on(pcSearch, 'input', penalFilter)
   on(el('pc-clear'), 'click', () => {
     if (pcSearch) pcSearch.value = ''
@@ -2325,14 +2831,4 @@ boot('tabs', () => {
   })
   on(el('pc-signout'), 'click', () => run('penalsignout'))
 
-  document.addEventListener('keydown', (e) => {
-    if (!e.ctrlKey || e.altKey || e.shiftKey) return
-    if (e.key === '1') {
-      e.preventDefault()
-      run('tabmdc')
-    } else if (e.key === '2') {
-      e.preventDefault()
-      run('tabpenal')
-    }
-  })
 })

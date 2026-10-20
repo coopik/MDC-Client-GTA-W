@@ -1,0 +1,132 @@
+<div class="card card-profile-elements ">
+	<div class="card-header card-header-index card-header-dark">
+		<div class="card-title">
+			<h5 class="text-center mb-0"><i class="fas fa-fw fa-user-tag mr-2"></i>Incident</h5>
+		</div>
+	</div>
+	<div class="card-body">
+		<span>
+			<div class="row">
+                            <div class="col-lg">
+                                <h4 class="card-text">
+                                    <form id="mainData">
+                                        <strong>Type</strong>:<br>
+                                        <input type="text" class="form-control w-50" placeholder="Robbery / GTA / Shooting"
+                                            id="type" name="type" maxlength="128" value="">
+                                        <strong>Flags</strong>:<br>
+                                        <input type="text" class="form-control w-50" placeholder="Armed / Gangs / Drugs"
+                                            id="flags" name="flags" maxlength="128" value="">
+                                        <strong>Status</strong>:
+                                        <div class="btn-group d-block">
+                                            <button type="button" class="btn btn-warning px-5 dropdown-toggle"
+                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="statusButton"
+                                                value="1">
+                                                Further Investigation
+                                                <div class="ripple-container"></div>
+                                            </button>
+                                            <div class="dropdown-menu" x-placement="bottom-start"
+                                                style="position: absolute; top: 42px; left: 0px; will-change: top, left;">
+                                                <a data-colour="warning" class="dropdown-item mb-1 p-2 statusOption" href="#"
+                                                    value="1" name="statusOption">
+                                                    <span class="badge badge-warning">
+                                                        <h6 class="mb-0">Further Investigation</h6>
+                                                    </span>
+                                                </a>
+                                                <a data-colour="dark" class="dropdown-item mb-1 p-2 statusOption" href="#"
+                                                    value="2" name="statusOption">
+                                                    <span class="badge badge-dark">
+                                                        <h6 class="mb-0">Inactive</h6>
+                                                    </span>
+                                                </a>
+                                                <a data-colour="danger" class="dropdown-item mb-1 p-2 statusOption" href="#"
+                                                    value="3" name="statusOption">
+                                                    <span class="badge badge-danger">
+                                                        <h6 class="mb-0">Closed / Leads Exhausted</h6>
+                                                    </span>
+                                                </a>
+                                                <a data-colour="success" class="dropdown-item mb-1 p-2 statusOption" href="#"
+                                                    value="4" name="statusOption">
+                                                    <span class="badge badge-success">
+                                                        <h6 class="mb-0">Closed / Cleared</h6>
+                                                    </span>
+                                                </a>
+                                                <a data-colour="primary" class="dropdown-item mb-1 p-2 statusOption" href="#"
+                                                    value="5" name="statusOption">
+                                                    <span class="badge badge-primary">
+                                                        <h6 class="mb-0">Closed / Cleared By Arrest
+                                                        </h6>
+                                                    </span>
+                                                </a>
+                                                <a data-colour="info" class="dropdown-item mb-1 p-2 statusOption" href="#"
+                                                    value="6" name="statusOption">
+                                                    <span class="badge badge-info">
+                                                        <h6 class="mb-0">
+                                                            Unfounded</h6>
+                                                    </span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <br>
+                                        <strong>Date and Time</strong>:
+                                        <input type="text" class="form-control w-25" placeholder="00/XXX/0000 00:00"
+                                            id="DateEntry" name="datetime" maxlength="20" value = "">
+                                        <strong>Classification</strong>:
+                                                                                <div class="btn-group d-block">
+                                            <button type="button"
+                                                class="btn btn-warning px-5 dropdown-toggle"
+                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                                id="classificationButton" value="2">
+                                                Departmental
+                                                <div class="ripple-container"></div>
+                                            </button>
+                                            <div class="dropdown-menu" x-placement="bottom-start"
+                                                style="position: absolute; top: 42px; left: 0px; will-change: top, left;">
+                                                <a data-colour="warning" class="dropdown-item mb-1 p-2 classificationOption" href="#"
+                                                    value="2" name="classificationOption">
+                                                    <span class="badge badge-warning">
+                                                        <h6 class="mb-0">Departmental</h6>
+                                                    </span>
+                                                </a>
+                                                <a data-colour="success" class="dropdown-item mb-1 p-2 classificationOption" href="#"
+                                                    value="1" name="classificationOption">
+                                                    <span class="badge badge-success">
+                                                        <h6 class="mb-0">Countywide</h6>
+                                                    </span>
+                                                </a>
+                                                                                                                                                <a data-colour="danger" class="dropdown-item mb-1 p-2 classificationOption" href="#"
+                                                    value="3" name="classificationOption">
+                                                    <span class="badge badge-danger">
+                                                        <h6 class="mb-0">Private</h6>
+                                                    </span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div class="badge badge-info text-left p-3 mt-2">
+                                            <strong>Departmental</strong>: Only visible to your department.<br>
+                                            <strong>Countywide</strong>: Visible to all with Incident Database access.<br>
+                                            <strong>Classified DB</strong>: Only visible to those with the MDC Classified DB tag.<br>
+                                            <strong>Internal Affairs</strong>: Only visible to those with the MDC Classified IA tag.<br>
+                                            <strong>Private</strong>: Only visible to the player submitting and supervisors.<br>
+                                        </div>
+                                        <br>
+                                </h4>
+                                <h3 class="card-text"><strong>Narrative</strong>: </h3>
+                                <textarea class="summernote" id="narrative" name="narrative"></textarea>
+                                </form>
+                            </div>
+                            <div class="col-m">
+                                <div id="map-card" class="card mt-0">
+                                    <div class="card-body">
+                                        <iframe id="callMap" src="/fixture-map"></iframe>
+                                    </div>
+                                                                            <span id="map-card-footer"
+                                        class="badge badge-info p-2 mx-5 mb-2">Click on the map to set the location</span>
+                                                                        <input type="text" id="xCoordinate" name="xCoordinate" hidden>
+                                    <input type="text" id="yCoordinate" name="yCoordinate" hidden>
+                                </div>
+
+                            </div>
+                        </div>
+		</span>
+	</div>
+</div>

@@ -1,8 +1,94 @@
 'use strict'
 
-const { ipcRenderer } = require('electron')
+const { ipcRenderer, webFrame } = require('electron')
+function comboOf(event) {
+  const raw = event.key || ''
+  if (!raw || ['Control', 'Alt', 'Shift', 'Meta', 'OS'].includes(raw)) return ''
+  const ctrl = event.ctrlKey || event.metaKey
+  if (ctrl && !event.altKey && (raw === '+' || raw === '=' || event.code === 'NumpadAdd')) return 'Ctrl++'
+  if (ctrl && !event.altKey && (raw === '-' || event.code === 'NumpadSubtract')) return 'Ctrl+-'
+  let name = raw.length === 1 ? raw.toUpperCase() : raw.replace(/^Arrow/, '')
+  if (name === ' ') name = 'Space'
+  return (ctrl ? 'Ctrl+' : '') + (event.altKey ? 'Alt+' : '') + (event.shiftKey && (name.length > 1 || ctrl || event.altKey) ? 'Shift+' : '') + name
+}
 
 const STYLE_ID = 'mdt-classic-skin'
+const skinCssCache = new Map()
+
+function cachedSkinCss(key, build) {
+  if (!skinCssCache.has(key)) skinCssCache.set(key,protectIconFonts(build()))
+  return skinCssCache.get(key)
+}
+
+function protectIconFonts(css) {
+  return css.replace(/([^{}]+)\{([^{}]*)\}/g,(rule,raw,body)=>{
+    if(raw.trim().startsWith('@'))return rule
+    const fonts=[]
+    const rest=body.split(';').filter(declaration=>{
+      if(/^\s*font(?:-family)?\s*:/i.test(declaration)&&!/Font Awesome|FontAwesome|Material Icons|Material Symbols|Glyphicons|bootstrap-icons|summernote/i.test(declaration)){fonts.push(declaration+';');return false}
+      return true
+    }).join(';')
+    return fonts.length?raw+'{'+rest+'}\n'+cssSelectors(raw).map(selector=>guardSelector(selector,ICON_SEL)).join(',')+'{'+fonts.join('')+'}':rule
+  })
+}
+
+const PAPER_SELECTOR = '[data-mdt-paper], [data-mdt-paper] *'
+const WIDGET_SELECTOR = PAPER_SELECTOR + ', .bootstrap-select .dropdown-menu, .bootstrap-select .dropdown-menu *, #mugshotPreview, #mugshotPreview *, .cropper-container, .cropper-container *, [class^="cropper-"], [class*=" cropper-"], [class^="imgareaselect-"], .note-color .note-dropdown-menu, .note-color .note-dropdown-menu *, .note-color .dropdown-menu, .note-color .dropdown-menu *, .note-color-palette, .note-color-palette *'
+const AUTHOR_COLOR_SELECTOR = '[data-mdt-author-color]:not([data-mdt-ink]), font[color], [data-mdt-author-color]:not([data-mdt-ink]) *, font[color] *, .note-editable *, [contenteditable="true"] *'
+const AUTHOR_FONT_SELECTOR = 'font[face], font[face] *, [data-mdt-author-font], [data-mdt-author-font] *, .note-editable *, [contenteditable="true"] *'
+const NATIVE_FORM_SELECTOR = '.modal[data-mdt-vanilla="1"] .modal-body, .modal[data-mdt-vanilla="1"] .modal-body *, html.mdt-form-page body .content, html.mdt-form-page body .content *'
+
+function cssSelectors(value) {
+  const selectors = []
+  let start = 0
+  let depth = 0
+  let quote = ''
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i]
+    if (quote) {
+      if (ch === quote && value[i - 1] !== '\\') quote = ''
+    } else if (ch === '"' || ch === "'") quote = ch
+    else if (ch === '(' || ch === '[') depth++
+    else if (ch === ')' || ch === ']') depth--
+    else if (ch === ',' && depth === 0) { selectors.push(value.slice(start, i).trim()); start = i + 1 }
+  }
+  selectors.push(value.slice(start).trim())
+  return selectors
+}
+
+function guardSelector(selector, excluded) {
+  const guard = ':not(:where(' + excluded + '))'
+  const index = selector.indexOf('::')
+  return index < 0 ? selector + guard : selector.slice(0, index) + guard + selector.slice(index)
+}
+
+function protectContentCss(css) {
+  const protectedCss = css.replace(/([^{}]+)\{([^{}]*)\}/g, (rule, raw, body) => {
+    if (raw.trim().startsWith('@')) return rule
+    const selectors = cssSelectors(raw).map((selector) => guardSelector(selector, WIDGET_SELECTOR))
+    const colors = []
+    const chromeColor = /data-notify|dataTables_length|_length|\.nav-tabs|\.nav-pills|\.note-toolbar|\.note-dropdown-menu|\.note-editor .*dropdown-menu|data-mdt-lookup/.test(raw)
+    const backgrounds = []
+    const fonts = []
+    const geometry = []
+    const divider = cssSelectors(raw).every((selector) => /\bhr\s*$/.test(selector))
+    const siteScrolls = /\.(?:modal(?:-body|-dialog|-content)?|dropdown-menu|bootstrap-select|note-editable|note-codable|note-editor|note-frame|note-editing-area)\b/.test(raw)
+    const plain = body.split(';').filter((declaration) => {
+      if (siteScrolls && /^\s*(?:max-height|overflow(?:-x|-y)?)\s*:/i.test(declaration)) return false
+      if (/^\s*color\s*:/i.test(declaration)) { colors.push(declaration + ';'); return false }
+      if (/^\s*background(?:-color|-image)?\s*:/i.test(declaration)) { backgrounds.push(declaration + ';'); return false }
+      if (/^\s*font(?:-family)?\s*:/i.test(declaration)) { fonts.push(declaration + ';'); return false }
+      if (/^\s*(?:display|position|inset(?:-\w+)?|top|right|bottom|left|float|clear|(?:min-|max-)?(?:width|height)|margin(?:-\w+)?|padding(?:-\w+)?|flex(?:-[\w-]+)?|grid(?:-[\w-]+)?|(?:row-|column-)?gap|align-\w+|justify-\w+|text-align|vertical-align|line-height|white-space|transform)\s*:/i.test(declaration)) { geometry.push(declaration + ';'); return false }
+      return true
+    }).join(';')
+    return selectors.join(', ') + ' {' + plain + '}\n' +
+      (fonts.length ? selectors.map((selector) => guardSelector(selector, AUTHOR_FONT_SELECTOR)).join(', ') + ' {' + fonts.join(' ') + '}\n' : '') +
+      (geometry.length ? selectors.map((selector) => divider ? selector : guardSelector(selector, NATIVE_FORM_SELECTOR)).join(', ') + ' {' + geometry.join(' ') + '}\n' : '') +
+      (backgrounds.length ? selectors.map((selector) => guardSelector(selector, '.note-editable *, [contenteditable="true"] *, .note-color-btn, .note-color-palette *, .note-current-color-button, .note-recent-color')).join(', ') + ' {' + backgrounds.join(' ') + '}\n' : '') +
+      (colors.length ? selectors.map((selector) => chromeColor ? selector : guardSelector(selector, AUTHOR_COLOR_SELECTOR)).join(', ') + ' {' + colors.join(' ') + '}\n' : '')
+  })
+  return protectedCss
+}
 
 const ICON_SEL = [
   'i', 'svg', 'svg *', 'use', 'path',
@@ -22,6 +108,7 @@ const NOT_ICON = ':not(i):not(svg):not(use):not(path)' +
   ':not([class^="fa-"]):not([class*=" fa-"])' +
   ':not(.glyphicon):not([class^="glyphicon-"])' +
   ':not(.icon-bar):not(.navbar-toggler-icon)' +
+  ':not([class^="note-icon-"]):not([class*=" note-icon-"])' +
   ':not(.bi):not([class^="bi-"]):not([class*=" bi-"])'
 
 const PANEL_SEL = [
@@ -140,7 +227,7 @@ const PALETTES = {
     infoStrong: '#1E6FA8',
     primary: '#2A6FA8'
   },
-  dark: {
+  aerodark: {
     panel: '#2B2B2B',
     panelAlt: '#323232',
     header: '#3C3C3C',
@@ -184,7 +271,7 @@ const PALETTES = {
     infoStrong: '#1E6B94',
     primary: '#24406E'
   },
-  lapd: {
+  aerolapd: {
     panel: '#0E2360',
     panelAlt: '#13307E',
     header: '#1B3F9E',
@@ -230,8 +317,52 @@ const PALETTES = {
   }
 }
 
-PALETTES.aerolapd = Object.assign({}, PALETTES.lapd)
-PALETTES.aerodark = Object.assign({}, PALETTES.dark)
+
+PALETTES.p1 = {
+  panel: '#E6E6E6',
+  panelAlt: '#F0F0F0',
+  header: '#CFCFCF',
+  border: '#6E6E6E',
+  borderLite: '#BDBDBD',
+  field: '#FFFFFF',
+  fieldBorder: '#7A7A7A',
+  text: '#111111',
+  textMuted: '#555555',
+  hover: '#E9E3CC',
+  sel: '#DDD6B8',
+  selBorder: '#8A8466',
+  zebra: '#F1F1F1',
+  row: '#FFFFFF',
+  link: '#8B0000',
+  visited: '#5A1A1A',
+  titlebar: '#000000',
+  titlebarText: '#FFFFFF',
+  btnFace: '#E4E4E4',
+  btnHover: '#D6D6D6',
+  btnActive: '#C4C4C4',
+  scrollTrack: '#E6E6E6',
+  scrollThumb: '#A8A8A8',
+  scrollThumbHover: '#8E8E8E',
+  chip: '#E4E4E4',
+  chipBorder: '#6E6E6E',
+  highlight: '#FFF3B0',
+  danger: '#B30000',
+  dangerText: '#FFFFFF',
+  dangerSoft: '#F7DADA',
+  dangerInk: '#8B0000',
+  warning: '#E0A100',
+  warningText: '#000000',
+  warningSoft: '#FFF3C4',
+  warningInk: '#7A5A00',
+  success: '#2E7D32',
+  successText: '#FFFFFF',
+  successSoft: '#E1F1E2',
+  successInk: '#1B5E20',
+  info: '#E4E8EE',
+  infoStrong: '#1F4E79',
+  primary: '#B30000'
+}
+
 
 const GLASS_STYLE_ID = 'mdt-glass-skin'
 
@@ -306,7 +437,7 @@ function buildGlassCss(g) {
   const gloss = g.dark
     ? 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.07) 49%, rgba(0,0,0,0.20) 50%, rgba(255,255,255,0.05) 100%)'
     : 'linear-gradient(180deg, rgba(255,255,255,0.80) 0%, rgba(255,255,255,0.42) 49%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.34) 100%)'
-  return `
+  return protectContentCss(`
 html.mdt-aero body {
   background-image: linear-gradient(180deg, ${g.pageHi} 0%, ${g.pageLo} 100%) !important;
   background-attachment: fixed !important;
@@ -682,9 +813,9 @@ html.mdt-aero body .swal2-close {
   margin: 0 !important;
   padding: 0 !important;
   width: 45px !important;
-  height: 21px !important;
+  height: auto !important;
   min-width: 0 !important;
-  min-height: 0 !important;
+  min-height: 21px !important;
   border: 1px solid #8C2318 !important;
   border-top: 0 !important;
   border-right: 0 !important;
@@ -712,6 +843,7 @@ html.mdt-aero body .modal-header .close span,
 html.mdt-aero body .modal-content .close span {
   color: #FFFFFF !important;
   font-size: 12px !important;
+  line-height: 19px !important;
   vertical-align: middle !important;
 }
 html.mdt-aero body .modal-header {
@@ -849,7 +981,24 @@ html.mdt-aero body .table td, html.mdt-aero body .table th {
   overflow-wrap: break-word !important;
 }
 
-`
+
+html.mdt-aero body .main-panel > .content { padding: 16px 18px !important; }
+html.mdt-aero body .card > .card-header:not(.modal *), html.mdt-aero body .panel > .panel-heading:not(.modal *) {
+  margin: 0 !important;
+  padding: 6px 30px !important;
+  min-height: 28px !important;
+  line-height: 16px !important;
+  background-image: linear-gradient(180deg, ${g.hdrHi}, ${g.hdrMid} 49%, ${g.hdrLo} 50%, ${g.hdrMid}) !important;
+}
+html.mdt-aero body .card > .card-header .card-title:not(.modal *), html.mdt-aero body .panel > .panel-heading .panel-title:not(.modal *) { color: ${g.hdrInk} !important; font-size: 11px !important; margin: 0 !important; }
+html.mdt-aero body .card > .card-body:not(.modal *), html.mdt-aero body .panel > .panel-body:not(.modal *) { padding: 10px !important; }
+html.mdt-aero body .table thead th:not(.modal *) { padding: 6px 8px !important; color: ${g.hdrInk} !important; }
+html.mdt-aero body .table td:not(.modal *) { padding: 5px 8px !important; line-height: 16px !important; }
+html.mdt-aero body .btn:focus-visible, html.mdt-aero body a:focus-visible { outline: 2px solid ${g.focus} !important; outline-offset: 2px !important; }
+html.mdt-aero body .btn:disabled, html.mdt-aero body .btn.disabled { opacity: .5 !important; }
+
+html.mdt-aero body .navbar .navbar-brand, html.mdt-aero body .navbar .navbar-brand *, html.mdt-aero body .navbar .navbar-wrapper { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+`)
 }
 function applyGlass() {
   const g = GLASS[themeNow()]
@@ -867,12 +1016,312 @@ function applyGlass() {
     node.id = GLASS_STYLE_ID
     node.setAttribute('type', 'text/css')
   }
-  const css = buildGlassCss(g)
+  const css = cachedSkinCss('glass:' + themeNow(), () => buildGlassCss(g))
   if (node.textContent !== css) node.textContent = css
   if (host && node.parentNode !== host) host.appendChild(node)
   else if (host && host.lastChild !== node) host.appendChild(node)
 }
 
+
+const P1_STYLE_ID = 'mdt-p1-skin'
+
+function buildP1Css() {
+  const lookup = ':is(input#character, input#plate, input)[data-mdt-lookup-field="1"]'
+  const lookupAction = 'html.mdt-p1 body [data-mdt-lookup-action="1"]'
+  return protectContentCss(`
+html.mdt-p1 body, html.mdt-p1 .wrapper, html.mdt-p1 .main-panel, html.mdt-p1 .main-panel > .content {
+  background-color: #DCDAD5 !important;
+  background-image: none !important;
+}
+html.mdt-p1 body, html.mdt-p1 body *:where(${NOT_ICON}) {
+  font-family: Tahoma, "Microsoft Sans Serif", sans-serif !important;
+}
+html.mdt-p1 body .card, html.mdt-p1 body .card-dashboard, html.mdt-p1 body .card-stats, html.mdt-p1 body .panel {
+  border: 1px solid #5E5E5E !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background-color: #F1F0EC !important;
+  background-image: none !important;
+}
+html.mdt-p1 body .card-header, html.mdt-p1 body .card-header-dark, html.mdt-p1 body .card-header-icon,
+html.mdt-p1 body .panel-heading, html.mdt-p1 body .card-footer {
+  background-color: #000000 !important;
+  background-image: linear-gradient(#2A2A2A, #000000) !important;
+  color: #FFFFFF !important;
+  border: 0 !important;
+  border-bottom: 1px solid #000000 !important;
+  border-radius: 0 !important;
+  font-size: 10px !important;
+  font-weight: bold !important;
+  letter-spacing: 0.4px !important;
+  text-transform: uppercase !important;
+  padding: 3px 8px !important;
+}
+html.mdt-p1 body .card-header *:not(.btn):not(button):not(input):not(select):not(:where(.btn *)), html.mdt-p1 body .panel-heading *:not(.btn):not(button):not(:where(.btn *)) {
+  color: #FFFFFF !important;
+}
+html.mdt-p1 body .card-header a:not(.btn), html.mdt-p1 body .card-header a:not(.btn):hover { color: #FFFFFF !important; text-decoration: underline !important; }
+html.mdt-p1 body .card-body, html.mdt-p1 body .panel-body {
+  background-color: #F1F0EC !important;
+  color: #111111 !important;
+}
+html.mdt-p1 body thead th, html.mdt-p1 body table > tbody > tr:first-child > th:first-child:last-child, html.mdt-p1 body th {
+  background-color: #000000 !important;
+  background-image: linear-gradient(#262626, #000000) !important;
+  color: #FFFFFF !important;
+  border: 0 !important;
+  border-right: 1px solid #3A3A3A !important;
+  font-size: 10px !important;
+  font-weight: bold !important;
+  letter-spacing: 0.2px !important;
+  padding: 3px 6px !important;
+}
+html.mdt-p1 body th a, html.mdt-p1 body th * { color: #FFFFFF !important; }
+html.mdt-p1 body td {
+  font-size: 11px !important;
+  padding: 2px 6px !important;
+  border-color: #CFCFCF !important;
+}
+html.mdt-p1 body tbody tr > td { background-color: #FFFFFF !important; }
+html.mdt-p1 body tbody tr:nth-child(even) > td { background-color: #F0F0F0 !important; }
+html.mdt-p1 body tbody tr:hover > td { background-color: #E9E3CC !important; }
+html.mdt-p1 body .table td a, html.mdt-p1 body td a { color: #8B0000 !important; font-weight: bold !important; text-decoration: none !important; }
+html.mdt-p1 body td a:hover { text-decoration: underline !important; }
+html.mdt-p1 body .btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-info):not(.btn-collapse):not(.btn-actions):not(.close),
+html.mdt-p1 body button.btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-info):not(.btn-collapse):not(.btn-actions):not(.close) {
+  background-color: #E4E4E4 !important;
+  background-image: linear-gradient(#FDFDFD, #D6D6D6) !important;
+  border: 1px solid #6E6E6E !important;
+  border-radius: 2px !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  font-size: 11px !important;
+  font-weight: normal !important;
+}
+html.mdt-p1 body .btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-info):not(.btn-collapse):not(.btn-actions):not(.close):hover {
+  background-image: linear-gradient(#FFFFFF, #E4E4E4) !important;
+}
+html.mdt-p1 body .btn-primary, html.mdt-p1 body .btn-danger, html.mdt-p1 body button.btn-primary, html.mdt-p1 body button.btn-danger {
+  background-color: #B30000 !important;
+  background-image: linear-gradient(#D61010, #8A0000) !important;
+  border: 1px solid #5A0000 !important;
+  border-radius: 2px !important;
+  color: #FFFFFF !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+html.mdt-p1 body .btn-primary:hover, html.mdt-p1 body .btn-danger:hover {
+  background-image: linear-gradient(#E82020, #A00000) !important;
+}
+html.mdt-p1 body .form-control, html.mdt-p1 body input[type="text"], html.mdt-p1 body input[type="search"],
+html.mdt-p1 body input[type="number"], html.mdt-p1 body input[type="password"], html.mdt-p1 body input[type="email"],
+html.mdt-p1 body input[type="date"], html.mdt-p1 body textarea, html.mdt-p1 body select {
+  background-color: #FFFFFF !important;
+  background-image: none !important;
+  border: 1px solid #6E6E6E !important;
+  border-radius: 0 !important;
+  box-shadow: inset 1px 1px 1px rgba(0,0,0,0.12) !important;
+  color: #111111 !important;
+  font-size: 11px !important;
+}
+html.mdt-p1 body .form-control:focus, html.mdt-p1 body input:focus, html.mdt-p1 body textarea:focus, html.mdt-p1 body select:focus {
+  border-color: #8B0000 !important;
+  outline: none !important;
+}
+html.mdt-p1 body label, html.mdt-p1 body .bmd-label-floating, html.mdt-p1 body .control-label {
+  color: #333333 !important;
+  font-size: 10px !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.2px !important;
+}
+html.mdt-p1 body textarea, html.mdt-p1 body .note-editable, html.mdt-p1 body .note-codable {
+  font-family: "Courier New", Consolas, monospace !important;
+}
+html.mdt-p1 body .modal-header {
+  background-color: #000000 !important;
+  background-image: linear-gradient(#2A2A2A, #000000) !important;
+  border-radius: 0 !important;
+}
+html.mdt-p1 body .modal-header .modal-title, html.mdt-p1 body .modal-header > *:not(.close) { color: #FFFFFF !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.4px !important; }
+html.mdt-p1 body .modal-content { border-radius: 0 !important; border: 1px solid #000000 !important; }
+html.mdt-p1 body .nav-tabs .nav-link, html.mdt-p1 body .nav-pills .nav-link {
+  background-color: #222222 !important;
+  background-image: linear-gradient(#494949, #171717) !important;
+  border-radius: 0 !important;
+  color: #FFFFFF !important;
+  font-weight: bold !important;
+}
+html.mdt-p1 body .nav-tabs .nav-link.active, html.mdt-p1 body .nav-pills .nav-link.active {
+  background-color: #DDD7BE !important;
+  background-image: linear-gradient(#F5F3E8, #DDD7BE) !important;
+  color: #202020 !important;
+}
+html.mdt-p1 body .nav-tabs .nav-link:hover:not(.active), html.mdt-p1 body .nav-pills .nav-link:hover:not(.active) { background-image: linear-gradient(#606060, #292929) !important; }
+html.mdt-p1 body .nav-tabs .nav-link:active, html.mdt-p1 body .nav-pills .nav-link:active { box-shadow: inset 0 1px 3px #090909 !important; }
+html.mdt-p1 body .badge { border-radius: 0 !important; font-size: 10px !important; }
+html.mdt-p1 body .navbar, html.mdt-p1 body .navbar-absolute {
+  background-color: #1A1A1A !important;
+  background-image: linear-gradient(#333333, #0A0A0A) !important;
+  border-bottom: 1px solid #000000 !important;
+}
+html.mdt-p1 body .navbar a, html.mdt-p1 body .navbar .navbar-brand, html.mdt-p1 body .navbar .nav-link { color: #FFFFFF !important; }
+html.mdt-p1 body ${lookup} {
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 3px 7px !important;
+  border: 1px solid #8E8A7A !important;
+  border-radius: 1px !important;
+  background: #F8F7F2 !important;
+  color: #202020 !important;
+  -webkit-text-fill-color: #202020 !important;
+  font: 12px Tahoma, "Microsoft Sans Serif", sans-serif !important;
+  line-height: 16px !important;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,.22), 0 1px 0 rgba(255,255,255,.16) !important;
+}
+html.mdt-p1 body ${lookup}::placeholder { font: 12px Tahoma, "Microsoft Sans Serif", sans-serif !important; line-height: 16px !important; color: #606060 !important; -webkit-text-fill-color: #606060 !important; opacity: 1 !important; }
+html.mdt-p1 body ${lookup}:hover { border-color: #B8B6AA !important; }
+html.mdt-p1 body ${lookup}:focus {
+  outline: 1px solid #C3B47B !important;
+  outline-offset: 0 !important;
+  border-color: #8A7D4A !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.18), 0 0 3px rgba(222,207,149,.5) !important;
+}
+${lookupAction} {
+  display: inline-flex !important;
+  box-sizing: border-box !important;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  flex: 0 0 28px !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 26px !important;
+  margin: 0 0 0 3px !important;
+  padding: 4px 5px !important;
+  border: 1px solid #777777 !important;
+  border-radius: 1px !important;
+  background: linear-gradient(#FCFCFA, #D5D3CC) !important;
+  color: #202020 !important;
+  -webkit-text-fill-color: #202020 !important;
+  box-shadow: inset 0 1px 0 #FFFFFF !important;
+  vertical-align: middle !important;
+  text-decoration: none !important;
+  text-shadow: none !important;
+}
+${lookupAction} :is(i, span, svg):not(.ripple-container):not(.ripple) { position: static !important; inset: auto !important; transform: none !important; display: block !important; flex: 0 0 auto !important; text-align: center !important; width: 12px !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; color: #202020 !important; -webkit-text-fill-color: #202020 !important; font-size: 12px !important; line-height: 16px !important; }
+${lookupAction} { gap: 0 !important; text-align: center !important; align-self: center !important; }
+${lookupAction} .fa-search::before, ${lookupAction}.fa-search::before { position: static !important; inset: auto !important; transform: none !important; display: block !important; margin: 0 !important; padding: 0 !important; line-height: 16px !important; text-align: center !important; }
+${lookupAction}:hover { background: linear-gradient(#FFFDF3, #E4DCBC) !important; border-color: #A69C74 !important; }
+${lookupAction}:active { background: linear-gradient(#C8C1A7, #E8E2CE) !important; box-shadow: inset 0 1px 2px #99917A !important; }
+${lookupAction}:focus-visible { outline: 1px solid #C3B47B !important; outline-offset: 1px !important; }
+
+html.mdt-p1 body .sidebar, html.mdt-p1 body .sidebar-wrapper {
+  background-color: #D9D9D9 !important;
+  background-image: linear-gradient(#F4F4F4, #D2D2D2) !important;
+  border-right: 1px solid #6E6E6E !important;
+}
+html.mdt-p1 body .sidebar .nav li a, html.mdt-p1 body .sidebar-wrapper .nav li > a {
+  background: transparent !important;
+  color: #111111 !important;
+  border-bottom: 1px solid #BDBDBD !important;
+  border-radius: 0 !important;
+}
+html.mdt-p1 body .sidebar .nav li.active > a, html.mdt-p1 body .sidebar-wrapper .nav li.active > a {
+  background-color: #D9D9D9 !important;
+  color: #111111 !important;
+}
+html.mdt-p1 body ::-webkit-scrollbar-thumb { background-color: #A8A8A8 !important; border-radius: 0 !important; }
+html.mdt-p1 body ::-webkit-scrollbar-track { background-color: #DCDAD5 !important; }
+
+html.mdt-p1 body .main-panel > .content:not(.modal *) { padding: 10px 12px !important; }
+html.mdt-p1 body .main-panel > .content .card:not(.card-profile-avatar):not(.card-profile):not(.modal *) { margin-top: 12px !important; margin-bottom: 14px !important; }
+html.mdt-p1 body .card > .card-header:not(.modal *), html.mdt-p1 body .panel > .panel-heading:not(.modal *) {
+  margin: 0 !important;
+  padding: 3px 26px !important;
+  min-height: 22px !important;
+  line-height: 16px !important;
+  box-shadow: inset 0 1px 0 #525252 !important;
+}
+html.mdt-p1 body .card > .card-body:not(.modal *), html.mdt-p1 body .panel > .panel-body:not(.modal *) { padding: 7px 8px !important; }
+html.mdt-p1 body .card > .card-header .card-title:not(.modal *), html.mdt-p1 body .panel > .panel-heading .panel-title:not(.modal *) { color: #FFFFFF !important; font-size: 11px !important; margin: 0 !important; }
+html.mdt-p1 body .table thead th:not(.modal *) { padding: 3px 6px !important; }
+html.mdt-p1 body .table td:not(.modal *) { padding: 3px 6px !important; line-height: 16px !important; }
+html.mdt-p1 body .btn:active:not(.btn-collapse) { box-shadow: inset 0 2px 4px rgba(0,0,0,.3) !important; background-image: linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.05)) !important; }
+html.mdt-p1 body .btn:focus-visible, html.mdt-p1 body a:focus-visible { outline: 2px solid #8B0000 !important; outline-offset: 2px !important; }
+html.mdt-p1 body .btn:disabled, html.mdt-p1 body .btn.disabled { opacity: .5 !important; }
+html.mdt-p1 body .modal-content { box-shadow: 0 12px 32px rgba(0,0,0,.35) !important; }
+html.mdt-p1 body .modal .modal-header .close, html.mdt-p1 body .card-header .btn-collapse {
+  background-color: #A30000 !important;
+  background-image: linear-gradient(#D52A2A, #830000) !important;
+  border: 1px solid #650000 !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3) !important;
+}
+html.mdt-p1 body .modal .modal-header .close:hover, html.mdt-p1 body .card-header .btn-collapse:hover { background-image: linear-gradient(#EF4141, #A30000) !important; }
+html.mdt-p1 body .modal .modal-header .close *, html.mdt-p1 body .card-header .btn-collapse * { color: #FFFFFF !important; }
+html.mdt-p1 body .modal-footer { background: #E4E4E4 !important; border-top: 1px solid #AAAAAA !important; }
+html.mdt-p1 body .dropdown-menu { background: #FAFAFA !important; border: 1px solid #777777 !important; box-shadow: 0 3px 10px rgba(0,0,0,.22) !important; }
+html.mdt-p1 body .dropdown-item:hover, html.mdt-p1 body .dropdown-item:focus { background: #E9E3CC !important; color: #111111 !important; }
+html.mdt-p1 body ::-webkit-scrollbar-thumb:hover { background-color: #858585 !important; }
+html.mdt-p1 body { font-size: 11px !important; }
+html.mdt-p1 body .note-editable, html.mdt-p1 body .note-codable { background: #F8F8F6 !important; color: #202020 !important; }
+html.mdt-p1 body .navbar .navbar-brand, html.mdt-p1 body .navbar .navbar-brand *, html.mdt-p1 body .navbar .navbar-wrapper {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #FFFFFF !important;
+}
+html.mdt-p1 body .table td .btn:not(.modal *), html.mdt-p1 body .btn-actions:not(.modal *) {
+  height: auto !important;
+  max-height: none !important;
+  min-height: 22px !important;
+  padding: 2px 7px !important;
+  line-height: 16px !important;
+  border: 1px solid rgba(0,0,0,.45) !important;
+  border-radius: 2px !important;
+  background-image: linear-gradient(rgba(255,255,255,.25), rgba(0,0,0,.18)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 1px 1px rgba(0,0,0,.15) !important;
+  margin: 1px 2px 1px 0 !important;
+}
+html.mdt-p1 body .table td .btn:hover:not(.modal *) { filter: brightness(1.12) !important; }
+html.mdt-p1 body .table td .btn:active:not(.modal *) { box-shadow: inset 0 1px 3px rgba(0,0,0,.5) !important; }
+`)
+}
+
+function applyP1() {
+  const on = themeNow() === 'p1'
+  const host = document.head || document.documentElement
+  const root = document.documentElement
+  let node = document.getElementById(P1_STYLE_ID)
+  if (!on) {
+    if (root && root.classList) root.classList.remove('mdt-p1')
+    if (node && node.parentNode) node.parentNode.removeChild(node)
+    return
+  }
+  if (root && root.classList) root.classList.add('mdt-p1')
+  if (!node) {
+    node = document.createElement('style')
+    node.id = P1_STYLE_ID
+    node.setAttribute('type', 'text/css')
+  }
+  const css = cachedSkinCss('p1', buildP1Css)
+  if (node.textContent !== css) node.textContent = css
+  if (host && node.parentNode !== host) host.appendChild(node)
+  else if (host && host.lastChild !== node) host.appendChild(node)
+}
 
 const PLATE_STYLE_ID = 'mdt-plate-skin'
 const PLATE_RE = /^[A-Z0-9][A-Z0-9 -]{1,10}$/
@@ -945,7 +1394,7 @@ function applyPlateStyle() {
     node = document.createElement('style')
     node.id = PLATE_STYLE_ID
     node.setAttribute('type', 'text/css')
-    node.textContent = buildPlateCss()
+    node.textContent = cachedSkinCss('plate', buildPlateCss)
   }
   if (node.parentNode !== host) host.appendChild(node)
 }
@@ -960,6 +1409,12 @@ function isPlateRecordPage() {
 
 function fixPlates() {
   if (!document.body) return
+  if (themeNow() === 'off') {
+    const old = document.getElementById(PLATE_STYLE_ID)
+    if (old) old.remove()
+    document.querySelectorAll('[data-mdt-plate]').forEach((node) => node.removeAttribute('data-mdt-plate'))
+    return
+  }
   if (!isPlateRecordPage()) {
     for (const old of document.querySelectorAll('[data-mdt-plate="1"]')) {
       old.removeAttribute('data-mdt-plate')
@@ -996,10 +1451,10 @@ function fixPlates() {
 }
 
 function buildCss(p) {
-  return `
+  return protectContentCss(`
 
 :root, html, body {
-  color-scheme: ${p !== PALETTES.light ? 'dark' : 'light'} !important;
+  color-scheme: ${p === PALETTES.aerodark || p === PALETTES.aerolapd ? 'dark' : 'light'} !important;
   --bs-body-bg: ${p.panel} !important;
   --bs-body-color: ${p.text} !important;
   --bs-card-bg: ${p.panel} !important;
@@ -1033,7 +1488,7 @@ html, body {
   line-height: 1.35 !important;
 }
 
-body, body *${NOT_ICON} {
+body, body *:where(${NOT_ICON}) {
   font-family: "Segoe UI", Tahoma, "MS Shell Dlg 2", sans-serif !important;
 }
 
@@ -1279,9 +1734,22 @@ html body .card-img-overlay i {
   vertical-align: top !important;
 }
 html body .card hr, html body .panel hr {
+  border: 0 !important;
   border-top: 1px solid ${p.borderLite} !important;
-  border-bottom: 0 !important;
-  margin: 6px 8px !important;
+  margin: 6px 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  flex: 0 1 100% !important;
+  float: none !important;
+  position: static !important;
+  transform: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
   opacity: 1 !important;
 }
 .card-title { font-size: 12px !important; font-weight: bold !important; margin: 2px 0 !important; }
@@ -1418,32 +1886,6 @@ html body .search-tip:hover,
 html body .search-tip-select {
   background: ${p.sel} !important;
   background-color: ${p.sel} !important;
-}
-
-html body #mugshotPreview > img {
-  max-width: 100% !important;
-  max-height: 440px !important;
-  margin: 0 auto !important;
-}
-html body #modalPicture .modal-body,
-html body #mugshotPreview {
-  overflow: visible !important;
-  max-width: 100% !important;
-  background: transparent !important;
-}
-html body .cropper-container img,
-html body .cropper-view-box img {
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  background: none !important;
-  filter: none !important;
-}
-html body .mugshotPreviewCropper {
-  overflow: hidden !important;
-  background: none !important;
-  border: 1px solid ${p.border} !important;
-} !important;
 }
 
 html body .note-editor,
@@ -2256,7 +2698,7 @@ input::placeholder, textarea::placeholder { color: ${p.textMuted} !important; }
   margin: 0 !important;
   float: none !important;
   z-index: 5 !important;
-  color: ${p !== PALETTES.light ? '#FF6B6B' : '#C00000'} !important;
+  color: ${p === PALETTES.aerodark || p === PALETTES.aerolapd ? '#FF6B6B' : '#C00000'} !important;
   background-color: ${p.btnFace} !important;
   border: 1px solid ${p.border} !important;
   font-weight: bold !important;
@@ -2264,7 +2706,7 @@ input::placeholder, textarea::placeholder { color: ${p.textMuted} !important; }
 }
 .modal-header .close span, .modal-header button.close span,
 .modal-header .close i, .modal-content > .close span, .modal-content > .close i {
-  color: ${p !== PALETTES.light ? '#FF6B6B' : '#C00000'} !important;
+  color: ${p === PALETTES.aerodark || p === PALETTES.aerolapd ? '#FF6B6B' : '#C00000'} !important;
   font-weight: bold !important;
 }
 .modal-body { background-color: ${p.panel} !important; padding: 8px !important; }
@@ -2532,6 +2974,35 @@ html body .note-toolbar .note-btn > span {
   font-size: 11px !important;
   line-height: 20px !important;
 }
+html body .note-editor .note-toolbar .note-btn-group > button.note-btn,
+html body .note-editor .note-toolbar .btn-group > button.btn {
+  background: linear-gradient(${p.panelAlt}, ${p.btnFace}) !important;
+  border-color: ${p.border} !important;
+  color: ${p.text} !important;
+  -webkit-text-fill-color: ${p.text} !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+  box-shadow: inset 0 1px 0 ${p.field} !important;
+}
+html body .note-editor .note-toolbar .note-btn-group > button.note-btn:hover,
+html body .note-editor .note-toolbar .btn-group > button.btn:hover {
+  background: ${p.btnHover} !important;
+  border-color: ${p.fieldBorder} !important;
+}
+html body .note-editor .note-toolbar .note-btn-group > button.note-btn:is(.active, :active, [aria-pressed="true"]),
+html body .note-editor .note-toolbar .btn-group > button.btn:is(.active, :active, [aria-pressed="true"]) {
+  background: ${p.btnActive} !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.3) !important;
+}
+html body .note-editor .note-toolbar .note-btn-group > button.note-btn:focus-visible,
+html body .note-editor .note-toolbar .btn-group > button.btn:focus-visible { outline: 1px solid ${p.fieldBorder} !important; outline-offset: 1px !important; }
+html body .note-editor .note-toolbar .note-btn-group > button.note-btn > :is(i, span):not(.note-recent-color),
+html body .note-editor .note-toolbar .btn-group > button.btn > :is(i, span):not(.note-recent-color) {
+  color: ${p.text} !important;
+  -webkit-text-fill-color: ${p.text} !important;
+  text-shadow: none !important;
+}
+html body .note-editor .note-toolbar button:disabled { opacity: .5 !important; }
 html body .note-toolbar .note-current-fontname {
   max-width: 96px !important;
   overflow: hidden !important;
@@ -2633,9 +3104,9 @@ html body .note-editor .note-color-select {
 }
 html body .note-editor .note-holder-custom { display: none !important; }
 html body .note-editor .note-dimension-picker { position: relative !important; }
-html body .note-editor .note-editing-area,
-html body .note-editor .note-editing-area > .note-editable,
-html body .note-editor .note-editing-area > .note-codable {
+html body .note-editor.note-frame .note-editing-area,
+html body .note-editor.note-frame .note-editing-area > .note-editable,
+html body .note-editor.note-frame .note-editing-area > .note-codable {
   background-color: ${p.field} !important;
   color: ${p.text} !important;
 }
@@ -2696,7 +3167,7 @@ html.mdt-lookup .tab-content .tab-pane .btn {
   border: 1px solid ${p.border} !important;
   padding: 4px 6px !important;
   margin: 0 0 4px 0 !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 .card-license span[name="licenseStatus"] {
   display: block !important;
@@ -2732,6 +3203,7 @@ html.mdt-lookup .tab-content .tab-pane .btn {
   vertical-align: middle !important;
 }
 .card-license .btn-group, .card-license .dropdown, .card-license .dropup {
+  position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
   width: auto !important;
@@ -2845,6 +3317,12 @@ html body .modal .modal-body [data-mdt-cbtn="1"] button {
   opacity: 0 !important;
   width: 0 !important;
   height: 0 !important;
+}
+html body .main-panel.ps-container::-webkit-scrollbar { width: 8px !important; height: 8px !important; }
+.main-panel.ps-container {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: stable;
 }
 .ps-container, .modal-scroll {
   overflow-x: hidden !important;
@@ -3028,15 +3506,16 @@ html body .mdt-grip {
   padding: 0 !important;
   margin: 0 !important;
   cursor: nwse-resize !important;
+  touch-action: none !important;
+  user-select: none !important;
   z-index: 12 !important;
   background-image: linear-gradient(135deg, transparent 0 42%, ${p.border} 42% 52%, transparent 52% 66%, ${p.border} 66% 76%, transparent 76%) !important;
+  opacity: 0 !important;
 }
+html body .mdt-grip:hover, html body .mdt-grip[data-mdt-resizing="1"] { opacity: 1 !important; }
 html body .modal-content,
 html body .swal2-popup {
   position: relative !important;
-}
-html body .modal-dialog[data-mdt-sized="1"] {
-  transition: none !important;
 }
 
 html body .modal .modal-body .input-group-addon:has(> .form-group.row),
@@ -3409,23 +3888,16 @@ html body .dropdown-menu.dropdown-menu-scroll > .dropdown-item > .badge {
 }
 
 input[type="file"] { all: revert !important; }
-.imgareaselect-outer, .imgareaselect-selection, .imgareaselect-border1,
-.imgareaselect-border2, .imgareaselect-border3, .imgareaselect-border4,
-.imgareaselect-handle, .cropper-container, .cropper-container *,
-.cropper-canvas, .cropper-drag-box, .cropper-crop-box, .cropper-view-box,
-.cropper-face, .cropper-line, .cropper-point, .cropper-modal {
-  all: revert !important;
-}
 
 h3.characterDetailsName { font-size: 14px !important; font-weight: bold !important; }
 .characterDetailsTitle, h4.characterDetailsTitle {
-  background-color: ${p.header} !important;
-  border: 1px solid ${p.border} !important;
+  background: transparent !important;
+  border: 0 !important;
   color: ${p.text} !important;
   font-size: 11px !important;
   font-weight: bold !important;
-  padding: 1px 5px !important;
-  margin: 4px 0 2px !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 .characterDetailsValue { font-size: 12px !important; color: ${p.text} !important; }
 
@@ -3487,7 +3959,7 @@ html body .table-responsive, html body .card-body .table {
   overflow-x: visible !important;
 }
 
-html body .alert, html body .alert-with-icon {
+html body .alert:not([data-notify]), html body .alert-with-icon:not([data-notify]) {
   overflow: visible !important;
   display: flex !important;
   align-items: flex-start !important;
@@ -3576,47 +4048,6 @@ html body #warrant .col-md-9, html body #warrantReason .col-md-9 {
 html body #warrant .text-right, html body #warrantReason .text-right {
   text-align: right !important;
 }
-html.mdt-form-page body .card-body .form-group,
-html.mdt-form-page body .card-body .bmd-form-group,
-html.mdt-form-page body .card-body .input-group {
-  display: block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  float: none !important;
-  margin: 0 0 12px 0 !important;
-  padding: 0 !important;
-  text-align: left !important;
-}
-html.mdt-form-page body .card-body label,
-html.mdt-form-page body .card-body .bmd-label-static,
-html.mdt-form-page body .card-body .bmd-label-floating,
-html.mdt-form-page body .card-body .card-title {
-  display: block !important;
-  position: static !important;
-  float: none !important;
-  width: auto !important;
-  max-width: 100% !important;
-  margin: 0 0 3px 0 !important;
-  text-align: left !important;
-  white-space: normal !important;
-}
-html.mdt-form-page body .card-body .form-control:not(.summernote):not(.note-codable),
-html.mdt-form-page body .card-body input.form-control,
-html.mdt-form-page body .card-body textarea:not(.summernote):not(.note-codable),
-html.mdt-form-page body .card-body select,
-html.mdt-form-page body .card-body .bootstrap-select,
-html.mdt-form-page body .card-body .note-editor,
-html.mdt-form-page body .card-body .note-frame {
-  width: 100% !important;
-  max-width: 100% !important;
-  display: block !important;
-  float: none !important;
-}
-html.mdt-form-page body .card-body .w-50,
-html.mdt-form-page body .card-body .w-25,
-html.mdt-form-page body .card-body .w-75 {
-  width: 100% !important;
-}
 html body textarea.summernote,
 html body .summernote,
 html body *:has(> .note-editor) > textarea,
@@ -3635,75 +4066,6 @@ html body .note-editor.codeview .note-codable {
 html body .note-frame.codeview .note-editable,
 html body .note-editor.codeview .note-editable {
   display: none !important;
-}
-html.mdt-form-page body .row {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: flex-start !important;
-  justify-content: flex-start !important;
-  width: auto !important;
-  margin: 0 -8px !important;
-}
-html.mdt-form-page body .row > [class*="col-"],
-html.mdt-form-page body .row > .col {
-  min-width: 0 !important;
-  margin: 0 !important;
-  float: none !important;
-  order: 0 !important;
-  padding: 0 8px 8px !important;
-}
-html.mdt-form-page body .card-body > .row,
-html.mdt-form-page body form > .row {
-  align-items: flex-start !important;
-}
-html.mdt-form-page body .row > .col,
-html.mdt-form-page body .row > .col-sm,
-html.mdt-form-page body .row > .col-md,
-html.mdt-form-page body .row > .col-lg,
-html.mdt-form-page body .row > .col-xl {
-  flex: 1 0 0% !important;
-  max-width: 100% !important;
-  width: auto !important;
-}
-html.mdt-form-page body .row > .col-auto,
-html.mdt-form-page body .row > .col-sm-auto,
-html.mdt-form-page body .row > .col-md-auto,
-html.mdt-form-page body .row > .col-lg-auto,
-html.mdt-form-page body .row > .col-xl-auto {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  max-width: 100% !important;
-}
-${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => {
-  const w = (n * 100 / 12).toFixed(6) + '%'
-  return `html.mdt-form-page body .row > .col-sm-${n},
-html.mdt-form-page body .row > .col-md-${n},
-html.mdt-form-page body .row > .col-lg-${n},
-html.mdt-form-page body .row > .col-xl-${n} {
-  flex: 0 0 ${w} !important;
-  max-width: ${w} !important;
-}`
-}).join('\n')}
-html.mdt-form-page body .card,
-html.mdt-form-page body .card-body {
-  width: auto !important;
-  max-width: none !important;
-  float: none !important;
-}
-html.mdt-form-page body .note-editor,
-html.mdt-form-page body .note-frame,
-html.mdt-form-page body .note-editing-area,
-html.mdt-form-page body .note-editable {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-height: 150px !important;
-  box-sizing: border-box !important;
-}
-html.mdt-form-page body #map,
-html.mdt-form-page body .map,
-html.mdt-form-page body .leaflet-container {
-  width: 100% !important;
-  max-width: 100% !important;
 }
 html body .badge:has(.font-plate),
 html body .badge:has([id^="vehiclePlateText"]),
@@ -3779,92 +4141,50 @@ html body .bg-light > *:not(.badge):not(.btn):not(input):not(select):not(textare
 .alert-success { background-color: ${p.successSoft} !important; color: ${p.successInk} !important; border: 1px solid ${p.success} !important; }
 
 html body div[data-notify="container"], html body .alert[data-notify] {
-  display: block !important;
-  padding: 6px 32px 6px 40px !important;
-  min-height: 36px !important;
-  max-width: 420px !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  background-image: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  --notice-edge: ${p.infoStrong};
+  --notice-fill: ${p.info};
+  --notice-ink: ${p.text};
+  padding: 12px 40px 12px 48px !important;
+  min-height: 58px !important;
+  max-width: min(420px, calc(100vw - 32px)) !important;
+  border: 1px solid var(--notice-edge) !important;
+  border-left: 4px solid var(--notice-edge) !important;
+  border-radius: 3px !important;
+  background: var(--notice-fill) !important;
+  color: var(--notice-ink) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.6) !important;
   z-index: 3000 !important;
 }
-html body div[data-notify="container"][style*="position"] {
-  position: fixed !important;
+html body div[data-notify="container"].alert-success, html body .alert[data-notify].alert-success { --notice-edge: ${p.success}; --notice-fill: ${p.successSoft}; --notice-ink: ${p.successInk}; }
+html body div[data-notify="container"].alert-danger, html body .alert[data-notify].alert-danger { --notice-edge: ${p.danger}; --notice-fill: ${p.dangerSoft}; --notice-ink: ${p.dangerInk}; }
+html body div[data-notify="container"].alert-warning, html body .alert[data-notify].alert-warning { --notice-edge: ${p.warning}; --notice-fill: ${p.warningSoft}; --notice-ink: ${p.warningInk}; }
+html body div[data-notify="container"]::before, html body div[data-notify="container"]::after, html body .alert[data-notify]::before, html body .alert[data-notify]::after { content: none !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"] {
+  position: absolute !important; left: 12px !important; top: 50% !important; transform: translateY(-50%) !important;
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  width: 23px !important; height: 23px !important; max-width: 23px !important; max-height: 23px !important; min-width: 0 !important; min-height: 0 !important;
+  margin: 0 !important; padding: 0 !important; font-size: 15px !important; line-height: 1 !important;
+  border: 1px solid var(--notice-edge) !important; border-radius: 50% !important;
+  color: var(--notice-edge) !important; background: transparent !important;
 }
-html body div[data-notify="container"]::before,
-html body div[data-notify="container"]::after,
-html body .alert[data-notify]::before, html body .alert[data-notify]::after {
-  display: none !important;
-  content: none !important;
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"]::before {
+  position: static !important; inset: auto !important; transform: none !important;
+  display: block !important; flex: 0 0 auto !important; margin: 0 !important; padding: 0 !important; line-height: 1 !important; text-align: center !important;
 }
-html body div[data-notify="container"].alert-success,
-html body .alert[data-notify].alert-success {
-  background-color: ${p.successSoft} !important;
-  border: 1px solid ${p.success} !important;
-  color: ${p.successInk} !important;
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"]:is(.fa-exclamation-circle, .fa-exclamation-triangle, .fa-exclamation)::before {
+  content: '' !important; width: 15px !important; height: 15px !important;
+  background: currentColor !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 15'%3E%3Crect x='6.25' y='1' width='2.5' height='8' rx='1'/%3E%3Ccircle cx='7.5' cy='12.5' r='1.5'/%3E%3C/svg%3E") center / 15px 15px no-repeat !important;
 }
-html body div[data-notify="container"].alert-danger,
-html body .alert[data-notify].alert-danger {
-  background-color: ${p.dangerSoft} !important;
-  border: 1px solid ${p.danger} !important;
-  color: ${p.dangerInk} !important;
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="title"] { display: block !important; color: var(--notice-ink) !important; font-size: 11px !important; font-weight: bold !important; line-height: 16px !important; margin: 0 0 2px !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="message"] { display: block !important; color: var(--notice-ink) !important; font-size: 11px !important; line-height: 16px !important; margin: 0 !important; overflow-wrap: anywhere !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="dismiss"] {
+  position: absolute !important; top: 50% !important; right: 8px !important; transform: translateY(-50%) !important;
+  width: 22px !important; min-width: 22px !important; min-height: 22px !important; height: auto !important;
+  border: 1px solid var(--notice-edge) !important; border-radius: 2px !important; background: transparent !important;
+  color: var(--notice-ink) !important; margin: 0 !important; padding: 0 !important; opacity: .8 !important;
 }
-html body div[data-notify="container"].alert-warning,
-html body .alert[data-notify].alert-warning {
-  background-color: ${p.warningSoft} !important;
-  border: 1px solid ${p.warning} !important;
-  color: ${p.warningInk} !important;
-}
-html body div[data-notify="container"].alert-info,
-html body .alert[data-notify].alert-info {
-  background-color: ${p.info} !important;
-  border: 1px solid ${p.infoStrong} !important;
-  color: ${p.text} !important;
-}
-html body [data-notify="icon"] {
-  position: absolute !important;
-  left: 8px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 13px !important;
-  height: 13px !important;
-  max-width: 13px !important;
-  max-height: 13px !important;
-  overflow: hidden !important;
-  font-size: 13px !important;
-  line-height: 13px !important;
-  background: none !important;
-  border: none !important;
-}
-html body [data-notify="title"] {
-  display: block !important;
-  font-weight: bold !important;
-  font-size: 12px !important;
-  line-height: 15px !important;
-  margin: 0 !important;
-}
-html body [data-notify="message"] {
-  display: block !important;
-  font-size: 12px !important;
-  line-height: 15px !important;
-  margin: 0 !important;
-}
-html body div[data-notify="container"] .close,
-html body div[data-notify="container"] button.close,
-html body [data-notify="dismiss"],
-html body .alert[data-notify] .close {
-  position: absolute !important;
-  right: 5px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  float: none !important;
-  margin: 0 !important;
-  opacity: 1 !important;
-}
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="dismiss"]:hover { opacity: 1 !important; box-shadow: inset 0 0 0 1px var(--notice-edge) !important; }
 html body .text-success, html body .text-success * { color: ${p.successInk} !important; }
 
 html body .badge-primary, html body .bg-primary,
@@ -3876,16 +4196,48 @@ html body .badge-info, html body .bg-info { background-color: ${p.info} !importa
 html body .btn-info, html body .btn.btn-info { background-color: ${p.infoStrong} !important; color: #FFFFFF !important; border: 1px solid ${p.infoStrong} !important; }
 html body .btn-info * { color: #FFFFFF !important; }
 
-::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 html body .main-panel, html body .modal, html body .modal-body, html body .table-responsive { scrollbar-gutter: stable; }
 ::-webkit-scrollbar-track { background: ${p.scrollTrack}; }
 ::-webkit-scrollbar-thumb { background: ${p.scrollThumb}; border: 1px solid ${p.border}; }
 ::-webkit-scrollbar-thumb:hover { background: ${p.scrollThumbHover}; }
 ::-webkit-scrollbar-corner { background: ${p.scrollTrack}; }
-`
+html.mdt-drag body .modal-header, html.mdt-drag body .swal2-header { touch-action: none !important; cursor: move !important; user-select: none !important; }
+html.mdt-drag body .modal.show .modal-dialog[data-mdt-dragging="1"], html.mdt-drag body .modal.in .modal-dialog[data-mdt-dragging="1"], html.mdt-drag body .swal2-popup[data-mdt-dragging="1"] { transition: transform 0s linear !important; will-change: transform !important; }
+html body .main-panel .card:not(.modal *) > .card-body > .row,
+html body .main-panel .card:not(.modal *) > .row { margin-left: 0 !important; margin-right: 0 !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+html body .main-panel .card:not(.modal *) .leaflet-container, html body .main-panel .card:not(.modal *) #map { box-sizing: border-box !important; max-width: 100% !important; }
+html body .dataTables_wrapper :is(.dataTables_length, [id$="_length"]) :is(select, option, .dropdown-toggle, .filter-option, .filter-option-inner-inner) {
+  color: ${p.text} !important; -webkit-text-fill-color: ${p.text} !important; background-color: ${p.field} !important; opacity: 1 !important;
+}
+html body .dataTables_wrapper :is(.dataTables_length, [id$="_length"]) select { appearance: auto !important; background-image: none !important; padding-right: 3px !important; }
+html body .card-header :is(.nav-tabs, .nav-pills) .nav-link, html body .card-header :is(.nav-tabs, .nav-pills) .nav-link * { color: ${p.text} !important; -webkit-text-fill-color: ${p.text} !important; }
+html.mdt-p1 body .card-header :is(.nav-tabs, .nav-pills) .nav-link, html.mdt-p1 body .card-header :is(.nav-tabs, .nav-pills) .nav-link * { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; }
+html.mdt-p1 body .card-header :is(.nav-tabs, .nav-pills) .nav-link.active, html.mdt-p1 body .card-header :is(.nav-tabs, .nav-pills) .nav-link.active * { color: #202020 !important; -webkit-text-fill-color: #202020 !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"],
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"] *,
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"]::before,
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"]::after { color: var(--notice-edge) !important; -webkit-text-fill-color: var(--notice-edge) !important; }
+html.mdt-workspace body .modal.show, html.mdt-workspace body .modal.in, html.mdt-workspace body .modal-dialog { pointer-events: none !important; }
+html.mdt-workspace body .modal-content { pointer-events: auto !important; }
+html.mdt-workspace body .swal2-container { z-index: 2900 !important; }
+html.mdt-workspace body .modal-backdrop, html body .modal-backdrop[data-mdt-workspace-backdrop] { pointer-events: none !important; opacity: 0 !important; }
+html body .modal .modal-header .close, html body .modal .modal-content > .close, html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="dismiss"] { font-size: 0 !important; line-height: 1 !important; }
+html body .modal .modal-header .close *, html body .modal .modal-content > .close *, html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="dismiss"] * { visibility: hidden !important; }
+html body .modal .modal-header .close::before, html body .modal .modal-header .close::after,
+html body .modal .modal-content > .close::before, html body .modal .modal-content > .close::after,
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="dismiss"]::before, html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="dismiss"]::after {
+  content: '' !important; display: block !important; position: absolute !important;
+  inset: 50% auto auto 50% !important; width: 10px !important; height: 2px !important; margin: 0 !important;
+  background: currentColor !important; transform: translate(-50%,-50%) rotate(45deg) !important; pointer-events: none !important;
+}
+html body .modal .modal-header .close::after, html body .modal .modal-content > .close::after, html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="dismiss"]::after { transform: translate(-50%,-50%) rotate(-45deg) !important; }
+
+`)
 }
 
-let theme = 'light'
+const SKINS = ['p1', 'aero', 'aerolapd', 'aerodark', 'off']
+let theme = 'p1'
 
 function isMdcHost() {
   try {
@@ -3912,11 +4264,617 @@ function styleEl() {
   return el
 }
 
+function buildControlCss(p) {
+  const glass = GLASS[themeNow()]
+  const menuInk = glass ? glass.hdrInk : p.text
+  const menuHighlight = glass ? glass.sel : p.sel
+  const fieldInk = glass ? glass.fieldInk : p.text
+  const fieldFace = glass ? glass.fieldBg : p.field
+  return `
+html[class] body :is(.card-header,.panel-heading,.search-bar,.search-panel,.search-container,form.form-inline):has(input.form-control):not(:where(.modal *,.note-editor *)) :is(input.form-control,select.form-control,.btn:not(.btn-collapse):not(.dropdown-item):not(.nav-link)) {
+  box-sizing: border-box !important; min-height: 26px !important; margin-top: 0 !important; margin-bottom: 0 !important;
+  padding: 3px 7px !important; font: 12px/18px Arial, sans-serif !important; vertical-align: middle !important;
+  border-width: 1px !important; border-style: solid !important; border-color: ${glass ? glass.fieldBorder : p.fieldBorder} !important;
+}
+html[class] body :is(.card-header,.panel-heading,.search-bar,.search-panel,.search-container,form.form-inline):has(input.form-control):not(:where(.modal *,.note-editor *)) :is(input.form-control,select.form-control) { height: 26px !important; }
+
+html[class] body :is(.card-header,.panel-heading) .btn:not(:where(.btn-collapse,.nav-link,.dropdown-item,.dropdown-menu *,.note-toolbar *,.note-editor *)) {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 4px !important;
+  min-height: 26px !important; height: auto !important; max-height: none !important; padding: 3px 9px !important;
+  font: 12px/18px Arial, sans-serif !important; letter-spacing: normal !important; text-transform: none !important;
+  background: linear-gradient(${GLASS[themeNow()]?.btnHi || p.panelAlt},${GLASS[themeNow()]?.btnLo || p.btnFace}) !important;
+  border: 1px solid ${GLASS[themeNow()]?.btnBorder || p.border} !important; color: ${GLASS[themeNow()]?.btnInk || p.text} !important;
+  -webkit-text-fill-color: ${GLASS[themeNow()]?.btnInk || p.text} !important; opacity: 1 !important; text-shadow: none !important; box-shadow: none !important;
+}
+html[class] body :is(.card-header,.panel-heading) .btn:not(:where(.btn-collapse,.nav-link,.dropdown-item,.dropdown-menu *,.note-toolbar *,.note-editor *)):hover { background: ${GLASS[themeNow()]?.hoverLo || p.btnHover} !important; }
+html[class] body :is(.card-header,.panel-heading) .btn:not(:where(.btn-collapse,.nav-link,.dropdown-item,.dropdown-menu *,.note-toolbar *,.note-editor *)):active { background: ${GLASS[themeNow()]?.downHi || p.btnActive} !important; box-shadow: inset 0 1px 3px #0005 !important; }
+html[class] body :is(.card-header,.panel-heading) .btn:is(.btn-primary,.btn-danger):not(.btn-collapse) { background: ${p.danger} !important; color: #FFF !important; -webkit-text-fill-color: #FFF !important; }
+html[class] body :is(.card-header,.panel-heading) .btn:is(.btn-primary,.btn-danger):not(.btn-collapse):hover { filter: brightness(1.15); }
+html[class] body :is(.card-header,.panel-heading) .btn:is(.btn-primary,.btn-danger):not(.btn-collapse):active { filter: brightness(.85); }
+html[class] body :is(.card-header,.panel-heading) .btn:not(:where(.btn-collapse,.nav-link,.dropdown-item,.dropdown-menu *,.note-toolbar *,.note-editor *)) *:not(:where(.ripple-container,.ripple-container *)) { color: inherit !important; -webkit-text-fill-color: inherit !important; opacity: 1 !important; text-shadow: none !important; }
+
+html body :is(.card-header,.panel-heading) .btn .ripple-container .ripple-decorator { border-radius: 50% !important; }
+
+html body .note-modal.modal > .modal-dialog > .modal-content > .modal-header { position: relative !important; display: flex !important; align-items: center !important; min-height: 30px !important; padding: 6px 44px 6px 10px !important; }
+html body .note-modal.modal .modal-body { padding: 12px !important; }
+html body .note-modal.modal .modal-body .form-group { margin: 0 0 10px !important; padding: 0 !important; }
+html body .note-modal.modal .modal-body .note-form-label { position: static !important; display: block !important; transform: none !important; margin: 0 0 5px !important; line-height: 17px !important; font-size: 12px !important; color: ${p.text} !important; }
+html body .note-modal.modal .modal-body input.form-control:not([type="file"]) { width: 100% !important; height: 30px !important; min-height: 30px !important; padding: 4px 7px !important; margin: 0 !important; background: ${GLASS[themeNow()]?.fieldBg || p.field} !important; color: ${GLASS[themeNow()]?.fieldInk || p.text} !important; -webkit-text-fill-color: ${GLASS[themeNow()]?.fieldInk || p.text} !important; border: 1px solid ${p.fieldBorder} !important; box-shadow: none !important; font: 12px/20px Arial, sans-serif !important; }
+html body .note-modal.modal .modal-body input.form-control:focus { border-color: ${p.fieldBorder} !important; outline: 1px solid ${p.fieldBorder} !important; outline-offset: 1px !important; background-image: none !important; }
+html body .note-modal.modal .modal-footer { display: flex !important; justify-content: flex-end !important; align-items: center !important; gap: 8px !important; margin: 0 !important; padding: 8px 12px !important; }
+html body .note-modal.modal .modal-footer .note-btn.btn-primary { width: auto !important; height: auto !important; min-height: 28px !important; max-height: none !important; padding: 3px 12px !important; margin: 0 !important; font: bold 12px/20px Arial, sans-serif !important; opacity: 1 !important; background: ${p.danger} !important; border: 1px solid ${p.danger} !important; color: ${p.dangerText} !important; -webkit-text-fill-color: ${p.dangerText} !important; box-shadow: none !important; }
+html body .note-modal.modal .modal-footer .note-btn.btn-primary:not(:disabled):hover { filter: brightness(1.15); }
+html body .note-modal.modal .modal-footer .note-btn.btn-primary:not(:disabled):active { filter: brightness(.85); }
+html body .note-modal.modal .modal-footer .note-btn.btn-primary:disabled { background: ${p.btnFace} !important; border-color: ${p.border} !important; color: ${p.textMuted} !important; -webkit-text-fill-color: ${p.textMuted} !important; cursor: default !important; filter: none !important; }
+html body .note-modal.modal .modal-header .close::before, html body .note-modal.modal .modal-header .close::after { content: '' !important; display: block !important; position: absolute !important; left: 50% !important; top: 50% !important; width: 10px !important; height: 2px !important; margin: 0 !important; background: #FFF !important; transform: translate(-50%,-50%) rotate(45deg) !important; pointer-events: none !important; }
+html body .note-modal.modal .modal-header .close::after { transform: translate(-50%,-50%) rotate(-45deg) !important; }
+
+html body .card > .card-header .btn-collapse, html body .panel > .panel-heading .btn-collapse {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: auto !important;
+  min-width: 18px !important;
+  min-height: 16px !important;
+  max-height: none !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+html body .card > .card-header .btn-collapse[data-mdt-collapse], html body .panel > .panel-heading .btn-collapse[data-mdt-collapse] { font-size: 0 !important; }
+html body .btn-collapse[data-mdt-collapse] > * { visibility: hidden !important; }
+html body .btn-collapse[data-mdt-collapse]::before, html body .btn-collapse[data-mdt-collapse]::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 50% auto auto 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 8px !important;
+  height: 2px !important;
+  margin: 0 !important;
+  background: currentColor !important;
+  pointer-events: none !important;
+}
+html body .btn-collapse[data-mdt-collapse="plus"]::after { width: 2px !important; height: 8px !important; }
+html body .btn-collapse[data-mdt-collapse="minus"]::after { display: none !important; }
+html body .card > .card-header .btn-collapse > *, html body .panel > .panel-heading .btn-collapse > * {
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  transform: none !important;
+}
+html[class] body table.table:has(> thead):not(:where([data-mdt-paper], [data-mdt-paper] *)) > tbody > tr > :is(th,td) {
+  background-color: ${p.row} !important; background-image: none !important; color: ${p.text} !important;
+  font-size: 12px !important; font-weight: normal !important; letter-spacing: normal !important;
+  white-space: normal !important; overflow-wrap: anywhere !important; padding: 6px 8px !important;
+  border: 1px solid ${p.borderLite} !important; vertical-align: middle !important;
+}
+html[class] body table.table:has(> thead):not(:where([data-mdt-paper], [data-mdt-paper] *)) > tbody > tr:nth-child(even) > :is(th,td) { background-color: ${p.zebra} !important; }
+html[class] body table.table:has(> thead):not(:where([data-mdt-paper], [data-mdt-paper] *)) > tbody > tr > th :not(:where(.badge,.badge *,[class*="text-"],[class*="text-"] *,a,.btn,.btn *)) { color: inherit !important; }
+html body #warrant > .row > .text-right:has(> .badge) { display: flex !important; flex-direction: column !important; align-items: flex-end !important; gap: 4px !important; }
+html body #warrant > .row > .text-right:has(> .badge) > br { display: none !important; }
+html body #warrant > .row > .text-right > .badge { width: 90px !important; min-width: 0 !important; max-width: 100% !important; padding: 3px 7px !important; margin: 0 !important; font-size: 11px !important; line-height: 15px !important; text-align: center !important; }
+html body #warrant > .row > .text-right > .badge > * { font: inherit !important; margin: 0 !important; padding: 0 !important; }
+html body #PostArrestTable { table-layout: fixed !important; width: 100% !important; }
+html body #PostArrestTable > thead > tr > th { white-space: normal !important; overflow-wrap: anywhere !important; padding: 6px 8px !important; }
+html body #PostArrestTable > thead > tr > th:first-child { width: 7% !important; }
+html body #PostArrestTable > thead > tr > th:nth-child(2) { width: 20% !important; }
+html body #PostArrestTable > thead > tr > th:nth-child(3) { width: 17% !important; }
+html body #PostArrestTable > thead > tr > th:nth-child(4) { width: 30% !important; }
+html body #PostArrestTable > thead > tr > th:nth-child(n+5) { width: 13% !important; }
+
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item {
+  display: flex !important; align-items: center !important; justify-content: flex-start !important;
+  text-align: left !important; margin: 0 !important; padding: 3px 8px !important; min-height: 22px !important; border: 0 !important;
+  box-sizing: border-box !important; line-height: 16px !important;
+}
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge,
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge * {
+  font-size: 10px !important; font-weight: normal !important; line-height: 14px !important;
+  letter-spacing: 0 !important; text-transform: none !important; text-align: left !important;
+}
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge {
+  display: inline-block !important; width: auto !important; min-width: 0 !important; margin: 0 !important;
+  padding: 1px 4px !important; border-radius: 0 !important; flex: 0 0 auto !important; border-width: 1px !important; border-style: solid !important; box-sizing: border-box !important;
+}
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge :is(h1,h2,h3,h4,h5,h6,p) { margin: 0 !important; padding: 0 !important; }
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item :is(h1,h2,h3,h4,h5,h6,p) { margin: 0 !important; padding: 0 !important; font-size: 10px !important; font-weight: normal !important; line-height: 14px !important; }
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge { background-image: none !important; text-shadow: none !important; box-shadow: none !important; }
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item :is(.badge-danger,.badge-primary) { background-color: ${p.danger} !important; color: ${p.dangerText} !important; -webkit-text-fill-color: ${p.dangerText} !important; }
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge-warning { background-color: ${p.warning} !important; color: ${p.warningText} !important; -webkit-text-fill-color: ${p.warningText} !important; }
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item :is(.badge-dark,.badge-secondary) { background-color: ${p.panelAlt} !important; color: ${p.text} !important; -webkit-text-fill-color: ${p.text} !important; }
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge-success { background-color: ${p.success} !important; color: ${p.successText} !important; -webkit-text-fill-color: ${p.successText} !important; }
+html body .dropdown-menu:not(:where(.note-editor *, .bootstrap-select *)) .dropdown-item .badge * { color: inherit !important; -webkit-text-fill-color: inherit !important; }
+
+
+html body .note-editor .note-toolbar > :is(.note-btn-group,.btn-group) { display: inline-flex !important; align-items: center !important; gap: 1px !important; margin: 0 3px 0 0 !important; padding: 0 !important; vertical-align: middle !important; }
+html body .note-editor .note-toolbar :is(.note-btn-group,.btn-group) > button.note-btn:not(:where(.dropdown-menu *, .note-dropdown-menu *)) {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  box-sizing: border-box !important; width: auto !important; min-width: 26px !important; height: auto !important; min-height: 26px !important; max-height: none !important;
+  padding: 1px 5px !important; margin: 0 !important; font-size: 11px !important; line-height: 20px !important; vertical-align: middle !important;
+}
+html body .note-editor .note-toolbar button.note-btn > i { font-size: 12px !important; line-height: 20px !important; margin: 0 !important; }
+html body .note-editor .note-toolbar .note-current-fontname { font-size: 11px !important; line-height: 20px !important; }
+html body .note-editor .note-toolbar button.dropdown-toggle {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  box-sizing: border-box !important; min-width: 24px !important; width: auto !important;
+  padding: 1px 5px !important; gap: 4px !important; transform: none !important;
+}
+html body .note-editor .note-toolbar button.dropdown-toggle::after {
+  position: static !important; inset: auto !important; float: none !important;
+  transform: none !important; margin: 0 !important; flex: 0 0 auto !important;
+}
+html body .modal[data-mdt-minimized] { visibility: hidden !important; pointer-events: none !important; }
+html body .modal .modal-content .modal-header > button.mdt-minimize {
+  position: absolute !important; right: 68px !important; top: 50% !important; transform: translateY(-50%) !important;
+  width: 28px !important; min-width: 28px !important; height: 22px !important; min-height: 22px !important;
+  margin: 0 !important; padding: 0 !important; border: 1px solid ${p.border} !important; border-radius: 2px !important;
+  box-sizing: border-box !important; background: ${p.btnFace} !important; color: ${p.text} !important; cursor: pointer !important;
+}
+html body .modal-header > .mdt-minimize::before { content: '' !important; position: absolute !important; width: 10px !important; height: 2px !important; left: 50% !important; top: 65% !important; transform: translate(-50%,-50%) !important; background: currentColor !important; }
+html body .modal .modal-content .modal-header > .mdt-minimize:hover { background: ${p.btnHover} !important; }
+html body .modal .modal-content .modal-header > .mdt-minimize:active { background: ${p.btnActive} !important; box-shadow: inset 0 1px 3px #0005 !important; }
+html body .modal-header .modal-title:has(.close) { position: static !important; }
+html body .modal-header:has(> .mdt-maximize) { padding-right: 108px !important; min-height: 30px !important; }
+html body .modal .modal-content .modal-header :is(button.mdt-maximize, .close) {
+  position: absolute !important; top: 50% !important; transform: translateY(-50%) !important;
+  width: 28px !important; min-width: 28px !important; height: 22px !important; min-height: 22px !important;
+  padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;
+  border: 1px solid ${p.border} !important; border-radius: 2px !important;
+  font-size: 0 !important; line-height: 1 !important; cursor: pointer !important;
+}
+html body .modal .modal-content .modal-header > button.mdt-maximize { right: 36px !important; background: ${p.btnFace} !important; color: ${p.text} !important; }
+html body .modal .modal-content .modal-header .close { right: 4px !important; background: #B72720 !important; color: #FFFFFF !important; opacity: 1 !important; }
+html body .modal .modal-content .modal-header > button.mdt-maximize:hover { background: ${p.btnHover} !important; }
+html body .modal .modal-content .modal-header .close:hover { background: #DF352B !important; }
+html body .modal .modal-content .modal-header > button.mdt-maximize:active { background: ${p.btnActive} !important; box-shadow: inset 0 1px 3px #0005 !important; }
+html body .modal .modal-content .modal-header .close:active { background: #8E1915 !important; box-shadow: inset 0 1px 3px #0005 !important; }
+html body .modal-header > .mdt-maximize::before {
+  content: '' !important; display: block !important; width: 12px !important; height: 10px !important;
+  margin: 0 !important; position: absolute !important; left: 50% !important; top: 50% !important;
+  transform: translate(-50%,-50%) !important; box-sizing: border-box !important; border: 1px solid currentColor !important; border-top-width: 3px !important;
+}
+html body [data-mdt-maximized] .mdt-maximize::before { width: 10px !important; height: 8px !important; transform: translate(calc(-50% - 2px),calc(-50% + 2px)) !important; background: ${p.btnFace} !important; z-index: 1 !important; }
+html body [data-mdt-maximized] .mdt-maximize::after { content: '' !important; position: absolute !important; width: 10px !important; height: 8px !important; left: 50% !important; top: 50% !important; transform: translate(calc(-50% + 1px),calc(-50% - 1px)) !important; box-sizing: border-box !important; border: 1px solid currentColor !important; border-top-width: 3px !important; }
+@media screen {
+html body .modal-header:has(> .mdt-maximize) { display: flex !important; align-items: center !important; }
+html body .modal-header:has(> .mdt-maximize) .modal-title { margin: 0 !important; align-self: center !important; line-height: 18px !important; min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+}
+html body [data-mdt-maximized] .mdt-grip { display: none !important; }
+html.mdt-form-page body .content .btn:not(:where(.modal *, .note-editor *, .btn-block, .btn-fab, .btn-just-icon, .card-header *, [data-mdt-paper] *, .bootstrap-select *)) {
+  height: auto !important; min-height: 24px !important; padding: 3px 8px !important;
+  width: auto !important; min-width: 0 !important; line-height: 16px !important; font-size: 12px !important;
+}
+html[class].mdt-form-page body .content .btn.btn-primary:not(:where(.modal *, .note-editor *, .dropdown-menu *, .bootstrap-select *, [data-mdt-paper] *)) { background: linear-gradient(${glass?.btnHi || p.danger},${glass?.btnLo || p.danger}) !important; border: 1px solid ${glass?.btnBorder || p.danger} !important; color: ${glass?.btnInk || p.dangerText} !important; -webkit-text-fill-color: ${glass?.btnInk || p.dangerText} !important; }
+html[class].mdt-form-page body .content .btn.btn-primary:not(:where(.modal *, .note-editor *, .dropdown-menu *, .bootstrap-select *, [data-mdt-paper] *)):hover { background: linear-gradient(${glass?.hoverHi || p.danger},${glass?.hoverLo || p.danger}) !important; filter: brightness(1.08); }
+html[class].mdt-form-page body .content .btn.btn-primary:not(:where(.modal *, .note-editor *, .dropdown-menu *, .bootstrap-select *, [data-mdt-paper] *)):active { background: linear-gradient(${glass?.downHi || p.danger},${glass?.downLo || p.danger}) !important; box-shadow: inset 0 1px 3px #0005 !important; }
+html[class].mdt-form-page body .content .badge:not(:where(.modal *, .note-editor *, .dropdown-menu *, [data-mdt-paper] *, table *)) { padding: 2px 6px !important; font-size: 11px !important; line-height: 16px !important; background-image: none !important; border-radius: ${glass?2:0}px !important; }
+html[class].mdt-form-page body .content .badge:not([class*="badge-"]):not(:where(.modal *, .note-editor *, .dropdown-menu *, [data-mdt-paper] *, table *)) { background-color: ${glass?.panelLo || p.chip} !important; border: 1px solid ${glass?.panelBorder || p.chipBorder} !important; color: ${glass?.ink || p.text} !important; }
+html body [data-mdt-lookup-action="1"] {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  position: relative !important; box-sizing: border-box !important; padding: 0 !important;
+  width: 28px !important; min-width: 28px !important; max-width: 28px !important;
+  height: 30px !important; flex: 0 0 28px !important; vertical-align: middle !important;
+}
+html body [data-mdt-lookup-action="1"] > :is(h4, h3) {
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  flex: 0 0 auto !important; width: auto !important; height: auto !important;
+  min-height: 0 !important; margin: 0 !important; padding: 0 !important;
+  position: static !important; transform: none !important; line-height: 1 !important;
+}
+html body [data-mdt-lookup-action="1"] :is(i, .fa, .material-icons),
+html body [data-mdt-lookup-action="1"].fa::before {
+  position: static !important; inset: auto !important; transform: none !important;
+  display: block !important; width: 1em !important; height: auto !important;
+  margin: 0 !important; padding: 0 !important; line-height: 1 !important; text-align: center !important;
+}
+html body [data-mdt-lookup-action="1"] .fa::before {
+  position: static !important; inset: auto !important; transform: none !important;
+  display: block !important; width: 100% !important; margin: 0 !important; line-height: 1 !important;
+}
+html body .note-editor .note-toolbar :is(.dropdown-menu, .note-dropdown-menu):not(:has(.note-color-palette)) {
+  background: ${p.panel} !important; color: ${p.text} !important;
+  border: 1px solid ${p.border} !important; text-shadow: none !important;
+  text-transform: none !important; letter-spacing: normal !important;
+}
+html body .note-editor .note-toolbar :is(.dropdown-menu, .note-dropdown-menu):not(:has(.note-color-palette)) :is(a, button.dropdown-item, li, span, i) {
+  color: ${p.text} !important; -webkit-text-fill-color: ${p.text} !important;
+  background-color: transparent !important; text-shadow: none !important;
+  text-transform: none !important; letter-spacing: normal !important; text-decoration: none !important;
+}
+html body .note-editor .note-toolbar :is(.dropdown-menu, .note-dropdown-menu) :is(a, button.dropdown-item):is(:hover, :focus, .active) {
+  background: ${p.sel} !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important;
+}
+html body .note-editor .note-toolbar :is(.dropdown-menu, .note-dropdown-menu) :is(a, button.dropdown-item):is(:hover, :focus, .active) * {
+  color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important;
+}
+html body .modal[data-mdt-vanilla="1"] .modal-body .btn:not(:where(.note-editor *, .btn-collapse, .btn-just-icon, .btn-fab, .close, [data-mdt-paper] *)) {
+  box-sizing: border-box !important; width: auto !important; min-width: 0 !important; max-width: 100% !important;
+  height: auto !important; min-height: 28px !important; padding: 3px 10px !important;
+  font-size: 12px !important; line-height: 20px !important;
+}
+html body .modal[data-mdt-vanilla="1"] .modal-body .input-group > .bootstrap-select.form-control {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  padding: 0 !important; margin: 0 !important; height: 30px !important; min-height: 30px !important;
+}
+html body .modal[data-mdt-vanilla="1"] .modal-body .input-group > .bootstrap-select > .dropdown-toggle {
+  width: 100% !important; height: auto !important; min-height: 30px !important; margin: 0 !important;
+  padding: 4px 8px !important; line-height: 20px !important; border-radius: 0 !important;
+}
+html body .modal[data-mdt-vanilla="1"] .modal-body .input-group:has(> .bootstrap-select) > .input-group-prepend {
+  margin: 0 -1px 0 0 !important; padding: 0 !important;
+}
+html body .modal[data-mdt-vanilla="1"] .modal-body .input-group:has(> .bootstrap-select) .input-group-text {
+  box-sizing: border-box !important; height: 30px !important; min-height: 30px !important; margin: 0 !important;
+  padding: 4px 8px !important; line-height: 20px !important; border-radius: 0 !important;
+}
+html body .modal[data-mdt-vanilla="1"] .modal-body .chargeWrapper .remove_button {
+  box-sizing: border-box !important; width: 28px !important; min-width: 0 !important; max-width: 100% !important;
+  height: auto !important; min-height: 30px !important; padding: 0 !important; margin: 0 !important; line-height: 28px !important;
+}
+html body .modal[data-mdt-vanilla="1"] .modal-body .bootstrap-select > .dropdown-toggle :is(.filter-option, .filter-option-inner, .filter-option-inner-inner) {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  color: inherit !important; -webkit-text-fill-color: inherit !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body .row {
+  display: flex !important; flex-wrap: wrap !important; align-items: flex-start !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body .row > [class*="col-"] { min-width: 0 !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body .input-group {
+  display: flex !important; flex-wrap: nowrap !important; align-items: flex-start !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body .input-group > .form-control { min-width: 0 !important; flex: 1 1 0 !important; width: 1% !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body .input-group > :is(.input-group-addon, .input-group-prepend, .input-group-append) { flex: 0 0 auto !important; }
+html body .modal[data-mdt-native-form="1"] textarea[data-mdt-src-hidden="1"] { display: none !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"] { box-sizing: border-box !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"]::before { align-self: center !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"][data-mdt-notice-mark="1"] > * { display: none !important; }
+html body :is(div[data-notify="container"], .alert[data-notify]) [data-notify="icon"][data-mdt-notice-mark="1"]::before {
+  content: '' !important; position: static !important; inset: auto !important; transform: none !important;
+  display: block !important; flex: 0 0 15px !important; width: 15px !important; height: 15px !important;
+  margin: 0 !important; padding: 0 !important; background: currentColor !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 15'%3E%3Crect x='6.25' y='1' width='2.5' height='8' rx='1'/%3E%3Ccircle cx='7.5' cy='12.5' r='1.5'/%3E%3C/svg%3E") center / 15px 15px no-repeat !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body { padding: 12px !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body > .form-group { margin: 0 0 16px !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body h6 { margin: 0 0 10px !important; line-height: 18px !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body .btn:where(:not(.note-btn):not(.note-color-btn)) {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 4px !important;
+  width: auto !important; min-width: 0 !important; max-width: 100% !important;
+  height: auto !important; min-height: 28px !important; padding: 3px 10px !important; margin: 0 !important;
+  font-size: 12px !important; line-height: 20px !important; white-space: nowrap !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body .btn > i { margin: 0 !important; line-height: 1 !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body :is(input.form-control, select.form-control, select.custom-select, .input-group-text) {
+  box-sizing: border-box !important; height: 30px !important; min-height: 30px !important; max-height: 30px !important;
+  padding: 4px 8px !important; margin: 0 !important; line-height: 20px !important; font-size: 12px !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body .input-group-text { display: flex !important; align-items: center !important; justify-content: center !important; min-width: 30px !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body .input-group-prepend { align-self: flex-start !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body > .row:first-child { margin: 0 0 14px !important; gap: 12px !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body > .row:first-child > .col-3 { flex: 0 1 auto !important; width: auto !important; max-width: none !important; padding: 0 !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body > .row:first-child > .col-3:empty { display: none !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body > .row:first-child .form-group { margin: 0 !important; }
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] {
+  display: grid !important; grid-template-columns: minmax(0, 420px) minmax(0, 1fr) !important; gap: 10px 16px !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] > h6 { grid-column: 1 / -1 !important; margin: 0 !important; }
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] > :is(.input-group, .row) {
+  grid-column: 1 !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] > .row > .col-4 {
+  flex: 1 1 100% !important; width: 100% !important; max-width: 100% !important; padding: 0 !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] > .col-auto {
+  grid-column: 2 !important; grid-row: 2 / span 4 !important; width: auto !important; margin: 0 !important; padding: 0 !important; justify-self: start !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] .custom-select { width: 100% !important; }
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-situation="1"] {
+  display: grid !important; grid-template-columns: minmax(160px, 1fr) minmax(130px, .8fr) minmax(180px, 2fr) !important;
+  gap: 10px !important; margin: 0 0 12px !important; align-items: start !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-situation="1"] > .form-group {
+  width: auto !important; max-width: none !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-situation="1"] label {
+  position: static !important; display: block !important; margin: 0 0 4px !important; padding: 0 !important; line-height: 16px !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body .input-group-addon { padding: 8px !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body [data-mdt-warrant-entry] {
+  display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(100px, .35fr) 28px !important;
+  gap: 8px !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 0 8px !important; align-items: start !important;
+}
+html body .modal[data-mdt-native-form="1"] .modal-body [data-mdt-warrant-entry="evidence"] { grid-template-columns: minmax(0, 1fr) 28px !important; }
+html body .modal[data-mdt-native-form="1"] .modal-body [data-mdt-warrant-entry] > [class*="col-"] {
+  width: 100% !important; max-width: 100% !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-entry] .remove_button {
+  width: 28px !important; min-width: 28px !important; height: auto !important; min-height: 30px !important; padding: 0 !important;
+}
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-entry] .bootstrap-select { width: 1% !important; min-width: 0 !important; flex: 1 1 0 !important; }
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-entry] .bootstrap-select > .dropdown-toggle { width: 100% !important; height: 30px !important; }
+html body .modal[data-mdt-native-form="1"] .bootstrap-select.form-control { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+html body .modal[data-mdt-native-form="1"] .bootstrap-select > .dropdown-toggle {
+  background: linear-gradient(${p.panelAlt}, ${p.btnFace}) !important;
+  border: 1px solid ${p.fieldBorder} !important; color: ${p.text} !important;
+  height: auto !important; min-height: 30px !important; box-shadow: none !important;
+}
+html body .modal[data-mdt-native-form="1"] .bootstrap-select > .dropdown-toggle :is(.filter-option, .filter-option-inner, .filter-option-inner-inner) {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  color: inherit !important; -webkit-text-fill-color: inherit !important;
+}
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu {
+  background: ${glass ? glass.menuBg : p.panel} !important; color: ${menuInk} !important; border-color: ${p.border} !important;
+  text-shadow: none !important; box-shadow: 0 3px 10px rgba(0,0,0,.22) !important;
+}
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu :is(.dropdown-item, .text, .dropdown-header, .no-results) {
+  color: ${menuInk} !important; -webkit-text-fill-color: ${menuInk} !important; background: transparent !important; text-shadow: none !important;
+}
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu :is(.dropdown-item:is(:hover, :focus, .active, .selected), li.selected > .dropdown-item, .dropdown-header) {
+  background: ${menuHighlight} !important; color: ${menuInk} !important; -webkit-text-fill-color: ${menuInk} !important;
+}
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu .dropdown-item:is(:hover, :focus, .active, .selected) .text,
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu li.selected > .dropdown-item .text {
+  color: ${menuInk} !important; -webkit-text-fill-color: ${menuInk} !important;
+}
+html body :is(.bootstrap-select, .bs-container) .bs-searchbox input.form-control {
+  background: ${fieldFace} !important; color: ${fieldInk} !important; -webkit-text-fill-color: ${fieldInk} !important;
+  border: 1px solid ${glass ? glass.fieldBorder : p.fieldBorder} !important; box-shadow: none !important; opacity: 1 !important;
+}
+html body :is(.bootstrap-select, .bs-container) .bs-searchbox input.form-control::placeholder {
+  color: ${fieldInk} !important; -webkit-text-fill-color: ${fieldInk} !important; opacity: .65 !important;
+}
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu .badge {
+  display: inline-block !important; box-sizing: border-box !important; min-width: 28px !important;
+  font-size: 10px !important; line-height: 14px !important; font-weight: bold !important;
+  padding: 1px 4px !important; text-align: center !important; text-shadow: none !important; letter-spacing: 0 !important;
+  color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; background-image: none !important;
+}
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu :is(.badge-danger, .badge-primary) { background-color: #B51F18 !important; }
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu .badge-success { background-color: #2E7D32 !important; }
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu .badge-info { background-color: #126A8B !important; }
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu .badge-light { background-color: #E6E6E6 !important; color: #111111 !important; -webkit-text-fill-color: #111111 !important; }
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu .badge-warning { background-color: #E5AA20 !important; color: #111111 !important; -webkit-text-fill-color: #111111 !important; }
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu :is(.badge-dark, .badge-secondary) { background-color: #343A40 !important; }
+html body :is(.bootstrap-select, .bs-container) .dropdown-menu .badge * { color: inherit !important; -webkit-text-fill-color: inherit !important; font: inherit !important; }
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-entry] .note-editor { width: 1% !important; min-width: 0 !important; flex: 1 1 0 !important; }
+html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-entry] .note-editable { min-height: 120px !important; }
+html body .modal[data-mdt-native-form="1"] .input-group-prepend:has(.fa-search) { display: none !important; }
+html body .card-license :is(.btn-group, .dropdown, .dropup) { position: relative !important; }
+html body .card-license .dropdown-menu { display: none !important; text-align: left !important; padding: 8px !important; }
+html body .card-license :is(.show, .open) > .dropdown-menu { display: block !important; }
+html body .card-profile :is(.characterDetailsTitle, .characterDetailsValue) {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  padding: 0 !important; margin: 0 !important; font-size: 12px !important; line-height: 18px !important;
+}
+html body [data-mdt-profile-tail="1"] { display: none !important; }
+html body [id="profile-element-vehicles"] > span > .row {
+  margin-left: 0 !important; margin-right: 0 !important; width: auto !important; max-width: 100% !important; box-sizing: border-box !important;
+}
+html body .card.card-stats:has(> .card-header:only-child) {
+  padding: 0 !important; min-height: 0 !important; border: 0 !important;
+  background: transparent !important; box-shadow: none !important;
+}
+html body .card.card-stats:has(> .card-header:only-child) > .card-header { margin: 0 !important; }
+@media (max-width: 650px) {
+  html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-situation="1"] { grid-template-columns: minmax(0, 1fr) !important; }
+  html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] { grid-template-columns: minmax(0, 1fr) !important; }
+  html body .modal[data-mdt-native-form="1"] [data-mdt-warrant-suspect="1"] > .col-auto { grid-column: 1 !important; grid-row: auto !important; }
+}
+`
+}
+
+const profileStyles = new Map()
+
+function profileStyle(node, properties) {
+  if (!profileStyles.has(node)) profileStyles.set(node, new Map())
+  const saved = profileStyles.get(node)
+  Object.entries(properties).forEach(([key, value]) => {
+    if (!saved.has(key)) saved.set(key, [node.style.getPropertyValue(key), node.style.getPropertyPriority(key)])
+    if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value, 'important')
+  })
+}
+
+function restoreProfileDetails() {
+  document.querySelectorAll('[data-mdt-profile-tail]').forEach((node) => node.removeAttribute('data-mdt-profile-tail'))
+  profileStyles.forEach((properties, node) => {
+    properties.forEach(([value, priority], key) => {
+      if (value) node.style.setProperty(key, value, priority)
+      else node.style.removeProperty(key)
+    })
+    node.removeAttribute('data-mdt-profile-column')
+  })
+  profileStyles.clear()
+}
+
+function fixProfileDetails() {
+  if (themeNow() === 'off') { restoreProfileDetails(); return }
+  const tails = new Set()
+  profileStyles.forEach((_properties, node) => { if (!node.isConnected) profileStyles.delete(node) })
+  document.querySelectorAll('.card-profile').forEach((card) => {
+    const titles = Array.from(card.querySelectorAll('.characterDetailsTitle'))
+    const values = Array.from(card.querySelectorAll('.characterDetailsValue'))
+    if (titles.length < 2 || titles.length !== values.length) return
+    const labelColumn = titles[0].parentElement
+    const valueColumn = values[0].parentElement
+    const separated = labelColumn !== valueColumn && labelColumn.parentElement === valueColumn.parentElement && titles.every((node) => node.parentElement === labelColumn) && values.every((node) => node.parentElement === valueColumn)
+    const alternating = labelColumn === valueColumn && titles.every((node) => node.parentElement === labelColumn) && values.every((node) => node.parentElement === valueColumn)
+    if (!separated && !alternating) return
+    for (const column of [labelColumn,valueColumn]) column.querySelectorAll(':scope > hr.style-hr-no-divider').forEach(node=>tails.add(node))
+    const paired = values.slice()
+    const jailIndex = titles.findIndex((node) => /jail\s*time/i.test(flatText(node)))
+    const partnerIndex = titles.findIndex((node) => /^partner\s*:?$/i.test(flatText(node)))
+    const duration = values.find((node) => node.matches('[id*="jail" i]') || node.querySelector('[id*="jail" i]') || /\d+\s*(?:years?|months?|days?|hours?|minutes?|seconds?)\b/i.test(flatText(node)))
+    if (jailIndex >= 0 && partnerIndex >= 0 && duration && paired[jailIndex] !== duration && paired[partnerIndex] === duration) {
+      paired[partnerIndex] = paired[jailIndex]
+      paired[jailIndex] = duration
+    }
+    const pointsIndex = titles.findIndex((node) => /^criminal\s*points\s*:?$/i.test(flatText(node)))
+    if (pointsIndex === titles.length - 1) {
+      for (const field of [titles[pointsIndex], paired[pointsIndex]]) {
+        const empty = []
+        let node = field.nextElementSibling
+        while (node && !flatText(node) && node.matches('hr, br, div, span, p') && Array.from(node.querySelectorAll('*')).every((child) => child.matches('hr, br, div, span, p'))) {
+          empty.push(node)
+          node = node.nextElementSibling
+        }
+        if (!node && empty.some((candidate) => candidate.matches('hr') || candidate.querySelector('hr'))) empty.forEach((candidate) => tails.add(candidate))
+      }
+    }
+    if (separated) {
+      for (const column of [labelColumn, valueColumn]) {
+        profileStyle(column, { display: 'grid', 'grid-template-columns': 'minmax(0, 1fr)', 'align-content': 'start', 'row-gap': '4px' })
+        column.dataset.mdtProfileColumn = '1'
+      }
+    } else {
+      profileStyle(labelColumn, { display: 'grid', 'grid-template-columns': 'minmax(90px, .9fr) minmax(0, 1fr)', 'column-gap': '8px', 'row-gap': '4px' })
+      labelColumn.dataset.mdtProfileColumn = '1'
+    }
+    titles.forEach((title, index) => {
+      profileStyle(title, { 'grid-row': String(index + 1), 'grid-column': '1', 'min-width': '0', 'align-self': 'start', float: 'none', width: 'auto' })
+      profileStyle(paired[index], { 'grid-row': String(index + 1), 'grid-column': separated ? '1' : '2', 'min-width': '0', 'align-self': 'start', float: 'none', width: 'auto', 'overflow-wrap': 'anywhere' })
+    })
+    if (separated) {
+      const heights = titles.map((title, index) => Math.max(title.getBoundingClientRect().height, paired[index].getBoundingClientRect().height) + 'px').join(' ')
+      profileStyle(labelColumn, { 'grid-template-rows': heights })
+      profileStyle(valueColumn, { 'grid-template-rows': heights })
+    }
+  })
+  document.querySelectorAll('[data-mdt-profile-tail]').forEach((node) => { if (!tails.has(node)) node.removeAttribute('data-mdt-profile-tail') })
+  tails.forEach((node) => node.setAttribute('data-mdt-profile-tail', '1'))
+}
+
+function modalScrollCss(p) {
+  return `
+html body :is(.bootstrap-select,.bs-container) .dropdown-menu :is(.ps-scrollbar-x-rail,.ps-scrollbar-y-rail,.ps-scrollbar-x,.ps-scrollbar-y,.ps__rail-x,.ps__rail-y,.ps__thumb-x,.ps__thumb-y) { display: none !important; pointer-events: none !important; }
+html body :is(.bootstrap-select, .bs-container) div.inner::-webkit-scrollbar, html body :is(.bootstrap-select, .bs-container) .dropdown-menu > div.inner[data-mdt-picker-list]::-webkit-scrollbar { display: block !important; width: 10px !important; height: 10px !important; }
+html body :is(.bootstrap-select, .bs-container) div.inner::-webkit-scrollbar-track { background: ${p.scrollTrack} !important; }
+html body :is(.bootstrap-select, .bs-container) div.inner::-webkit-scrollbar-thumb { background: ${p.scrollThumb} !important; border: 1px solid ${p.border} !important; border-radius: 0 !important; }
+html body :is(.bootstrap-select, .bs-container) div.inner::-webkit-scrollbar-thumb:hover { background: ${p.scrollThumbHover} !important; }
+html body .modal .modal-body:is(.ps-container, .modal-scroll) { overflow-y: auto !important; scrollbar-gutter: stable; overscroll-behavior: contain; }
+html body .modal .modal-body::-webkit-scrollbar { display: block !important; width: ${themeNow().startsWith('aero') ? 17 : 8}px !important; height: ${themeNow().startsWith('aero') ? 17 : 8}px !important; }
+html body .modal .modal-body::-webkit-scrollbar-track { background: ${p.scrollTrack} !important; }
+html body .modal .modal-body::-webkit-scrollbar-thumb { background: ${p.scrollThumb} !important; border: 1px solid ${p.border} !important; }
+html body .modal .modal-body::-webkit-scrollbar-thumb:hover { background: ${p.scrollThumbHover} !important; }
+`
+}
+
+function paperCss() {
+  return `
+html body [data-mdt-record-details], html body [data-mdt-record-details] :is(span, p, a, strong, label, h6):not(:where([data-mdt-paper], [data-mdt-paper] *, .badge, .badge *, .note-editor *)) { font-size: 13px !important; line-height: 1.4 !important; }
+html body [data-mdt-paper] {
+  background: #FFFFFF !important; color: #000000 !important; color-scheme: light;
+  font-family: "Times New Roman", Times, serif !important; font-size: 14px; line-height: 1.45;
+  width: 100% !important; max-width: 100% !important; margin-inline: 0 !important; box-sizing: border-box;
+}
+html body :is(table[data-mdt-paper], [data-mdt-paper] table) {
+  width: 100% !important; max-width: 100% !important; border-collapse: collapse; border-spacing: 0;
+  border: 1px solid #000000; margin: 0; font-family: inherit; font-size: inherit; line-height: inherit;
+}
+html body [data-mdt-paper] :is(th, td) {
+  background: #FFFFFF; background-image: none; color: #000000; border: 1px solid #000000;
+  padding: 6px 4px; font-family: inherit; font-size: inherit; line-height: inherit;
+  vertical-align: top; overflow-wrap: anywhere;
+}
+html body [data-mdt-paper] th { font-size: 10px; font-weight: bold; text-align: left; line-height: 1.3; }
+html body [data-mdt-paper] [data-mdt-paper-title] { font-size: 16px; font-weight: bold; text-align: center; padding: 12px 6px; }
+html body [data-mdt-paper] p { line-height: 1.45; margin-block: 0 10px; }
+@media print {
+  @page mdt-document { size: letter; margin: 12mm; }
+  html:has([data-mdt-paper-print]), html body:has([data-mdt-paper-print]) { background: white !important; min-width: 0 !important; height: auto !important; overflow: visible !important; }
+  html body:has([data-mdt-paper-print]) *:not([data-mdt-paper-print]):not([data-mdt-paper-print] *):not(:has([data-mdt-paper-print])) { display: none !important; }
+  html body :has([data-mdt-paper-print]), html body [data-mdt-paper-print], html body [data-mdt-paper-print] :is(.modal-dialog, .modal-content, .modal-body) {
+    display: block !important; position: static !important; inset: auto !important; transform: none !important;
+    width: 100% !important; min-width: 0 !important; max-width: none !important; height: auto !important; max-height: none !important;
+    overflow: visible !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important;
+    background: white !important;
+  }
+  [data-mdt-paper-print] { page: mdt-document; }
+  [data-mdt-paper-print] :is(.modal-header, .modal-footer, .mdt-grip) { display: none !important; }
+  [data-mdt-paper-print] .modal-body > :not([data-mdt-paper]):not(:has([data-mdt-paper])) { display: none !important; }
+  [data-mdt-paper] { print-color-adjust: exact; }
+  html body [data-mdt-paper] :is(table, th, td), html body table[data-mdt-paper] { border: 1pt solid #000000 !important; }
+  [data-mdt-paper] tr:has(th) { break-inside: avoid; break-after: avoid; }
+}
+`
+}
+
+function isPrintedForm(table) {
+  if (table.closest('.note-editor, [contenteditable="true"]') || table.querySelector('input, select, textarea, [contenteditable="true"]')) return false
+  const rows = Array.from(table.rows)
+  if (rows.length < 3) return false
+  const heading = rows.slice(0,3).flatMap(row=>Array.from(row.cells)).find(cell => {
+    if (cell.closest('table') !== table || cell.querySelector('table') || !(cell.colSpan > 1 || cell.querySelector('h1,h2,h3,center'))) return false
+    return /(?:(?:arrest|incident|infraction|impound|supplemental)\s+report|(?:infraction|traffic|parking|civil)\s+citation(?:\s+report)?|(?:(?:arrest|search|electronic|financial)\s+)?warrant)\b/i.test(flatText(cell))
+  })
+  if (!heading) return false
+  const labels = rows.slice(1).flatMap(row=>Array.from(row.cells)).filter(cell=>cell.closest('table')===table&&flatText(cell).length<90&&(cell.tagName==='TH'||cell.querySelector('b,strong')))
+  return labels.length >= 3 && rows.some(row=>row.cells.length>1)
+}
+
+function markPaperDocuments() {
+  const wanted = new Set(), details = new Set()
+  if(themeNow()!=='off') {
+    document.querySelectorAll('table').forEach(table=>{if(isPrintedForm(table))wanted.add(table)})
+    document.querySelectorAll('.report-document, .paper, .printable, article.document').forEach(node=>{
+      if(!node.closest('.note-editor, [contenteditable="true"]')&&!node.querySelector('input,select,textarea,[contenteditable="true"]'))wanted.add(node)
+    })
+    document.querySelectorAll('.card, .panel, article').forEach(card=>{
+      if(card.closest('.modal, .note-editor, [contenteditable="true"]')) return
+      const heading=card.querySelector('.card-title, .panel-title, .modal-header :is(h1,h2,h3,h4,h5,h6)')
+      if(!heading||heading.closest('.card,.panel,article')!==card||!/^view\s+(?:record|report)\b/i.test(flatText(heading))) return
+      const body=card.querySelector(':scope > .card-body, :scope > .panel-body')
+      if(body) details.add(body)
+    })
+  }
+  wanted.forEach(node=>{let parent=node.parentElement;while(parent){if(wanted.has(parent)){wanted.delete(node);break}parent=parent.parentElement}})
+  document.querySelectorAll('[data-mdt-record-details]').forEach(node=>{if(!details.has(node)) node.removeAttribute('data-mdt-record-details')})
+  details.forEach(node=>node.setAttribute('data-mdt-record-details','1'))
+  document.querySelectorAll('[data-mdt-paper]').forEach((node) => { if (!wanted.has(node)) node.removeAttribute('data-mdt-paper') })
+  document.querySelectorAll('[data-mdt-paper-title]').forEach((node) => { if (!node.closest('[data-mdt-paper]')) node.removeAttribute('data-mdt-paper-title') })
+  wanted.forEach((node) => {
+    node.setAttribute('data-mdt-paper', '1')
+    const table = node.matches('table') ? node : node.querySelector('table')
+    const row = table && table.rows[0]
+    if (row && row.cells.length === 1 && (row.cells[0].colSpan > 1 || row.cells[0].querySelector('h1, h2, h3, br'))) row.cells[0].setAttribute('data-mdt-paper-title', '1')
+  })
+}
+
+window.addEventListener('beforeprint', () => {
+  markPaperDocuments()
+  const modals = Array.from(document.querySelectorAll('.modal')).filter((node) => node.style.display !== 'none' && node.getAttribute('aria-hidden') !== 'true' && (node.matches('.show, .in') || node.style.display === 'block') && node.querySelector('[data-mdt-paper]'))
+  modals.sort((a, b) => Number(getComputedStyle(b).zIndex || 0) - Number(getComputedStyle(a).zIndex || 0))
+  if (modals[0]) modals[0].setAttribute('data-mdt-paper-print', '1')
+  else document.querySelector('[data-mdt-record-details] [data-mdt-paper], .report-document[data-mdt-paper], .paper[data-mdt-paper]')?.setAttribute('data-mdt-paper-print','1')
+})
+window.addEventListener('afterprint', () => document.querySelectorAll('[data-mdt-paper-print]').forEach((node) => node.removeAttribute('data-mdt-paper-print')))
+
+function markAuthorStyle(node) {
+  if (!node.style || node.closest('.bootstrap-select, .cropper-container, .note-color-palette')) return
+  for (const [attribute, enabled] of [['data-mdt-author-color', !!(node.style.color || node.style.backgroundColor || node.style.webkitTextFillColor)], ['data-mdt-author-font', !!node.style.fontFamily]]) {
+    if (enabled && !node.hasAttribute(attribute)) node.setAttribute(attribute, '1')
+    else if (!enabled && node.hasAttribute(attribute)) node.removeAttribute(attribute)
+  }
+}
+
+function markAuthorStyles(root) {
+  if (root.nodeType === 1) markAuthorStyle(root)
+  root.querySelectorAll('[style]').forEach(markAuthorStyle)
+}
+
 function keepLast() {
   try {
+    if (themeNow() === 'off') {
+      const old = document.getElementById(STYLE_ID)
+      if (old) old.remove()
+      document.querySelectorAll('[data-mdt-author-color], [data-mdt-author-font]').forEach((node) => { node.removeAttribute('data-mdt-author-color'); node.removeAttribute('data-mdt-author-font') })
+      return
+    }
+    markAuthorStyles(document)
     const el = styleEl()
     const wanted = paletteNow()
-    const css = themeNow() === 'off' ? '' : buildCss(wanted)
+    const css = cachedSkinCss('base:' + themeNow(), () => buildCss(wanted) + buildControlCss(wanted) + modalScrollCss(wanted) + paperCss())
     if (el.textContent !== css) el.textContent = css
     const host = document.body || document.head || document.documentElement
     if (host && host.lastElementChild !== el) host.appendChild(el)
@@ -3924,6 +4882,27 @@ function keepLast() {
   } catch (_) {
   }
 }
+
+function markNoticeIcon(icon) {
+  const nested = icon.querySelector('.material-icons')
+  const known = nested && /^(?:error|error_outline|warning|warning_amber|priority_high|report_problem|report)$/i.test(flatText(nested))
+  if (known) icon.dataset.mdtNoticeMark = '1'
+  else icon.removeAttribute('data-mdt-notice-mark')
+}
+
+const noticeObserver = new MutationObserver((records) => {
+  for (const record of records) {
+    const target = record.target.nodeType === 1 ? record.target : record.target.parentElement
+    const icon = target && target.closest('[data-notify="icon"]')
+    if (icon) markNoticeIcon(icon)
+    for (const node of record.addedNodes || []) {
+      if (node.nodeType !== 1) continue
+      if (node.matches('[data-notify="icon"]')) markNoticeIcon(node)
+      node.querySelectorAll('[data-notify="icon"]').forEach(markNoticeIcon)
+    }
+  }
+})
+noticeObserver.observe(document, { childList: true, subtree: true, characterData: true })
 
 function normalizeInlineColors() {
   try {
@@ -4001,6 +4980,7 @@ function labelText(el) {
 
 function stripFrame(el) {
   if (!el || !el.style || !el.dataset) return
+  if (el.closest('[data-mdt-paper]')) return
   if (el.dataset.mdtDeframed === '1') return
   el.dataset.mdtDeframed = '1'
   Object.keys(FRAME_PROPS).forEach((prop) => {
@@ -4021,7 +5001,7 @@ function frameBannerHost(el) {
 }
 
 function paintBanner(el) {
-  if (!el || !el.style || !el.dataset) return
+  if (!el || !el.style || !el.dataset || el.closest('.dropdown-menu, .dropdown-item, [role="menu"], [role="option"]')) return
   frameBannerHost(el)
   if (el.dataset.mdtBanner === '1') return
   el.dataset.mdtBanner = '1'
@@ -4077,10 +5057,23 @@ function restoreHidden() {
   })
 }
 
+let headerPanelOpen = false
+ipcRenderer.on('mdt:header-panel-state', (_event, open) => {headerPanelOpen=!!open})
+function dismissHeaderPanel() {
+  if (!headerPanelOpen) return
+  headerPanelOpen = false
+  ipcRenderer.sendToHost('mdt:dismiss-header-panel')
+}
+for (const event of ['pointerdown','mousedown','focusin']) document.addEventListener(event,dismissHeaderPanel,true)
+window.addEventListener('focus',dismissHeaderPanel)
+window.addEventListener('keydown',event=>{
+  if(headerPanelOpen&&event.key==='Escape') {dismissHeaderPanel();event.preventDefault();event.stopImmediatePropagation()}
+},true)
+
 const HDR_SEL = {
   history: '#navbarDropdownHistory',
   bell: '#navbarDropdownNotifications',
-  menu: '#navbarDropdownProfile'
+  profile: '#navbarDropdownProfile'
 }
 
 function findHeaderCtl(kind) {
@@ -4155,6 +5148,23 @@ function isDayModeItem(node) {
   return /^(day|night)\s*mode$/i.test(labelText(node))
 }
 
+function headerLabelParts(link, label) {
+  const parts = []
+  let cursor = 0
+  link.querySelectorAll('[class], [style]').forEach(node=>{
+    const tone=Array.from(node.classList).map(name=>/^text-(primary|secondary|success|danger|warning|info|light|dark|muted)$/.exec(name)).find(Boolean)?.[1]
+    if(!tone&&!node.style.color) return
+    if(node.querySelector('[class*="text-"], [style*="color"]')) return
+    const text=flatText(node),start=label.indexOf(text,cursor)
+    if(!text||start<cursor) return
+    if(start>cursor)parts.push({text:label.slice(cursor,start)})
+    parts.push({text,tone:tone||'',color:node.style.color?getComputedStyle(node).color:''})
+    cursor=start+text.length
+  })
+  if(cursor<label.length)parts.push({text:label.slice(cursor)})
+  return parts
+}
+
 function headerMenuItems(kind) {
   const node = findHeaderCtl(kind)
   const box = headerCtlBox(node)
@@ -4170,7 +5180,7 @@ function headerMenuItems(kind) {
     let label = flatText(link)
     if (sub && label.endsWith(sub)) label = label.slice(0, label.length - sub.length).trim()
     if (!label && !sub) continue
-    out.push({ index: i, label: label, sub: sub, href: link.getAttribute('href') || '' })
+    out.push({ index: i, label: label, parts:headerLabelParts(link,label), sub: sub, unread: !!link.closest('.unread, [data-unread="1"], .notification-unread'), href: link.getAttribute('href') || '' })
   }
   return out
 }
@@ -4188,14 +5198,6 @@ function runHeaderItem(kind, index) {
   if (!menu) return
   const link = menu.querySelectorAll('a')[index]
   if (!link) return
-  const href = link.getAttribute('href') || ''
-  if (href && href !== '#' && href.charAt(0) !== '#') {
-    try {
-      window.location.assign(link.href)
-      return
-    } catch (_) {
-    }
-  }
   try {
     link.click()
   } catch (_) {
@@ -4214,6 +5216,7 @@ function deframeBanners() {
   )
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i]
+    if (el.closest('[data-mdt-paper], .dropdown-menu, .dropdown-item, [role="menu"], [role="option"]')) continue
     const t = flatText(el)
     if (!t || t.length > 40) continue
     const isBanner = BANNER_RE.test(t)
@@ -4221,6 +5224,7 @@ function deframeBanners() {
     const isAge = AGE_RE.test(t)
     if (!isBanner && !isPoints && !isAge) continue
 
+    if (isBanner && isCautionChip(el)) continue
     if (isPoints) stripFrame(el)
     if (isBanner && !isCautionChip(el)) paintBanner(el)
     if (isAge) {
@@ -4244,7 +5248,7 @@ function deframeBanners() {
 
 function isCautionChip(el) {
   if (!el || !el.closest) return false
-  if (el.closest('#cautionCodes')) return true
+  if (el.closest('#cautionCodes, td, th, .nav-tabs, .nav-pills, [data-notify], .note-editor')) return true
   const cls = String((el.className && el.className.baseVal) || el.className || '')
   return /\bbadge\b|\bchip\b|\bcaution\b/i.test(cls)
 }
@@ -4302,7 +5306,7 @@ const ROW_PROPS = [
   'overflow', 'position', 'text-align', 'float', 'max-width'
 ]
 
-const FORM_PAGE_RE = /\/(incident|apb|warrant|report|arrest)\/(create|edit)/i
+const FORM_PAGE_RE = /\/(incidents?|apbs?|warrants?|reports?|arrests?)\/(create|edit)(?:\/|$)/i
 
 function isFormPage() {
   try {
@@ -4315,7 +5319,8 @@ function isFormPage() {
 function applyFormFlag() {
   try {
     if (document.documentElement) {
-      document.documentElement.classList.toggle('mdt-form-page', isFormPage() && themeNow() !== 'off')
+      const authoring = isFormPage() || !!document.querySelector('.content :is(form:has(textarea, .note-editor, [contenteditable="true"]), textarea.summernote, .note-editor):not(.modal *)')
+      document.documentElement.classList.toggle('mdt-form-page', authoring && themeNow() !== 'off')
     }
   } catch (_) {
   }
@@ -4323,8 +5328,8 @@ function applyFormFlag() {
 
 function markRow(el, props) {
   if (!el || !el.style || !el.dataset || el.dataset.mdtRow === '1') return
-  if (isFormPage()) return
-  if (el.closest && el.closest('[data-mdt-vanilla="1"]')) return
+  if (isFormPage() || document.documentElement.classList.contains('mdt-form-page')) return
+  if (el.closest && el.closest('[data-mdt-vanilla="1"], [data-mdt-paper]')) return
   el.dataset.mdtRow = '1'
   Object.keys(props).forEach((key) => el.style.setProperty(key, props[key], 'important'))
 }
@@ -4395,6 +5400,7 @@ function fixTimeBadges() {
     for (let j = 0; j < nodes.length; j++) {
       const el = nodes[j]
       if (!el.style || !el.dataset) continue
+      if (el.closest('[data-mdt-paper]')) continue
       const t = flatText(el)
       if (!t || t.length > 80 || !TIME_RE.test(t)) continue
       if (el.querySelector && el.querySelector('div, span, p, label, strong, b')) continue
@@ -4456,6 +5462,7 @@ function fixChargeRows() {
   const bodies = document.querySelectorAll('.modal-body')
   for (let b = 0; b < bodies.length; b++) {
     const body = bodies[b]
+    if (body.closest('[data-mdt-vanilla="1"]')) continue
     const controls = body.querySelectorAll('select, .bootstrap-select')
     if (controls.length < 2) continue
     const rows = []
@@ -4613,6 +5620,7 @@ function fixLicenseButtons() {
     if (btns.length < 2) continue
     const host = sharedAncestor(btns)
     if (!host || !host.style || !host.dataset || host === card.ownerDocument.body) continue
+    if (host.matches('.card, .card-license, .card-body')) continue
     if (host.dataset.mdtLichost !== '1') {
       host.dataset.mdtLichost = '1'
       setImportant(host, {
@@ -4646,7 +5654,7 @@ function fixLicenseButtons() {
           flex: '0 0 auto',
           float: 'none',
           margin: '0',
-          position: 'static'
+          position: el.matches('.btn-group, .dropdown, .dropup') ? 'relative' : 'static'
         })
       }
     }
@@ -4843,12 +5851,15 @@ function collectNav() {
   }
 }
 
+let clientNavigation = false
+
 function navGo(url) {
   if (!url) return
   const links = document.querySelectorAll('a')
   for (let i = 0; i < links.length; i++) {
     if (links[i].href === url) {
-      links[i].click()
+      clientNavigation = true
+      try { links[i].click() } finally { clientNavigation = false }
       return
     }
   }
@@ -4862,7 +5873,7 @@ const SIDEBAR_STYLE_ID = 'mdt-sidebar-toggle'
 const SEARCH_STYLE_ID = 'mdt-search-toggle'
 let searchHidden = false
 let lastErrorSound = 0
-let sidebarHidden = false
+let sidebarHidden = true
 
 function sidebarStyleEl() {
   let el = document.getElementById(SIDEBAR_STYLE_ID)
@@ -4886,9 +5897,10 @@ function sidebarStyleEl() {
 }
 
 function applySidebarState() {
-  if (!document.documentElement) return
-  sidebarStyleEl()
-  document.documentElement.classList.toggle('mdt-hide-sidebar', sidebarHidden)
+  if (!document.documentElement || !isMdcHost()) return
+  if (themeNow() !== 'off') sidebarStyleEl()
+  else { const old = document.getElementById(SIDEBAR_STYLE_ID); if (old) old.remove() }
+  document.documentElement.classList.toggle('mdt-hide-sidebar', sidebarHidden && themeNow() !== 'off')
   savePrefs()
 }
 
@@ -4915,9 +5927,10 @@ function searchStyleEl() {
 }
 
 function applySearchState() {
-  if (!document.documentElement) return
-  searchStyleEl()
-  document.documentElement.classList.toggle('mdt-hide-search', searchHidden)
+  if (!document.documentElement || !isMdcHost()) return
+  if (themeNow() !== 'off') searchStyleEl()
+  else { const old = document.getElementById(SEARCH_STYLE_ID); if (old) old.remove() }
+  document.documentElement.classList.toggle('mdt-hide-search', searchHidden && themeNow() !== 'off')
   applySearchInputs()
   savePrefs()
 }
@@ -4946,127 +5959,15 @@ function setSidebarHidden(next) {
   applySidebarState()
 }
 
-function fixSingleScroller() {
-  try {
-    const html = document.documentElement
-    const body = document.body
-    if (!body) return
-
-    if (themeNow() === 'off') {
-      html.style.removeProperty('overflow-y')
-      body.style.removeProperty('overflow-y')
-      return
-    }
-
-    const panel = document.querySelector('.main-panel')
-    const panelScrolls = !!panel && panel.scrollHeight - panel.clientHeight > 4
-
-    if (panelScrolls) {
-      html.style.setProperty('overflow-y', 'hidden', 'important')
-      body.style.setProperty('overflow-y', 'hidden', 'important')
-    } else {
-      html.style.removeProperty('overflow-y')
-      body.style.removeProperty('overflow-y')
-    }
-  } catch (_) {
-  }
-}
-
 const NOIMG_RE = /^no image(?:\s+(?:found|available|on file|uploaded))?\.?$/i
 
 const SHOT_SEL = '#copyWarrant, #copyWarrantReason, [id^="copyWarrant"]'
 let shotWired = 0
-let shotTimer = 0
-let shotActive = 0
-const SHOT_STYLE_ID = 'mdt-shot-skin'
-let shotFrozen = []
-const BLANK_BG = /^(transparent|rgba\(0,\s*0,\s*0,\s*0\))$/i
-function shotTarget(btn) {
-  const id = (btn && btn.id) || ''
-  const wanted = /reason/i.test(id) ? 'warrantReason' : 'warrant'
-  return document.getElementById(wanted) || document.getElementById('warrant')
-}
-function shotBackdrop(root) {
-  let node = root && root.parentElement
-  while (node && node !== document.documentElement) {
-    let bg = ''
-    try {
-      bg = window.getComputedStyle(node).backgroundColor || ''
-    } catch (_) {
-      bg = ''
-    }
-    if (bg && !BLANK_BG.test(bg.replace(/\s+/g, ' ').trim())) return bg
-    node = node.parentElement
-  }
-  return themeNow() === 'off' ? '#FFFFFF' : paletteNow().panel
-}
-function freezeNode(el, prop, value) {
-  shotFrozen.push([el, prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)])
-  el.style.setProperty(prop, value, 'important')
-}
-function beginShot(btn) {
-  const root = shotTarget(btn)
-  if (!root) return
-  endShot()
-  try {
-    const nodes = [root].concat(Array.prototype.slice.call(root.querySelectorAll('*')))
-    for (const el of nodes) {
-      const tag = el.tagName
-      if (tag === 'IMG' || tag === 'BR' || tag === 'SCRIPT' || tag === 'STYLE') continue
-      let ink = ''
-      try {
-        ink = window.getComputedStyle(el).color || ''
-      } catch (_) {
-        ink = ''
-      }
-      if (ink) freezeNode(el, 'color', ink)
-    }
-    const inner = root.querySelectorAll('.badge > *')
-    for (const el of inner) {
-      let disp = ''
-      try {
-        disp = window.getComputedStyle(el).display || ''
-      } catch (_) {
-        disp = ''
-      }
-      if (disp === 'block' || disp === 'flex') {
-        freezeNode(el, 'display', 'inline-block')
-        freezeNode(el, 'margin', '0')
-      }
-    }
-    freezeNode(root, 'background-color', shotBackdrop(root))
-    shotActive = 1
-  } catch (_) {
-  }
-  if (shotTimer) clearTimeout(shotTimer)
-  shotTimer = setTimeout(endShot, 1500)
-}
-function endShot() {
-  shotActive = 0
-  if (shotTimer) {
-    clearTimeout(shotTimer)
-    shotTimer = 0
-  }
-  const list = shotFrozen
-  shotFrozen = []
-  for (const row of list) {
-    try {
-      const el = row[0]
-      el.style.removeProperty(row[1])
-      if (row[2]) el.style.setProperty(row[1], row[2], row[3] || '')
-    } catch (_) {
-    }
-  }
-}
 function watchWarrantCopy() {
   if (shotWired) return
   shotWired = 1
-  document.addEventListener('click', function (ev) {
-    const target = ev.target
-    if (!target || !target.closest) return
-    const btn = target.closest(SHOT_SEL)
-    if (!btn) return
-    beginShot(btn)
+  document.addEventListener('click', event => {
+    if (event.target.closest && event.target.closest(SHOT_SEL)) document.dispatchEvent(new Event('mdt:prepare-export'))
   }, true)
 }
 
@@ -5076,6 +5977,7 @@ function humanKey(raw) {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 function fixLabelKeys() {
+  if (!document.body) return
   const links = document.querySelectorAll('a[href*="index."]')
   for (const link of links) {
     const href = link.getAttribute('href') || ''
@@ -5164,31 +6066,42 @@ function fixNoImage() {
 }
 
 let scrollerTimer = null
+let deferredSkinPass = false
 function scheduleScrollerFix() {
   if (scrollerTimer) clearTimeout(scrollerTimer)
   scrollerTimer = setTimeout(() => {
-    fixSingleScroller()
-    exemptDialogs()
-    fixContrast()
-    deframeBanners()
-    hideColourControls()
-    colorEmotes()
-    fixChargeBars()
-    fixChargeRows()
-    fixLicenseButtons()
-    fixNoImage()
-    fixPlates()
-    fixTimeBadges()
-    packButtonRows()
-    centerFieldColumns()
-    trimScrollers()
-    applySidebarState()
-    applySearchState()
-    markLookupPage()
-    fixFilterStrips()
-    fixHeaderControls()
-    collectNav()
-    uncloak()
+    scrollerTimer = null
+    if (dragState || gripBox) { deferredSkinPass = true; return }
+    deferredSkinPass = false
+    if (themeNow() === 'off') { collectNav(); return }
+    if (styleObserver) styleObserver.disconnect()
+    try {
+      applyFormFlag()
+      markLookupControls()
+      watchMapSearch()
+      exemptDialogs()
+      fixProfileDetails()
+      fixContrast()
+      deframeBanners()
+      hideColourControls()
+      colorEmotes()
+      fixChargeBars()
+      fixChargeRows()
+      fixLicenseButtons()
+      fixNoImage()
+      fixPlates()
+      fixTimeBadges()
+      packButtonRows()
+      centerFieldColumns()
+      trimScrollers()
+      applySidebarState()
+      applySearchState()
+      markLookupPage()
+      fixFilterStrips()
+      fixHeaderControls()
+      collectNav()
+      uncloak()
+    } finally { observeSkinStyles() }
   }, 120)
 }
 
@@ -5204,16 +6117,26 @@ function luminance(c) {
   return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255
 }
 
-function backgroundLuminance(el) {
+function backgroundLuminance(el, cache) {
   let node = el
   let hops = 0
+  const visited = []
+  const remember = (value) => { visited.forEach((item) => cache.set(item, value)); return value }
   while (node && node.nodeType === 1 && hops < 40) {
-    const c = parseRgb(getComputedStyle(node).backgroundColor)
-    if (c && c.a > 0.2) return luminance(c)
+    if (cache.has(node)) return remember(cache.get(node))
+    visited.push(node)
+    const style = getComputedStyle(node)
+    const stops = /gradient\(/.test(style.backgroundImage) ? style.backgroundImage.match(/rgba?\([^)]+\)/g) : null
+    if (stops && stops.length) {
+      const colors = stops.map(parseRgb).filter((c) => c && c.a > 0.8)
+      if (colors.length) return remember(colors.reduce((sum, c) => sum + luminance(c), 0) / colors.length)
+    }
+    const c = parseRgb(style.backgroundColor)
+    if (c && c.a > 0.8) return remember(luminance(c))
     node = node.parentElement
     hops++
   }
-  return themeNow() !== 'light' ? 0.16 : 0.94
+  return remember(luminance(parseRgb(getComputedStyle(document.body).backgroundColor) || { r: 240, g: 240, b: 240 }))
 }
 
 function hasDirectText(el) {
@@ -5223,36 +6146,53 @@ function hasDirectText(el) {
   return false
 }
 
+function syncCollapseButton(button) {
+  if (themeNow() === 'off') { delete button.dataset.mdtCollapse; return }
+  const expanded = button.getAttribute('aria-expanded')
+  const plus = expanded !== null ? expanded === 'false' : /^(\+|add)$/.test(flatText(button)) || button.querySelector('.fa-plus, .glyphicon-plus')
+  button.dataset.mdtCollapse = plus ? 'plus' : 'minus'
+}
+
 function fixContrast() {
   try {
     if (!document.body) return
-    const p = paletteNow()
+    document.querySelectorAll('.btn-collapse').forEach(syncCollapseButton)
+    const off = themeNow() === 'off'
+    const backgrounds = new WeakMap()
+    const repairs = []
 
     document.body.querySelectorAll('*').forEach((el) => {
       if (!el.style || !el.dataset) return
 
-      if (themeNow() === 'off') {
+      if (off) {
         if (el.dataset.mdtInk !== undefined) {
-          if (el.dataset.mdtInk) el.style.setProperty('color', el.dataset.mdtInk)
+          if (el.dataset.mdtInk) el.style.setProperty('color', el.dataset.mdtInk, el.dataset.mdtInkPriority || '')
           else el.style.removeProperty('color')
           delete el.dataset.mdtInk
+          delete el.dataset.mdtInkPriority
         }
         return
       }
 
       if (!hasDirectText(el)) return
+      if (el.closest('[data-mdt-paper], #mugshotPreview, .cropper-container, [class^="cropper-"], [class*=" cropper-"], [class^="imgareaselect-"], .note-editor, .note-color-palette, .bootstrap-select, [contenteditable="true"]')) return
 
       const col = parseRgb(getComputedStyle(el).color)
       if (!col || col.a < 0.1) return
+      if (Math.max(col.r, col.g, col.b) - Math.min(col.r, col.g, col.b) > 28 && el.closest(AUTHOR_COLOR_SELECTOR)) return
 
       const inkL = luminance(col)
-      const bgL = backgroundLuminance(el)
+      const bgL = backgroundLuminance(el, backgrounds)
       if (Math.abs(inkL - bgL) > 0.34) return
 
+      repairs.push([el, bgL > 0.5 ? '#202020' : '#FFFFFF'])
+    })
+    repairs.forEach(([el, color]) => {
       if (el.dataset.mdtInk === undefined) {
         el.dataset.mdtInk = el.style.getPropertyValue('color') || ''
+        el.dataset.mdtInkPriority = el.style.getPropertyPriority('color') || ''
       }
-      el.style.setProperty('color', bgL > 0.5 ? p.text : '#FFFFFF', 'important')
+      el.style.setProperty('color', color, 'important')
     })
   } catch (_) {
   }
@@ -5262,9 +6202,10 @@ function restoreInk() {
   document.querySelectorAll('[data-mdt-ink]').forEach((el) => {
     if (!el.style || !el.dataset) return
     const prev = el.dataset.mdtInk
-    if (prev) el.style.setProperty('color', prev)
+    if (prev) el.style.setProperty('color', prev, el.dataset.mdtInkPriority || '')
     else el.style.removeProperty('color')
     delete el.dataset.mdtInk
+    delete el.dataset.mdtInkPriority
   })
 }
 
@@ -5292,7 +6233,16 @@ function resetPaintedState() {
     restoreFilterStrips()
     restoreHeaderControls()
     restoreInk()
+    restoreProfileDetails()
     restoreInlineColors()
+    if (themeNow() === 'off') {
+      document.querySelectorAll('.mdt-grip, .mdt-maximize, .mdt-minimize').forEach((node) => node.remove())
+      document.querySelectorAll('[data-mdt-moved], [data-mdt-offset], [data-mdt-maximized]').forEach(resetModalDrag)
+      document.querySelectorAll('[data-mdt-sized]').forEach(clearGripSize)
+      hideNarrativeLabel()
+      hideSourceTextareas()
+      scanPickers()
+    }
   } catch (_) {
   }
 }
@@ -5310,7 +6260,7 @@ const FSTRIP_CELL_SEL = '.form-group, .bmd-form-group, .input-group, [class*="co
 function fixFilterStrips() {
   try {
     if (!document.body || !document.documentElement) return
-    if (themeNow() === 'off' || document.documentElement.classList.contains('mdt-lookup')) {
+    if (themeNow() === 'off' || isFormPage() || document.documentElement.classList.contains('mdt-form-page') || document.documentElement.classList.contains('mdt-lookup')) {
       restoreFilterStrips()
       return
     }
@@ -5318,6 +6268,8 @@ function fixFilterStrips() {
     const byRow = new Map()
     document.body.querySelectorAll(FSTRIP_FIELD_SEL).forEach((field) => {
       if (!field.closest || field.closest(FSTRIP_SKIP_SEL)) return
+      const form = field.closest('form')
+      if (form && form.querySelector('textarea, .note-editor, [contenteditable="true"]')) return
       const cell = field.closest(FSTRIP_CELL_SEL)
       if (!cell || cell.querySelector('table')) return
       const row = cell.parentElement
@@ -5398,8 +6350,8 @@ function loadPrefs() {
     if (!raw) return
     const saved = JSON.parse(raw)
     if (!saved || typeof saved !== 'object') return
-    if (typeof saved.theme === 'string' && (PALETTES[saved.theme] || saved.theme === 'off')) theme = saved.theme
-    sidebarHidden = !!saved.sidebar
+    theme = SKINS.includes(saved.theme) ? saved.theme : 'p1'
+    if (typeof saved.sidebar === 'boolean') sidebarHidden = saved.sidebar
     searchHidden = !!saved.search
     lastPrefsJson = raw
   } catch (_) {
@@ -5426,6 +6378,8 @@ function uncloak() {
   uncloaked = true
   try {
     if (document.documentElement) document.documentElement.classList.remove('mdt-cloak')
+    const old = document.getElementById(BOOT_STYLE_ID)
+    if (old) old.remove()
   } catch (_) {
   }
 }
@@ -5440,10 +6394,13 @@ function cloak() {
 function earlyBoot() {
   if (!document.documentElement) return false
   try {
+    applySidebarState()
+    applySearchState()
     cloak()
     applyFormFlag()
     keepLast()
     applyGlass()
+    applyP1()
     watchStyles()
     applySidebarState()
     applySearchState()
@@ -5454,15 +6411,18 @@ function earlyBoot() {
 
 function applyTheme(next) {
   const prev = theme
-  theme = PALETTES[next] ? next : next === 'off' ? 'off' : 'light'
+  theme = SKINS.includes(next) ? next : 'p1'
   if (prev !== theme) resetPaintedState()
+  applyFormFlag()
   keepLast()
   applyGlass()
+  applyP1()
   applyDragFlag()
+  exemptDialogs()
+  fixProfileDetails()
   reportAlerts()
   fixPlates()
   normalizeInlineColors()
-  fixSingleScroller()
   fixContrast()
   deframeBanners()
   hideColourControls()
@@ -5484,42 +6444,97 @@ function applyTheme(next) {
   fixFilterStrips()
   fixHeaderControls()
   collectNav()
+  if (themeNow() === 'off') {
+    document.querySelectorAll('style[id^="mdt-"]').forEach((node) => node.remove())
+    document.querySelectorAll('img[data-mdt-imgur-src]').forEach((img) => {
+      const src = img.getAttribute('data-mdt-imgur-src')
+      if (img.mdtProxyError) img.removeEventListener('error', img.mdtProxyError)
+      img.removeAttribute('data-mdt-imgur')
+      img.removeAttribute('data-mdt-imgur-src')
+      if (src) img.src = src
+    })
+  }
   savePrefs()
 }
 
 let styleObserver = null
+let profileFrame = 0
+
+function observeSkinStyles() {
+  if (styleObserver && document.documentElement) styleObserver.observe(document.documentElement, {childList:true,subtree:true,characterData:true,attributes:true,attributeOldValue:true,attributeFilter:['class','style','aria-expanded','placeholder','aria-label','id']})
+}
+
+function clockOnlyChange(record) {
+  if (record.type === 'attributes') return false
+  const nodes = record.type === 'characterData' ? [record.target] : Array.from(record.addedNodes).concat(Array.from(record.removedNodes))
+  return nodes.length > 0 && nodes.every((node) => (node.nodeType === 3 || node.nodeType === 1 && node.matches('span, b, strong, small, font, time') && !node.querySelector('input, button, a, img, script, style')) && /^\s*\d{1,2}:\d{2}(?::\d{2})?(?:\s*(?:AM|PM|GMT[+-]?\d*))?\s*$/i.test(node.textContent || ''))
+}
 
 function watchStyles() {
   if (styleObserver || !document.documentElement) return
   try {
     styleObserver = new MutationObserver((records) => {
       let restyle = false
+      let content = false
+      let lookup = false
+      let alerts = false
       let recolor = false
-      for (const r of records) {
-        for (const n of r.addedNodes) {
-          if (n.nodeType !== 1) continue
-          if ((n.tagName === 'LINK' || n.tagName === 'STYLE') && n.id !== STYLE_ID) restyle = true
-          if (n.id === 'cautionCodes' || n.closest === undefined) continue
-          if (n.closest('#cautionCodes')) recolor = true
+      let profile = false
+      for (const record of records) {
+        const target = record.target.nodeType === 1 ? record.target : record.target.parentElement
+        if (!target) continue
+        if (themeNow() !== 'off' && target.closest('.note-toolbar')) {
+          if (record.type === 'attributes' && record.attributeName === 'style') markAuthorStyle(target)
+          if (record.type === 'childList') Array.from(record.addedNodes).filter((node) => node.nodeType === 1).forEach(markAuthorStyles)
+        }
+        if (target.closest('#navbarDropdownNotifications, .notification-count, .notification-unread')) alerts = true
+        if (target.closest('script, style, .note-editor, .bootstrap-select, [contenteditable="true"], [data-notify], .ripple-container, .ripple, .leaflet-pane, [data-mdt-emote]') || clockOnlyChange(record)) continue
+        if (record.type !== 'attributes' && target.closest('[data-mdt-profile-column]')) { profile = true; continue }
+        if (record.type === 'attributes') {
+          if (record.attributeName === 'style') { if (themeNow() !== 'off') markAuthorStyle(target); continue }
+          const button = target.closest('.btn-collapse')
+          if (button) { syncCollapseButton(button); continue }
+          if (target.matches('input, [data-mdt-lookup-action]')) lookup = true
+          if (target === document.documentElement || target === document.body || target.matches('button, input, a, i, [data-mdt-lookup-action]')) continue
+          if (record.attributeName === 'class') {
+            const old = (record.oldValue || '').split(/\s+/)
+            const now = Array.from(target.classList)
+            const changed = old.filter((name) => !now.includes(name)).concat(now.filter((name) => !old.includes(name)))
+            if (changed.some((name) => /^(?:bg-|text-|alert-|card-header|active$|selected$|show$|in$)/.test(name)) && !target.closest('.bootstrap-select, .dropdown-menu')) content = true
+          }
+          continue
+        }
+        if (record.type === 'characterData') { content = true; continue }
+        for (const node of Array.from(record.addedNodes).concat(Array.from(record.removedNodes))) {
+          if (node.nodeType === 3) { if (node.textContent.trim()) content = true; continue }
+          if (node.nodeType !== 1) continue
+          if (themeNow() !== 'off') markAuthorStyles(node)
+          if (node.matches('style, link')) { if (!node.id.startsWith('mdt-') && node.isConnected) restyle = true; continue }
+          if (node.matches('script, .mdt-grip, [data-mdt-emote], [data-notify], .ripple-container, .ripple')) continue
+          if (node.matches('#navbarDropdownNotifications') || node.querySelector('#navbarDropdownNotifications')) alerts = true
+          if (node.matches('input, button, a, i') || node.querySelector('input')) lookup = true
+          if (target.closest('#cautionCodes') || node.id === 'cautionCodes') recolor = true
+          content = true
         }
       }
       if (restyle) keepLast()
+      if (lookup) markLookupControls()
       if (recolor) normalizeInlineColors()
-      if (document.body) scheduleScrollerFix()
+      if (alerts) reportAlerts()
+      if (profile && !profileFrame) profileFrame = requestAnimationFrame(() => { profileFrame = 0; fixProfileDetails() })
+      if (content || restyle) scheduleScrollerFix()
     })
-    styleObserver.observe(document.documentElement, { childList: true, subtree: true })
-  } catch (_) {
-  }
+    observeSkinStyles()
+  } catch (_) {}
 }
 
 loadPrefs()
 
 if (!earlyBoot()) {
-  const bootTimer = setInterval(() => {
-    if (earlyBoot()) clearInterval(bootTimer)
-  }, 0)
-  setTimeout(() => clearInterval(bootTimer), 3000)
-  document.addEventListener('readystatechange', earlyBoot)
+  const bootObserver = new MutationObserver(() => {
+    if (earlyBoot()) bootObserver.disconnect()
+  })
+  bootObserver.observe(document, { childList: true, subtree: true })
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -5529,7 +6544,6 @@ document.addEventListener('DOMContentLoaded', () => {
   scheduleScrollerFix()
   markLookupPage()
   watchMapSearch()
-  watchMugshot()
   watchSourceTextareas()
   hideNarrativeLabel()
   window.addEventListener('resize', scheduleScrollerFix)
@@ -5549,11 +6563,11 @@ window.addEventListener('load', () => {
   else setTimeout(uncloak, 450)
 })
 
+let VIEW_KEY_COMBOS = null
 let HOTKEYS = {
   F3: 'findnext',
   F5: 'reload',
   F8: 'cycletheme',
-  F9: 'toggleaddr',
   F10: 'togglesidebar'
 }
 
@@ -5570,9 +6584,11 @@ let CTRL_HOTKEYS = {
 window.addEventListener('keydown', (e) => {
   if (!e || e.defaultPrevented) return
   let action = ''
-  if (e.ctrlKey || e.metaKey) {
-    if (e.altKey || e.shiftKey) return
-    action = CTRL_HOTKEYS[String(e.key || '').toLowerCase()] || ''
+  if (VIEW_KEY_COMBOS) action = VIEW_KEY_COMBOS[comboOf(e)] || ''
+  else if (e.ctrlKey || e.metaKey) {
+    const key = e.code === 'NumpadAdd' || e.key === '=' ? '+' : e.code === 'NumpadSubtract' ? '-' : String(e.key || '').toLowerCase()
+    if (e.altKey || (e.shiftKey && key !== '+')) return
+    action = CTRL_HOTKEYS[key] || ''
   } else if (!e.altKey && !e.ctrlKey) {
     action = HOTKEYS[e.key] || ''
   }
@@ -5609,6 +6625,7 @@ ipcRenderer.on('mdt:set-search-boxes', (_e, hidden) => {
 document.addEventListener('click', (e) => {
   const t = e && e.target
   if (!t || !t.closest) return
+  if (clientNavigation) return
   if (t.closest('.close, [data-dismiss="modal"], [data-notify="dismiss"], .swal2-close')) {
     sendSound('close')
     return
@@ -5656,6 +6673,7 @@ ipcRenderer.on('mdt:set-keys', (_e, payload) => {
     if (payload && payload.plain) HOTKEYS = payload.plain
     if (payload && payload.ctrl) CTRL_HOTKEYS = payload.ctrl
     if (payload && payload.mouse) MOUSE_KEYS = payload.mouse
+    if (payload && payload.combos) VIEW_KEY_COMBOS = payload.combos
   } catch (_) {
   }
 })
@@ -5702,95 +6720,683 @@ ipcRenderer.on('mdt:set-sidebar', (_e, hidden) => {
 
 let dragEnabled = true
 let dragState = null
+let modalDragFrame = 0
+let modalLayer = 1100
+const modalLayers = new Map()
+let workspaceInstalled = false
+let workspaceOpen = []
+
+const minimizedRecords = new Map()
+let minimizedSequence = 0
+const recordDocument = Date.now().toString(36)+Math.random().toString(36).slice(2)
+function publishRecordDock() {
+  for(const [id,e] of minimizedRecords) {
+    if(!e.node.isConnected || !e.node.matches('.show,.in') || e.node.style.display==='none' || recordNumber(e.node)!==e.recordId) {
+      e.node.removeAttribute('data-mdt-minimized')
+      minimizedRecords.delete(id)
+    }
+  }
+  ipcRenderer.sendToHost('mdt:record-dock',Array.from(minimizedRecords,([id,e])=>({id,key:e.key,recordId:e.recordId,documentId:recordDocument,url:e.url,title:e.title,color:e.color,geometry:e.geometry,scroll:e.scroll,active:id===Array.from(minimizedRecords.keys()).pop()})))
+}
+function recordGeometry(entry) {
+  if(!entry.node.isConnected) return
+  const dlg=entry.node.querySelector('.modal-dialog'),head=dlg.querySelector('.modal-header')
+  if(dlg.hasAttribute('data-mdt-maximized')) return
+  const r=head.getBoundingClientRect(),at=(dlg.getAttribute('data-mdt-offset')||'0,0').split(',').map(Number)
+  if(!dlg.mdtDragTransform) dlg.mdtDragTransform=[dlg.style.getPropertyValue('transform'),dlg.style.getPropertyPriority('transform')]
+  const x=at[0]+entry.left-r.left,y=at[1]+entry.top-r.top
+  dlg.style.setProperty('transform','translate3d('+x+'px,'+y+'px,0)','important')
+  dlg.setAttribute('data-mdt-offset',x+','+y)
+}
+function recordNumber(node) {
+  return /#\s*(\d+)/.exec(flatText(node.querySelector('.modal-title')))?.[1] || ''
+}
+function minimizeRecord(dlg,approved=false) {
+  if(!isRecordMaxTarget(dlg)) return
+  const node=dlg.closest('.modal')
+  if(!recordNumber(node)) return
+  if(!reportIdentity(node)&&!approved) {
+    node.setAttribute('data-mdt-edit-warning',recordNumber(node))
+    ipcRenderer.sendToHost('mdt:record-minimize-warning',{recordId:recordNumber(node)})
+    return
+  }
+  if(node.hasAttribute('data-mdt-minimized')) return
+  const r=dlg.querySelector('.modal-header').getBoundingClientRect(),box=dlg.querySelector('.modal-content')
+  const title=flatText(node.querySelector('.modal-title')).replace(/^view\s+record\s*[-:]?\s*/i,'')
+  const match=title.match(/^#(\d+)\s*[-:]?\s*(.*)/)
+  const type=node.querySelector('[id*="RecordType"], [id*="recordType"]')
+  const entry={node,scrolls:[node].concat(Array.from(node.querySelectorAll('*'))).map(n=>[n.scrollTop,n.scrollLeft]),left:r.left,top:r.top,title:match?(match[2]||'Record')+' #'+match[1]:title,color:type?getComputedStyle(type).color:''}
+  const frame=dlg.getBoundingClientRect(),content=box.getBoundingClientRect()
+  entry.recordId=recordNumber(node)
+  entry.url=location.href
+  entry.geometry={...(dlg.mdtMaxState?.geometry||{left:r.left,top:r.top,width:frame.width,height:content.height}),maximized:dlg.hasAttribute('data-mdt-maximized')}
+  const body=node.querySelector('.modal-body')
+  entry.scroll={modal:[node.scrollTop,node.scrollLeft],body:[body?.scrollTop||0,body?.scrollLeft||0]}
+  if(!dlg.hasAttribute('data-mdt-maximized')) {
+    gripStyle(dlg,dlg,{width:dlg.getBoundingClientRect().width+'px','max-width':'none'})
+    gripStyle(dlg,box,{height:box.getBoundingClientRect().height+'px'})
+    dlg.setAttribute('data-mdt-sized','1')
+    fitSizedModal(dlg)
+  }
+  const id=String(++minimizedSequence)
+  entry.key=recordDocument+':'+id
+  minimizedRecords.set(id,entry)
+  node.setAttribute('data-mdt-minimized',id)
+  document.activeElement?.blur()
+  syncWorkspace()
+  cacheMovedReport()
+  publishRecordDock()
+  setTimeout(()=>recordGeometry(entry),180)
+}
+function recordResult(record,success,reason='') {
+  ipcRenderer.sendToHost('mdt:record-dock-result',{key:record.key||record.recordId,success,reason})
+}
+function nativeRecordOpen(recordId) {
+  const jq=window.jQuery
+  const target=Array.from(document.querySelectorAll('span[name="viewRecord"]')).find(n=>n.id===recordId)
+  const events=jq&&jq._data&&jq._data(document,'events')
+  const delegated=events?.click?.some(h=>/viewRecord/.test(h.selector||''))
+  if(target&&(delegated||target.onclick||jq?._data?.(target,'events')?.click?.length)) { target.click(); return true }
+  if(!document.querySelector('#modalViewRecord')||!delegated) return false
+  const trigger=document.createElement('span')
+  trigger.setAttribute('name','viewRecord');trigger.id=recordId;trigger.hidden=true
+  document.body.appendChild(trigger);trigger.click();trigger.remove()
+  return true
+}
+let recordReopenToken=0
+async function reopenRecord(record) {
+  const token=++recordReopenToken
+  if(!/^\d+$/.test(String(record.recordId))) {recordResult(record,false,'No record ID');return}
+  try {
+    const opened=await webFrame.executeJavaScript('('+nativeRecordOpen.toString()+')('+JSON.stringify(String(record.recordId))+')')
+    if(!opened) {recordResult(record,false,'This page has no record viewer');return}
+    const start=Date.now()
+    const wait=()=>{
+      if(token!==recordReopenToken) return
+      const node=Array.from(document.querySelectorAll('.modal.show,.modal.in')).find(n=>recordNumber(n)===String(record.recordId)&&!n.hasAttribute('data-mdt-minimized'))
+      if(node) {
+        setTimeout(()=>{
+          if(token!==recordReopenToken||!node.isConnected) return
+          const dlg=node.querySelector('.modal-dialog'),box=dlg.querySelector('.modal-content'),body=box.querySelector('.modal-body'),g=record.geometry
+          if(g&&themeNow()!=='off') {
+            restoreModalMax(dlg)
+            gripStyle(dlg,dlg,{width:Math.max(240,Math.min(g.width,innerWidth))+'px','max-width':'none'})
+            gripStyle(dlg,box,{height:Math.max(180,Math.min(g.height,innerHeight))+'px'})
+            dlg.setAttribute('data-mdt-sized','1');dlg.setAttribute('data-mdt-moved','1');fitSizedModal(dlg)
+            syncWorkspace()
+            recordGeometry({node,left:Math.max(0,Math.min(g.left,innerWidth-dlg.getBoundingClientRect().width)),top:Math.max(0,Math.min(g.top,innerHeight-30))})
+            if(g.maximized) toggleModalMax(dlg)
+            syncWorkspace();raiseModal(node)
+          }
+          if(record.scroll) { node.scrollTop=record.scroll.modal?.[0]||0;node.scrollLeft=record.scroll.modal?.[1]||0;if(body){body.scrollTop=record.scroll.body?.[0]||0;body.scrollLeft=record.scroll.body?.[1]||0} }
+          cacheMovedReport()
+          recordResult(record,true)
+        },220)
+      } else if(Date.now()-start<12000) setTimeout(wait,100)
+      else recordResult(record,false,'The MDC did not open the record')
+    }
+    wait()
+  } catch(_) {recordResult(record,false,'The MDC could not open the record')}
+}
+ipcRenderer.on('mdt:record-dock-sync',()=>ipcRenderer.sendToHost('mdt:record-ready',{documentId:recordDocument}))
+ipcRenderer.on('mdt:record-minimize-approved',(_e,recordId)=>{
+  const node=Array.from(document.querySelectorAll('.modal[data-mdt-edit-warning]')).find(n=>n.getAttribute('data-mdt-edit-warning')===String(recordId))
+  if(node&&recordNumber(node)===String(recordId)) {node.removeAttribute('data-mdt-edit-warning');minimizeRecord(node.querySelector('.modal-dialog'),true)}
+})
+ipcRenderer.on('mdt:record-dock',(_event,message)=>{
+  if(!message||!['restore','close'].includes(message.action)) return
+  const record=message.record||{}
+  let entry=record.documentId===recordDocument?minimizedRecords.get(String(message.id)):null
+  if(entry&&recordNumber(entry.node)!==entry.recordId) entry=null
+  if(!entry) {if(message.action==='restore') reopenRecord(record);return}
+  minimizedRecords.delete(String(message.id))
+  if(message.action==='restore') {
+    entry.node.removeAttribute('data-mdt-minimized')
+    syncWorkspace();raiseModal(entry.node)
+    setTimeout(()=>{recordGeometry(entry);recordResult(record,true)},180)
+  } else {
+    if(entry.node.hasAttribute('data-mdt-record-copy')) entry.node.remove()
+    else entry.node.querySelector('.close')?.click()
+  }
+  publishRecordDock();syncWorkspace()
+})
+document.addEventListener('click',e=>{
+  const target=e.target.closest&&e.target.closest('a,button')
+  if(target&&/^(?:sign\s*out|log\s*out)$/i.test(flatText(target))) ipcRenderer.sendToHost('mdt:record-signout')
+},true)
+
+const reportSnapshots = new Map()
+let reportCopySequence = 0
+let reportCacheTimer = 0
+
+function reportIdentity(node) {
+  const title = flatText(node.querySelector('.modal-title, .modal-header'))
+  if (!/^(view|show)\s+(?:(?:arrest|incident)\s+)?(?:record|report)\b/i.test(title)) return ''
+  if (node.querySelector('textarea, select, input:not([type="hidden"]):not([readonly]):not([disabled]), [contenteditable="true"], .note-editor')) return ''
+  const id = /#\s*(\d+)/.exec(title)
+  return id ? id[1] : title + '|' + flatText(node.querySelector('.modal-body'))
+}
+
+function cacheMovedReport() {
+  if (themeNow() === 'off' || dragState || gripBox) return
+  const copies = !!document.querySelector('[data-mdt-record-copy]')
+  document.querySelectorAll('.modal.show:not([data-mdt-record-copy]), .modal.in:not([data-mdt-record-copy])').forEach((node) => {
+    const box = node.querySelector('.modal-dialog')
+    if (!node.getClientRects().length || !box || !copies && !box.hasAttribute('data-mdt-moved') && !node.hasAttribute('data-mdt-minimized')) return
+    const identity = reportIdentity(node)
+    if (identity) {
+      const snapshot = node.cloneNode(true)
+      if (box.mdtMaxState && !node.hasAttribute('data-mdt-minimized')) {
+        const original = [node].concat(Array.from(node.querySelectorAll('*')))
+        const copies = [snapshot].concat(Array.from(snapshot.querySelectorAll('*')))
+        box.mdtMaxState.styles.forEach(([element,prop,value,priority]) => {
+          const target = copies[original.indexOf(element)]
+          if (!target) return
+          if (value) target.style.setProperty(prop,value,priority)
+          else target.style.removeProperty(prop)
+        })
+        const frame = snapshot.querySelector('.modal-dialog')
+        frame.removeAttribute('data-mdt-maximized')
+        if (box.mdtMaxState.sized === null) frame.removeAttribute('data-mdt-sized')
+        else frame.setAttribute('data-mdt-sized',box.mdtMaxState.sized)
+      }
+      reportSnapshots.set(node, {identity, snapshot})
+    }
+  })
+}
+
+function preserveReport(node, saved) {
+  reportSnapshots.delete(node)
+  const copy = saved.snapshot
+  const minId=node.getAttribute('data-mdt-minimized'),entry=minimizedRecords.get(minId)
+  const original=[node].concat(Array.from(node.querySelectorAll('*'))),cloned=[copy].concat(Array.from(copy.querySelectorAll('*')))
+  const scrolls=entry?entry.scrolls:original.map(n=>[n.scrollTop,n.scrollLeft])
+  if(entry) {
+    const oldBox=node.querySelector('.modal-dialog'),newBox=copy.querySelector('.modal-dialog')
+    const mapped=n=>cloned[original.indexOf(n)]
+    if(oldBox.mdtGripStyle) newBox.mdtGripStyle=oldBox.mdtGripStyle.map(([n,...rest])=>[mapped(n),...rest]).filter(([n])=>n)
+    if(oldBox.mdtMaxState) newBox.mdtMaxState={...oldBox.mdtMaxState,grip:oldBox.mdtMaxState.grip?.map(([n,...rest])=>[mapped(n),...rest]).filter(([n])=>n),styles:oldBox.mdtMaxState.styles.map(([n,...rest])=>[mapped(n),...rest]).filter(([n])=>n)}
+    newBox.mdtDragTransform=oldBox.mdtDragTransform
+    entry.node=copy
+    copy.setAttribute('data-mdt-minimized',minId)
+    node.removeAttribute('data-mdt-minimized')
+  }
+  copy.setAttribute('data-mdt-record-copy', '1')
+  copy.classList.add('show')
+  copy.classList.remove('fade')
+  copy.style.display = 'block'
+  copy.removeAttribute('aria-hidden')
+  copy.setAttribute('aria-modal','false')
+  const ids = new Map()
+  const prefix = 'mdt-report-' + (++reportCopySequence) + '-'
+  ;[copy].concat(Array.from(copy.querySelectorAll('[id]'))).forEach((el) => {
+    if (!el.id) return
+    ids.set(el.id, prefix + el.id)
+    el.id = prefix + el.id
+  })
+  copy.querySelectorAll('script, input[type="hidden"], .mdt-grip, button:not(.close)').forEach((el) => el.remove())
+  ;[copy].concat(Array.from(copy.querySelectorAll('*'))).forEach((el) => {
+    Array.from(el.attributes).forEach((attr) => {
+      if (/^on/i.test(attr.name) || /^(data-toggle|data-target|data-dismiss)$/.test(attr.name)) el.removeAttribute(attr.name)
+    })
+    for (const attr of ['for','aria-labelledby','aria-describedby','headers']) {
+      const value = el.getAttribute(attr)
+      if (value) el.setAttribute(attr, value.split(/\s+/).map((id) => ids.get(id) || id).join(' '))
+    }
+    const href = el.getAttribute('href') || ''
+    if (/^javascript:/i.test(href)) el.removeAttribute('href')
+    else if (href.startsWith('#') && ids.has(href.slice(1))) el.setAttribute('href', '#' + ids.get(href.slice(1)))
+  })
+  const box = copy.querySelector('.modal-dialog')
+  box.setAttribute('data-mdt-moved', '1')
+  box.removeAttribute('data-mdt-dragging')
+  const close = copy.querySelector('.close')
+  if (close) { close.setAttribute('type','button'); close.addEventListener('click', (event) => { event.preventDefault(); event.stopImmediatePropagation(); copy.remove(); syncWorkspace() }) }
+  document.body.appendChild(copy)
+  cloned.forEach((n,i)=>{if(scrolls[i]) { n.scrollTop=scrolls[i][0]; n.scrollLeft=scrolls[i][1] }})
+  if(entry) publishRecordDock()
+  resetModalDrag(node.querySelector('.modal-dialog'))
+  syncWorkspace()
+  raiseModal(copy)
+  raiseModal(node)
+}
+
+function watchReportReuse() {
+  const observer = new MutationObserver((records) => {
+    const affected = new Set()
+    for (const record of records) {
+      const target = record.target.nodeType === 1 ? record.target : record.target.parentElement
+      const modal = target && target.closest('.modal:not([data-mdt-record-copy])')
+      if (modal) affected.add(modal)
+    }
+    if (!affected.size) return
+    affected.forEach((node) => {
+      const saved = reportSnapshots.get(node)
+      const identity = reportIdentity(node)
+      if (saved && identity && identity !== saved.identity && themeNow() !== 'off') preserveReport(node, saved)
+    })
+    if(Array.from(minimizedRecords.values()).some(e=>recordNumber(e.node)!==e.recordId)) {publishRecordDock();syncWorkspace()}
+    clearTimeout(reportCacheTimer)
+    reportCacheTimer = setTimeout(cacheMovedReport, 180)
+  })
+  observer.observe(document.documentElement, {subtree:true, childList:true, characterData:true})
+  document.addEventListener('click', (event) => {
+    const modal = event.target.closest && event.target.closest('.modal')
+    if (modal && event.target.closest('.close, [data-dismiss="modal"]')) reportSnapshots.delete(modal)
+    else if (!modal) cacheMovedReport()
+  }, true)
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return
+    const modal = event.target.closest && event.target.closest('.modal')
+    if (modal && modal.hasAttribute('data-mdt-record-copy')) { event.preventDefault(); event.stopImmediatePropagation(); modal.remove(); syncWorkspace() }
+    else if (modal) reportSnapshots.delete(modal)
+  }, true)
+}
+
+function installWorkspace() {
+  if (workspaceInstalled) return
+  workspaceInstalled = true
+  webFrame.executeJavaScript('(' + bootstrapWorkspace.toString() + ')()').catch(() => { workspaceInstalled = false })
+}
+
+function bootstrapWorkspace() {
+  document.addEventListener('mdt:prepare-export', () => {
+    const nativeCapture = window.html2canvas
+    if (typeof nativeCapture !== 'function' || nativeCapture.mdtPaperCapture) return
+    const capture = async (root, options = {}) => {
+      if (!root || !/^(warrant|warrantReason)$/.test(root.id)) return nativeCapture(root, options)
+      if (document.fonts) await document.fonts.ready
+      const nativeClone = options.onclone
+      const prepare = async clone => {
+        clone.querySelectorAll('style[id^="mdt-"]').forEach(node => node.remove())
+        Array.from(clone.documentElement.classList).filter(name => name.startsWith('mdt-')).forEach(name => clone.documentElement.classList.remove(name))
+        const paper = clone.getElementById(root.id)
+        if (!paper) return
+        paper.querySelectorAll('.mdt-grip, .mdt-maximize, .mdt-minimize').forEach(node => node.remove())
+        const style = clone.createElement('style')
+        style.textContent = `
+          #${root.id}, #${root.id} .card, #${root.id} .card-body { background: #FFF !important; color: #111 !important; box-shadow: none !important; }
+          #${root.id} * { color: #111 !important; -webkit-text-fill-color: #111 !important; text-shadow: none !important; }
+          #${root.id} .card-header { position: relative !important; margin: 0 !important; padding: 8px 26px !important; background: #EEE !important; box-shadow: none !important; border-bottom: 1px solid #999 !important; }
+          #${root.id} .card-header * { background: transparent !important; }
+          #${root.id} .btn-collapse { position: absolute !important; top: 8px !important; left: 5px !important; right: auto !important; width: 18px !important; min-height: 18px !important; padding: 0 !important; margin: 0 !important; background: #EEE !important; border: 1px solid #888 !important; transform: none !important; }
+          #${root.id} .btn-collapse::before, #${root.id} .btn-collapse::after { content: none !important; }
+          #${root.id} .btn-collapse > * { visibility: visible !important; }
+          #${root.id} table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+          #${root.id} table :is(th,td) { color: #111 !important; background: #FFF !important; border: 1px solid #AAA !important; padding: 6px !important; white-space: normal !important; overflow-wrap: anywhere !important; font-size: 12px !important; }
+          #${root.id} table thead th { background: #EEE !important; }
+          #${root.id} .badge { padding: 3px 6px !important; background: #DDD !important; color: #111 !important; }
+          #${root.id} .badge-warning { background: #FFB331 !important; }
+          #${root.id} .badge-danger { background: #B51F18 !important; }
+          #${root.id} .badge-danger, #${root.id} .badge-danger * { color: #FFF !important; -webkit-text-fill-color: #FFF !important; }
+          #${root.id} .text-right:has(> .badge) { display: flex !important; flex-direction: column !important; align-items: flex-end !important; gap: 4px !important; }
+          #${root.id} .text-right:has(> .badge) > br { display: none !important; }
+          #${root.id} .text-right > .badge { min-width: 90px !important; text-align: center !important; }
+          #${root.id} .badge > * { font: inherit !important; margin: 0 !important; }
+        `
+        clone.head.appendChild(style)
+        if (clone.fonts) await clone.fonts.ready
+        const view = clone.defaultView
+        for (const icon of paper.querySelectorAll('i.fa, i.fas, i.far, i.fab, i[class*="fa-"], .material-icons')) {
+          const css = view.getComputedStyle(icon), pseudo = view.getComputedStyle(icon, '::before')
+          let glyph = pseudo.content
+          try { glyph = JSON.parse(glyph) } catch (_) { glyph = '' }
+          if (!glyph || glyph === 'none' || glyph === 'normal') glyph = icon.textContent.trim()
+          if (!glyph) continue
+          const family = pseudo.fontFamily || css.fontFamily, weight = pseudo.fontWeight || css.fontWeight, size = parseFloat(css.fontSize) || 12
+          const font = weight + ' ' + size + 'px ' + family
+          if (document.fonts) await document.fonts.load(font, glyph)
+          const canvas = document.createElement('canvas'), pixels = Math.ceil(size * 1.6)
+          canvas.width = canvas.height = pixels * 2
+          const ctx = canvas.getContext('2d')
+          ctx.scale(2, 2); ctx.font = font; ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(glyph, pixels / 2, pixels / 2)
+          const image = clone.createElement('img')
+          image.src = canvas.toDataURL('image/png'); image.alt = icon.getAttribute('aria-label') || ''; image.dataset.mdtExportIcon = '1'
+          image.style.cssText = 'display:inline-block;width:'+size+'px;height:'+size+'px;vertical-align:middle;margin-left:'+css.marginLeft+';margin-right:'+css.marginRight
+          icon.replaceWith(image)
+        }
+      }
+      const frame = document.createElement('iframe')
+      frame.setAttribute('aria-hidden', 'true')
+      frame.style.cssText = 'position:fixed;left:-100000px;top:0;border:0;width:'+Math.ceil(root.getBoundingClientRect().width)+'px;height:'+innerHeight+'px;pointer-events:none'
+      document.body.appendChild(frame)
+      try {
+        const clone = frame.contentDocument
+        clone.open(); clone.write('<!doctype html><html><head></head><body></body></html>'); clone.close()
+        const base = clone.createElement('base'); base.href = document.baseURI; clone.head.appendChild(base)
+        const loaded = []
+        document.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+          if (node.id.startsWith('mdt-')) return
+          const copy = node.cloneNode(true)
+          if (copy.tagName === 'LINK') loaded.push(new Promise(resolve => { copy.onload = resolve; copy.onerror = resolve }))
+          clone.head.appendChild(copy)
+        })
+        clone.body.style.margin = '0'
+        clone.body.appendChild(root.cloneNode(true))
+        clone.querySelectorAll('script, iframe').forEach(node => node.remove())
+        clone.querySelectorAll('*').forEach(node => Array.from(node.attributes).filter(attribute => /^on/i.test(attribute.name)).forEach(attribute => node.removeAttribute(attribute.name)))
+        await Promise.all(loaded)
+        await prepare(clone)
+        return await nativeCapture(clone.getElementById(root.id), {...options, backgroundColor:'#FFFFFF', onclone:nativeClone})
+      } finally { frame.remove() }
+
+    }
+    capture.mdtPaperCapture = true
+    window.html2canvas = capture
+  })
+
+  const saved = new Map()
+  const backdrops = new Set()
+  let syncing = false
+  const instanceFor = (node) => window.jQuery && window.jQuery(node).data('bs.modal') || (window.bootstrap && window.bootstrap.Modal && typeof window.bootstrap.Modal.getInstance === 'function' && window.bootstrap.Modal.getInstance(node))
+  const backdropFor = (instance) => instance.$backdrop && instance.$backdrop[0] || instance._backdrop && (instance._backdrop._element || instance._backdrop)
+  function sync() {
+    if (syncing) return
+    syncing = true
+    try {
+      const active = document.documentElement.classList.contains('mdt-workspace')
+      const jq = window.jQuery
+      const open = Array.from(document.querySelectorAll('.modal.show, .modal.in')).filter((node) => node.getClientRects().length && !node.hasAttribute('data-mdt-minimized'))
+      const native = open.filter((node) => !node.hasAttribute('data-mdt-record-copy'))
+      if (active && jq) jq(document).off('focusin.bs.modal')
+      document.querySelectorAll('.modal:not([data-mdt-record-copy])').forEach((node) => {
+        const instance = instanceFor(node)
+        if (!instance) return
+        if (active && (native.includes(node) || node.hasAttribute('data-mdt-minimized'))) {
+          if (!saved.has(instance)) saved.set(instance, {focus:instance._config && instance._config.focus, node})
+          if (instance._config) instance._config.focus = false
+          if (instance._focustrap) instance._focustrap.deactivate()
+        }
+        if (!saved.has(instance)) return
+        const backdrop = backdropFor(instance)
+        if (backdrop && backdrop.nodeType === 1) {
+          backdrop.setAttribute('data-mdt-workspace-backdrop','1')
+          backdrops.add(backdrop)
+        }
+        if (!node.getClientRects().length && !instance._isTransitioning && (instance._isShown || instance.isShown) && typeof instance.hide === 'function') instance.hide()
+      })
+      if (active) document.body.classList.remove('modal-open')
+      else if (saved.size) {
+        const top = native.sort((a, b) => Number(getComputedStyle(a).zIndex) - Number(getComputedStyle(b).zIndex)).pop()
+        let pending = false
+        saved.forEach(({focus,node}, instance) => {
+          if (instance._config && focus !== undefined) instance._config.focus = focus
+          if (instance._focustrap) instance._focustrap.deactivate()
+          if (instance._isTransitioning) pending = true
+          if (node === top && focus !== false) {
+            if (instance._focustrap) instance._focustrap.activate()
+            else if (instance._enforceFocus) instance._enforceFocus()
+            else if (instance.enforceFocus) instance.enforceFocus()
+          }
+        })
+        if (native.length) {
+          document.body.classList.add('modal-open')
+          backdrops.forEach((node) => node.removeAttribute('data-mdt-workspace-backdrop'))
+          backdrops.clear()
+          saved.clear()
+        } else if (!pending && !document.querySelector('.swal2-shown, .sweet-alert.visible')) {
+          if (jq) jq(document).off('focusin.bs.modal')
+          const needsReset = document.body.classList.contains('modal-open') || Array.from(backdrops).some((node) => node.isConnected)
+          const instances = Array.from(saved.keys()).reverse()
+          const reset = instances.find((instance) => { const node = backdropFor(instance); return node && node.isConnected }) || instances[0]
+          saved.forEach((value, instance) => {
+            if (instance._removeBackdrop) instance._removeBackdrop()
+            else if (instance.removeBackdrop) instance.removeBackdrop()
+            else if (instance._backdrop && instance._backdrop.dispose) instance._backdrop.dispose()
+          })
+          if (needsReset && reset) {
+            if (reset._resetScrollbar) reset._resetScrollbar()
+            else if (reset.resetScrollbar) reset.resetScrollbar()
+          }
+          backdrops.forEach((node) => node.remove())
+          document.body.classList.remove('modal-open')
+          backdrops.clear()
+          saved.clear()
+        }
+      }
+    } finally { syncing = false }
+  }
+  document.addEventListener('mdt:picker-dismiss',event=>{
+    const picker=window.jQuery&&window.jQuery(event.target).data('this')
+    if(picker)picker.$button.trigger('click.bs.dropdown.data-api').trigger('focus')
+  })
+  window.addEventListener('wheel', event => {
+    if (event.ctrlKey) return
+    const menu = event.target.closest?.('.dropdown-menu')
+    const list = menu?.closest('.bootstrap-select,.bs-container')?.querySelector('div.inner[data-mdt-picker-list]')
+    if (!list) return
+    const factor = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? list.clientHeight : 1
+    list.scrollTop += event.deltaY * factor
+    event.preventDefault()
+    event.stopPropagation()
+  }, {capture:true,passive:false})
+  function applyPickerFit(picker, state) {
+    const menu = picker.$menu[0], list = picker.$menuInner[0]
+    menu.style.setProperty('height', state.height+'px', 'important')
+    menu.style.setProperty('max-height', state.height+'px', 'important')
+    menu.style.setProperty('min-height', '0', 'important')
+    menu.style.setProperty('overflow', 'hidden', 'important')
+    list.style.setProperty('height', state.innerHeight+'px', 'important')
+    list.style.setProperty('max-height', state.innerHeight+'px', 'important')
+    list.style.setProperty('min-height', '0', 'important')
+    list.style.setProperty('overflow-y', 'auto', 'important')
+    list.style.setProperty('overflow-x', 'hidden', 'important')
+    list.style.setProperty('scrollbar-gutter', 'stable', 'important')
+    list.style.setProperty('scrollbar-width', 'auto', 'important')
+    list.style.setProperty('scrollbar-color', 'auto', 'important')
+    list.style.setProperty('overscroll-behavior', 'contain', 'important')
+    list.setAttribute('data-mdt-picker-list', '1')
+    picker.sizeInfo.menuInnerHeight = state.innerHeight
+    picker.$newElement.toggleClass('dropup', state.up)
+    picker.selectpicker.dropup = state.up
+  }
+  document.addEventListener('mdt:picker-fit', event => {
+    const jq = window.jQuery, picker = jq && jq(event.target).data('selectpicker')
+    if (!picker || !picker.sizeInfo || !picker.sizeInfo.menuExtras) return
+    let fit
+    try { fit = JSON.parse(event.detail) } catch (_) { return }
+    let state = picker.mdtFixedMenu
+    if (fit === null) {
+      if (!state) return
+      picker.setMenuSize = state.native
+      picker.options.windowPadding = state.padding
+      state.styles.forEach(([node, values])=>values.forEach(([key,value,priority])=>{if(value)node.style.setProperty(key,value,priority);else node.style.removeProperty(key)}))
+      picker.$menuInner[0].removeAttribute('data-mdt-picker-list')
+      delete picker.mdtFixedMenu
+      if (picker.$newElement.hasClass('show') || picker.$newElement.hasClass('open')) picker.setMenuSize()
+      return
+    }
+    if (!fit || !Array.isArray(fit.padding) || fit.padding.length!==4 || !fit.padding.every(Number.isFinite) || !Number.isFinite(fit.limit)) return
+    if (!state) {
+      const keys = ['height','max-height','min-height','overflow','overflow-x','overflow-y','scrollbar-gutter','scrollbar-width','scrollbar-color','overscroll-behavior','transition-property']
+      state = {native:picker.setMenuSize,padding:picker.options.windowPadding.slice(),styles:[picker.$menu[0],picker.$menuInner[0]].map(node=>[node,keys.map(key=>[key,node.style.getPropertyValue(key),node.style.getPropertyPriority(key)])])}
+      picker.mdtFixedMenu = state
+      picker.setMenuSize = function(){applyPickerFit(this,state)}
+    }
+    picker.$menu[0].style.setProperty('transition-property','opacity','important')
+    picker.$menu[0].style.setProperty('transform','none','important')
+    picker.options.windowPadding = fit.padding
+    state.native.call(picker)
+    const menu = picker.$menu[0], list = picker.$menuInner[0]
+    const extra = Math.max(0, menu.offsetHeight-list.offsetHeight)
+    const data = picker.selectpicker.current.data, last = data[data.length-1]
+    if (!state.contentHeight) state.contentHeight = Math.max(list.scrollHeight,last && last.position || 0)
+    state.height = Math.max(1,Math.min(fit.limit,extra+state.contentHeight))
+    state.innerHeight = Math.max(0,state.height-extra)
+    state.up = !!fit.up
+    applyPickerFit(picker,state)
+  })
+  document.addEventListener('mdt:workspace', sync)
+  function lifecycle() {
+    document.dispatchEvent(new Event('mdt:modal-lifecycle'))
+    sync()
+  }
+  function wire() {
+    if (window.jQuery) window.jQuery(document).on('show.bs.modal.mdtWorkspace shown.bs.modal.mdtWorkspace hidden.bs.modal.mdtWorkspace', lifecycle)
+    else ['show.bs.modal','shown.bs.modal','hidden.bs.modal'].forEach((name) => document.addEventListener(name,lifecycle))
+    sync()
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire, {once:true})
+  else wire()
+}
+
+function syncWorkspace() {
+  if(Array.from(minimizedRecords.values()).some(e=>!e.node.isConnected||!e.node.matches('.show,.in')||e.node.style.display==='none')) publishRecordDock()
+  document.querySelectorAll('.modal[data-mdt-minimized]').forEach(node=>{if(node.style.display==='none') node.removeAttribute('data-mdt-minimized')})
+  const open = Array.from(document.querySelectorAll('.modal.show, .modal.in')).filter((node) => node.getClientRects().length && !node.hasAttribute('data-mdt-minimized'))
+  const root = document.documentElement
+  const floating = themeNow() !== 'off' && (dragEnabled || minimizedRecords.size>0) && (open.length > 0 || minimizedRecords.size > 0) && (minimizedRecords.size > 0 || root.classList.contains('mdt-workspace') || open.some((node) => node.querySelector('[data-mdt-moved="1"]')))
+  const changed = root.classList.contains('mdt-workspace') !== floating
+  const windowsChanged = open.length !== workspaceOpen.length || open.some((node,index) => node !== workspaceOpen[index])
+  workspaceOpen = open
+  if (changed) root.classList.toggle('mdt-workspace', floating)
+  if (changed || floating && windowsChanged) document.dispatchEvent(new Event('mdt:workspace'))
+  modalLayers.forEach((saved, node) => {
+    if (!open.includes(node) || !floating) {
+      if (saved[0]) node.style.setProperty('z-index', saved[0], saved[1])
+      else node.style.removeProperty('z-index')
+      modalLayers.delete(node)
+    }
+  })
+}
+
+function raiseModal(node) {
+  if (!node || node.hasAttribute('data-mdt-minimized') || !document.documentElement.classList.contains('mdt-workspace')) return
+  if (!modalLayers.has(node)) modalLayers.set(node, [node.style.getPropertyValue('z-index'), node.style.getPropertyPriority('z-index')])
+  if (modalLayer >= 1400) {
+    Array.from(modalLayers.keys()).sort((a,b) => Number(a.style.zIndex)-Number(b.style.zIndex)).forEach((modal,index) => modal.style.setProperty('z-index', String(1100+index), 'important'))
+    modalLayer = 1100 + modalLayers.size
+  }
+  node.style.setProperty('z-index', String(++modalLayer), 'important')
+}
+
+document.addEventListener('wheel', (event) => {
+  if (themeNow() === 'off' || event.ctrlKey || !event.target.closest) return
+  const menu = event.target.closest('.dropdown-menu')
+  const picker = menu && menu.closest('.bootstrap-select, .bs-container')
+  const list = picker && picker.querySelector('.dropdown-menu > div.inner')
+  if (list) {
+    const factor = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? list.clientHeight : 1
+    list.scrollTop += event.deltaY * factor
+    event.preventDefault()
+    event.stopPropagation()
+    return
+  }
+  const content = event.target.closest('.modal-content')
+  const modal = content && content.closest('.modal.show, .modal.in')
+  if (!modal) return
+  const factor = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? modal.clientHeight : 1
+  const deltaY = event.deltaY * factor
+  const deltaX = event.deltaX * factor
+  let node = event.target.nodeType === 1 ? event.target : event.target.parentElement
+  while (node && modal.contains(node)) {
+    const style = getComputedStyle(node)
+    const vertical = /auto|scroll|overlay/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1
+    const horizontal = /auto|scroll|overlay/.test(style.overflowX) && node.scrollWidth > node.clientWidth + 1
+    const beforeY = node.scrollTop
+    const beforeX = node.scrollLeft
+    if (vertical && deltaY) node.scrollTop += deltaY
+    if (horizontal && deltaX) node.scrollLeft += deltaX
+    if (node.scrollTop !== beforeY || node.scrollLeft !== beforeX) break
+    node = node.parentElement
+  }
+  event.preventDefault()
+  event.stopPropagation()
+}, { capture: true, passive: false })
 
 function applyDragFlag() {
   try {
-    document.documentElement.classList.toggle('mdt-drag', !!dragEnabled)
-  } catch (_) {
-  }
+    if (themeNow() === 'off') {
+      minimizedRecords.forEach(e=>e.node.removeAttribute('data-mdt-minimized'))
+      minimizedRecords.clear()
+      publishRecordDock()
+      document.querySelectorAll('[data-mdt-record-copy]').forEach((node) => node.remove())
+      reportSnapshots.clear()
+    }
+    document.documentElement.classList.toggle('mdt-drag', !!dragEnabled && themeNow() !== 'off')
+    if (themeNow() !== 'off') installWorkspace()
+    syncWorkspace()
+  } catch (_) {}
 }
 
 function dragTarget(node) {
   if (!node || !node.closest) return null
   const head = node.closest('.modal-header, .swal2-header')
-  if (!head) return null
-  if (node.closest('button, a, input, select, textarea, .close')) return null
+  if (!head || node.closest('button, a, input, select, textarea, .close')) return null
   return head.closest('.modal-dialog, .swal2-popup')
 }
 
 function startModalDrag(e) {
-  if (!dragEnabled || !e || e.button !== 0) return
+  if (themeNow() === 'off' || !dragEnabled || !e || e.button !== 0) return
   const box = dragTarget(e.target)
-  if (!box) return
-  const prev = box.getAttribute('data-mdt-offset')
-  const at = prev ? prev.split(',') : ['0', '0']
-  box.setAttribute('data-mdt-moved', '1')
-  if (document.body) document.body.setAttribute('data-mdt-moved', '1')
-  dragState = {
-    box: box,
-    ox: parseFloat(at[0]) || 0,
-    oy: parseFloat(at[1]) || 0,
-    sx: e.clientX,
-    sy: e.clientY
-  }
+  if (!box || box.hasAttribute('data-mdt-maximized')) return
+  const at = (box.getAttribute('data-mdt-offset') || '0,0').split(',').map(Number)
+  const rect = box.getBoundingClientRect()
+  const handle = e.target.closest('.modal-header, .swal2-header')
+  handle.setPointerCapture(e.pointerId)
+  box.setAttribute('data-mdt-dragging', '1')
+  dragState = { box, handle, pointer:e.pointerId, ox:at[0] || 0, oy:at[1] || 0, sx:e.clientX, sy:e.clientY, left:rect.left, top:rect.top, width:rect.width, x:at[0] || 0, y:at[1] || 0, moved:false }
   e.preventDefault()
 }
 
+function paintModalDrag() {
+  modalDragFrame = 0
+  if (!dragState || !dragState.moved) return
+  dragState.box.style.setProperty('transform', 'translate3d(' + dragState.x + 'px,' + dragState.y + 'px,0)', 'important')
+}
+
 function moveModalDrag(e) {
-  if (!dragState) return
-  const box = dragState.box
-  const rect = box.getBoundingClientRect()
-  let x = dragState.ox + (e.clientX - dragState.sx)
-  let y = dragState.oy + (e.clientY - dragState.sy)
-  const leftEdge = rect.left - dragState.ox
-  const topEdge = rect.top - dragState.oy
-  x = Math.min(Math.max(x, 60 - rect.width - leftEdge), window.innerWidth - 60 - leftEdge)
-  y = Math.min(Math.max(y, -topEdge), window.innerHeight - 28 - topEdge)
-  dragState.lx = x
-  dragState.ly = y
-  box.style.setProperty('transform', 'translate(' + x + 'px, ' + y + 'px)', 'important')
+  if (!dragState || e.pointerId !== dragState.pointer) return
+  const state = dragState
+  if (!state.moved && Math.abs(e.clientX - state.sx) + Math.abs(e.clientY - state.sy) < 4) return
+  if (!state.moved) {
+    state.moved = true
+    if (!state.box.mdtDragTransform) state.box.mdtDragTransform = [state.box.style.getPropertyValue('transform'), state.box.style.getPropertyPriority('transform')]
+    state.box.setAttribute('data-mdt-moved', '1')
+    syncWorkspace()
+    const settled = state.box.getBoundingClientRect()
+    state.baseLeft = settled.left - state.ox
+    state.baseTop = settled.top - state.oy
+    const header = state.handle.getBoundingClientRect()
+    state.headLeft = header.left - state.ox
+    state.headTop = header.top - state.oy
+    state.headWidth = header.width
+    state.headHeight = header.height
+    state.ox += state.left - settled.left
+    state.oy += state.top - settled.top
+    raiseModal(state.box.closest('.modal'))
+  }
+  state.x = Math.min(Math.max(state.ox + e.clientX - state.sx, -state.headLeft), Math.max(0, innerWidth - state.headWidth) - state.headLeft)
+  state.y = Math.min(Math.max(state.oy + e.clientY - state.sy, -state.headTop), Math.max(0, innerHeight - state.headHeight) - state.headTop)
+  if (!modalDragFrame) modalDragFrame = requestAnimationFrame(paintModalDrag)
+  e.preventDefault()
 }
 
 function endModalDrag() {
-  if (dragState && dragState.box && typeof dragState.lx === 'number') {
-    dragState.box.setAttribute('data-mdt-offset', dragState.lx + ',' + dragState.ly)
-  }
+  if (!dragState) return
+  if (modalDragFrame) cancelAnimationFrame(modalDragFrame)
+  paintModalDrag()
+  if (dragState.moved) dragState.box.setAttribute('data-mdt-offset', dragState.x + ',' + dragState.y)
+  if (dragState.handle.hasPointerCapture(dragState.pointer)) dragState.handle.releasePointerCapture(dragState.pointer)
+  dragState.box.removeAttribute('data-mdt-dragging')
   dragState = null
+  if (deferredSkinPass) scheduleScrollerFix()
+  cacheMovedReport()
 }
 
 function resetModalDrag(box) {
   if (!box) return
+  restoreModalMax(box)
+  if (dragState && dragState.box === box) endModalDrag()
   box.removeAttribute('data-mdt-moved')
   box.removeAttribute('data-mdt-offset')
-  if (document.body && !document.querySelector('[data-mdt-moved="1"]')) {
-    document.body.removeAttribute('data-mdt-moved')
+  if (box.mdtDragTransform) {
+    const saved = box.mdtDragTransform
+    if (saved[0]) box.style.setProperty('transform', saved[0], saved[1])
+    else box.style.removeProperty('transform')
+    delete box.mdtDragTransform
   }
-  box.style.removeProperty('transform')
-  box.style.removeProperty('position')
-  box.style.removeProperty('left')
-  box.style.removeProperty('top')
-  box.style.removeProperty('width')
-  box.style.removeProperty('margin')
-}
-
-function stackModal(node) {
-  if (!node || !node.style) return
-  const open = document.querySelectorAll('.modal.show').length
-  const z = 1050 + (open + 1) * 20
-  node.style.setProperty('z-index', String(z), 'important')
-  setTimeout(() => {
-    const shades = document.querySelectorAll('.modal-backdrop')
-    const last = shades[shades.length - 1]
-    if (last && last.style) last.style.setProperty('z-index', String(z - 10), 'important')
-    if (document.body) document.body.classList.add('modal-open')
-  }, 0)
-}
-
-function keepStackOpen() {
-  setTimeout(() => {
-    if (!document.body) return
-    if (document.querySelector('.modal.show')) document.body.classList.add('modal-open')
-  }, 0)
+  syncWorkspace()
 }
 
 function styleTipList(list, p) {
@@ -5863,686 +7469,26 @@ function scheduleMapSearchFix() {
   }, 80)
 }
 
+let mapSearchWatching = false
 function watchMapSearch() {
-  if (!document.querySelector('#map, .leaflet-container')) return
+  if (mapSearchWatching || !document.querySelector('#map, .leaflet-container')) return
   if (!document.body) return
+  mapSearchWatching = true
   scheduleMapSearchFix()
-  const obs = new MutationObserver(scheduleMapSearchFix)
+  const obs = new MutationObserver((records) => {
+    if (records.some((record) => record.target.nodeType === 1 && record.target.closest('#map, .leaflet-container, .leaflet-control-search'))) scheduleMapSearchFix()
+  })
   obs.observe(document.body, { childList: true, subtree: true })
   document.addEventListener('input', scheduleMapSearchFix, true)
   document.addEventListener('keyup', scheduleMapSearchFix, true)
   document.addEventListener('focusin', scheduleMapSearchFix, true)
 }
 
-const CROP_OFF = true
-
-const CROP_STYLE_ID = 'mdt-crop-style'
-
-const CROP_CSS = `
-.mdt-crop-wrap {
-  position: relative !important;
-  display: inline-block !important;
-  max-width: 100% !important;
-  line-height: 0 !important;
-  user-select: none !important;
-}
-.mdt-crop-wrap > img {
-  display: block !important;
-  max-width: 100% !important;
-  max-height: 440px !important;
-  width: auto !important;
-  height: auto !important;
-}
-.mdt-crop-box {
-  position: absolute !important;
-  box-sizing: border-box !important;
-  border: 1px solid #FFFFFF !important;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45) !important;
-  cursor: move !important;
-  z-index: 5 !important;
-}
-.mdt-crop-grid {
-  position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  border: 1px dashed rgba(255, 255, 255, 0.55) !important;
-  pointer-events: none !important;
-}
-.mdt-crop-handle {
-  position: absolute !important;
-  width: 12px !important;
-  height: 12px !important;
-  background: #39F !important;
-  border: 1px solid #FFFFFF !important;
-  z-index: 6 !important;
-}
-.mdt-crop-nw { left: -6px !important; top: -6px !important; cursor: nwse-resize !important; }
-.mdt-crop-ne { right: -6px !important; top: -6px !important; cursor: nesw-resize !important; }
-.mdt-crop-sw { left: -6px !important; bottom: -6px !important; cursor: nesw-resize !important; }
-.mdt-crop-se { right: -6px !important; bottom: -6px !important; cursor: nwse-resize !important; }
-.mugshotPreviewCropper,
-#mugshotPreview .img-preview,
-.cropper-preview {
-  display: none !important;
-}
-html body #uploadMugshot[data-mdt-crop-on="1"] {
-  pointer-events: auto !important;
-  opacity: 1 !important;
-  filter: none !important;
-  cursor: pointer !important;
-}
-`
-
-function ensureCropStyle() {
-  if (CROP_OFF) return
-  if (document.getElementById(CROP_STYLE_ID)) return
-  const el = document.createElement('style')
-  el.id = CROP_STYLE_ID
-  el.textContent = CROP_CSS
-  const head = document.head || document.documentElement
-  if (head) head.appendChild(el)
-}
-
-class MdtCropper {
-  constructor(img, opts) {
-    this.img = img
-    this.opts = opts || {}
-    this.ratio = this.opts.aspectRatio || 0
-    this.drag = null
-    this.x = 0
-    this.y = 0
-    this.w = 0
-    this.h = 0
-    img.mdtCropper = this
-    this.build()
-  }
-
-  build() {
-    ensureCropStyle()
-    const img = this.img
-    const parent = img.parentNode
-    if (!parent) return
-    img.classList.remove('cropper-hidden')
-    img.style.setProperty('display', 'block', 'important')
-    img.style.setProperty('max-width', '100%', 'important')
-    img.style.setProperty('max-height', '440px', 'important')
-    const wrap = document.createElement('div')
-    wrap.className = 'mdt-crop-wrap'
-    parent.insertBefore(wrap, img)
-    wrap.appendChild(img)
-    const box = document.createElement('div')
-    box.className = 'mdt-crop-box'
-    const grid = document.createElement('div')
-    grid.className = 'mdt-crop-grid'
-    box.appendChild(grid)
-    for (const k of ['nw', 'ne', 'sw', 'se']) {
-      const hd = document.createElement('span')
-      hd.className = 'mdt-crop-handle mdt-crop-' + k
-      hd.setAttribute('data-mdt-crop-handle', k)
-      box.appendChild(hd)
-    }
-    wrap.appendChild(box)
-    this.wrap = wrap
-    this.box = box
-    hideExtraMugshots(img)
-    this.onDown = (e) => this.start(e)
-    this.onMove = (e) => this.move(e)
-    this.onUp = () => this.end()
-    box.addEventListener('mousedown', this.onDown, true)
-    document.addEventListener('mousemove', this.onMove, true)
-    document.addEventListener('mouseup', this.onUp, true)
-    this.fit = () => this.reset()
-    if (img.complete && img.naturalWidth) this.reset()
-    else img.addEventListener('load', this.fit)
-    window.addEventListener('resize', this.fit)
-  }
-
-  reset() {
-    const w = this.img.clientWidth
-    const h = this.img.clientHeight
-    if (!w || !h) return
-    const area = this.opts.autoCropArea || 0.8
-    let bw = w * area
-    let bh = h * area
-    if (this.ratio) {
-      bh = bw / this.ratio
-      if (bh > h * area) {
-        bh = h * area
-        bw = bh * this.ratio
-      }
-    }
-    this.x = (w - bw) / 2
-    this.y = (h - bh) / 2
-    this.w = bw
-    this.h = bh
-    this.paint()
-    this.preview()
-    enableUpload()
-  }
-
-  paint() {
-    if (!this.box) return
-    this.box.style.left = this.x + 'px'
-    this.box.style.top = this.y + 'px'
-    this.box.style.width = this.w + 'px'
-    this.box.style.height = this.h + 'px'
-  }
-
-  start(e) {
-    if (!e || e.button !== 0) return
-    const hd = e.target && e.target.getAttribute
-      ? e.target.getAttribute('data-mdt-crop-handle')
-      : null
-    this.drag = {
-      mode: hd || 'move',
-      px: e.clientX,
-      py: e.clientY,
-      x: this.x,
-      y: this.y,
-      w: this.w,
-      h: this.h
-    }
-    e.preventDefault()
-    e.stopPropagation()
-  }
-
-  move(e) {
-    const s = this.drag
-    if (!s) return
-    const maxW = this.img.clientWidth
-    const maxH = this.img.clientHeight
-    const dx = e.clientX - s.px
-    const dy = e.clientY - s.py
-    if (s.mode === 'move') {
-      this.x = Math.min(Math.max(0, s.x + dx), Math.max(0, maxW - s.w))
-      this.y = Math.min(Math.max(0, s.y + dy), Math.max(0, maxH - s.h))
-      this.paint()
-      e.preventDefault()
-      return
-    }
-    const k = s.mode
-    let x = s.x
-    let y = s.y
-    let w = s.w
-    let h = s.h
-    if (k.indexOf('e') >= 0) w = s.w + dx
-    if (k.indexOf('w') >= 0) {
-      w = s.w - dx
-      x = s.x + dx
-    }
-    if (k.indexOf('s') >= 0) h = s.h + dy
-    if (k.indexOf('n') >= 0) {
-      h = s.h - dy
-      y = s.y + dy
-    }
-    w = Math.max(24, w)
-    h = Math.max(24, h)
-    if (this.ratio) {
-      h = w / this.ratio
-      if (k.indexOf('n') >= 0) y = s.y + s.h - h
-    }
-    if (x < 0) {
-      w += x
-      x = 0
-      if (this.ratio) h = w / this.ratio
-    }
-    if (y < 0) {
-      h += y
-      y = 0
-      if (this.ratio) w = h * this.ratio
-    }
-    if (x + w > maxW) {
-      w = maxW - x
-      if (this.ratio) h = w / this.ratio
-    }
-    if (y + h > maxH) {
-      h = maxH - y
-      if (this.ratio) w = h * this.ratio
-    }
-    this.x = x
-    this.y = y
-    this.w = Math.max(24, w)
-    this.h = Math.max(24, h)
-    this.paint()
-    e.preventDefault()
-  }
-
-  end() {
-    if (!this.drag) return
-    this.drag = null
-    this.preview()
-    applyCropToInput()
-    enableUpload()
-  }
-
-  scale() {
-    const img = this.img
-    const sx = img.clientWidth ? img.naturalWidth / img.clientWidth : 1
-    const sy = img.clientHeight ? img.naturalHeight / img.clientHeight : 1
-    return { sx: sx || 1, sy: sy || 1 }
-  }
-
-  getData() {
-    const s = this.scale()
-    return {
-      x: Math.round(this.x * s.sx),
-      y: Math.round(this.y * s.sy),
-      width: Math.round(this.w * s.sx),
-      height: Math.round(this.h * s.sy),
-      rotate: 0,
-      scaleX: 1,
-      scaleY: 1
-    }
-  }
-
-  getCroppedCanvas(o) {
-    const s = this.scale()
-    const sw = Math.max(1, Math.round(this.w * s.sx))
-    const sh = Math.max(1, Math.round(this.h * s.sy))
-    const cv = document.createElement('canvas')
-    cv.width = (o && o.width) || sw
-    cv.height = (o && o.height) || sh
-    const ctx = cv.getContext('2d')
-    if (ctx) {
-      ctx.drawImage(
-        this.img,
-        Math.round(this.x * s.sx),
-        Math.round(this.y * s.sy),
-        sw,
-        sh,
-        0,
-        0,
-        cv.width,
-        cv.height
-      )
-    }
-    return cv
-  }
-
-  preview() {
-    const sel = this.opts.preview
-    if (!sel) return
-    if (sel === 'off') return
-    let hosts = []
-    try {
-      hosts = document.querySelectorAll(sel)
-    } catch (_) {
-      return
-    }
-    if (!hosts.length) return
-    let url = ''
-    try {
-      const wide = 160
-      const tall = this.ratio ? Math.round(wide / this.ratio) : wide
-      url = this.getCroppedCanvas({ width: wide, height: tall }).toDataURL('image/png')
-    } catch (_) {
-      return
-    }
-    for (const host of hosts) {
-      host.innerHTML = ''
-      const im = document.createElement('img')
-      im.src = url
-      im.style.setProperty('display', 'block', 'important')
-      im.style.setProperty('max-width', '100%', 'important')
-      host.appendChild(im)
-    }
-  }
-
-  replace(url) {
-    if (!url) return
-    this.img.setAttribute('src', url)
-    setTimeout(() => this.reset(), 120)
-  }
-
-  destroy() {
-    const img = this.img
-    if (this.box && this.box.parentNode) this.box.parentNode.removeChild(this.box)
-    document.removeEventListener('mousemove', this.onMove, true)
-    document.removeEventListener('mouseup', this.onUp, true)
-    window.removeEventListener('resize', this.fit)
-    if (img) {
-      img.removeEventListener('load', this.fit)
-      if (this.wrap && this.wrap.parentNode) {
-        this.wrap.parentNode.insertBefore(img, this.wrap)
-        this.wrap.parentNode.removeChild(this.wrap)
-      }
-      img.mdtCropper = null
-    }
-    this.box = null
-    this.wrap = null
-  }
-}
-
-function installCropShim() {
-  if (CROP_OFF) return
-  window.Cropper = MdtCropper
-  const jq = window.jQuery || window.$
-  if (!jq || !jq.fn) return
-  if (jq.fn.cropper && jq.fn.cropper.mdtOwn) return
-  jq.fn.cropper = function (a, b) {
-    let out
-    this.each(function () {
-      const el = this
-      if (typeof a === 'string') {
-        let inst = el.mdtCropper || currentCropper()
-        if (!inst && a === 'getCroppedCanvas' && el.getAttribute &&
-          el.getAttribute('src')) {
-          try {
-            inst = new MdtCropper(el, { aspectRatio: 1, autoCropArea: 0.8, preview: 'off' })
-          } catch (_) {
-            inst = null
-          }
-        }
-        if (!inst) return
-        if (a === 'getCroppedCanvas') out = inst.getCroppedCanvas(b)
-        else if (a === 'getData') out = inst.getData()
-        else if (a === 'replace') inst.replace(b)
-        else if (a === 'destroy') inst.destroy()
-        else if (a === 'reset') inst.reset()
-        return
-      }
-      if (el.mdtCropper) el.mdtCropper.destroy()
-      new MdtCropper(el, a || {})
-    })
-    return out === undefined ? this : out
-  }
-  jq.fn.cropper.mdtOwn = true
-}
-
-function enableUpload() {
-  if (CROP_OFF) return
-  const list = document.querySelectorAll('#uploadMugshot, #modalPicture button, #modalPicture .btn')
-  for (const b of list) {
-    b.removeAttribute('disabled')
-    b.classList.remove('disabled')
-    b.setAttribute('data-mdt-crop-on', '1')
-    b.style.removeProperty('pointer-events')
-    b.style.setProperty('opacity', '1', 'important')
-    b.style.setProperty('cursor', 'pointer', 'important')
-  }
-}
-
-function cropFileNow() {
-  const inst = currentCropper()
-  if (!inst) return null
-  let url = ''
-  try {
-    url = inst.getCroppedCanvas({}).toDataURL('image/png')
-  } catch (_) {
-    return null
-  }
-  const parts = url.split(',')
-  if (parts.length < 2) return null
-  try {
-    const bin = atob(parts[1])
-    const arr = new Uint8Array(bin.length)
-    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-    window.mdtCroppedMugshot = url
-    return new File([arr], 'mugshot.png', { type: 'image/png' })
-  } catch (_) {
-    return null
-  }
-}
-
-function swapFormData(body) {
-  const f = cropFileNow()
-  if (!f || !body || typeof body.entries !== 'function') return body
-  let hit = false
-  const out = new FormData()
-  for (const pair of Array.from(body.entries())) {
-    const key = pair[0]
-    const val = pair[1]
-    const isFile = val && typeof val === 'object' && typeof val.size === 'number' &&
-      typeof val.type === 'string'
-    if (isFile && (val.type.indexOf('image') === 0 || val.size === 0)) {
-      out.append(key, f, 'mugshot.png')
-      hit = true
-      continue
-    }
-    if (typeof val === 'string' && val.indexOf('data:image') === 0 &&
-      window.mdtCroppedMugshot) {
-      out.append(key, window.mdtCroppedMugshot)
-      hit = true
-      continue
-    }
-    out.append(key, val)
-  }
-  return hit ? out : body
-}
-
-let uploadHooked = false
-
-function installUploadHook() {
-  if (CROP_OFF) return
-  if (uploadHooked) return
-  uploadHooked = true
-  try {
-    const open = XMLHttpRequest.prototype.open
-    XMLHttpRequest.prototype.open = function (m, u) {
-      this.mdtMethod = m
-      this.mdtUrl = u
-      return open.apply(this, arguments)
-    }
-  } catch (_) {
-  }
-  try {
-    const send = XMLHttpRequest.prototype.send
-    XMLHttpRequest.prototype.send = function (body) {
-      let next = body
-      try {
-        const raw = body && typeof body === 'object' &&
-          typeof body.size === 'number' && typeof body.type === 'string' &&
-          body.type.indexOf('image') === 0
-        if (body instanceof FormData && currentCropper()) next = swapFormData(body)
-        else if (raw && currentCropper()) {
-          const shot = cropFileNow()
-          if (shot) next = shot
-        } else if (typeof body === 'string' && currentCropper() &&
-          body.indexOf('data%3Aimage') >= 0 && window.mdtCroppedMugshot) {
-          cropFileNow()
-          next = body.replace(/data%3Aimage[^&]*/, encodeURIComponent(window.mdtCroppedMugshot))
-        }
-      } catch (_) {
-      }
-      try {
-        logNet(this.mdtMethod || 'POST', this.mdtUrl || '', next)
-      } catch (_) {
-      }
-      return send.call(this, next)
-    }
-  } catch (_) {
-  }
-  try {
-    const nativeFetch = window.fetch
-    if (typeof nativeFetch === 'function') {
-      window.fetch = function (input, init) {
-        let next = init
-        try {
-          if (init && init.body instanceof FormData && currentCropper()) {
-            next = Object.assign({}, init, { body: swapFormData(init.body) })
-          }
-        } catch (_) {
-        }
-        return nativeFetch.call(window, input, next)
-      }
-    }
-  } catch (_) {
-  }
-}
-
-const NET_LOG = []
-
-function describeBody(body) {
-  if (!body) return 'no body'
-  if (typeof body === 'string') return 'text ' + body.slice(0, 400)
-  if (typeof FormData !== 'undefined' && body instanceof FormData) {
-    const bits = []
-    for (const pair of Array.from(body.entries())) {
-      const v = pair[1]
-      if (v && typeof v === 'object' && typeof v.size === 'number') {
-        bits.push(pair[0] + ' = FILE name:' + (v.name || '?') +
-          ' type:' + (v.type || '?') + ' size:' + v.size)
-      } else {
-        bits.push(pair[0] + ' = ' + String(v).slice(0, 140))
-      }
-    }
-    return 'formdata ' + bits.join(' | ')
-  }
-  if (typeof body === 'object' && typeof body.size === 'number') {
-    return 'blob type:' + (body.type || '?') + ' size:' + body.size
-  }
-  return 'other ' + Object.prototype.toString.call(body)
-}
-
-function logNet(method, url, body) {
-  NET_LOG.push(method + ' ' + url + ' :: ' + describeBody(body))
-  while (NET_LOG.length > 8) NET_LOG.shift()
-  window.mdtNetLog = NET_LOG
-}
-
-function mugshotReport() {
-  const jq = window.jQuery || window.$
-  const lines = []
-  lines.push('page ' + location.href)
-  lines.push('window.Cropper is ours: ' + (window.Cropper === MdtCropper))
-  lines.push('jquery present: ' + !!jq)
-  lines.push('jquery cropper ours: ' +
-    !!(jq && jq.fn && jq.fn.cropper && jq.fn.cropper.mdtOwn))
-  lines.push('live crop frame: ' + !!currentCropper())
-  lines.push('cropped file ready: ' + !!window.mdtCroppedMugshot)
-  const modal = document.getElementById('modalPicture')
-  lines.push('modalPicture found: ' + !!modal)
-  if (modal) {
-    for (const f of modal.querySelectorAll('form')) {
-      lines.push('FORM action=' + (f.getAttribute('action') || '-') +
-        ' method=' + (f.getAttribute('method') || '-') +
-        ' id=' + (f.id || '-'))
-    }
-    for (const im of modal.querySelectorAll('img')) {
-      lines.push('IMG id=' + (im.id || '-') + ' class=' + (im.className || '-') +
-        ' visible=' + (im.offsetParent !== null) + ' cropped=' + !!im.mdtCropper)
-    }
-    for (const el of modal.querySelectorAll('input, button, .btn, a.btn')) {
-      lines.push(el.tagName + ' id=' + (el.id || '-') +
-        ' name=' + (el.getAttribute('name') || '-') +
-        ' type=' + (el.getAttribute('type') || '-') +
-        ' disabled=' + (el.disabled === true) +
-        ' class=' + (el.className || '-'))
-    }
-  }
-  lines.push('--- last requests ---')
-  if (!NET_LOG.length) lines.push('none captured yet')
-  for (const l of NET_LOG) lines.push(l)
-  return lines.join('\n')
-}
-
-function showReport(text) {
-  const old = document.getElementById('mdt-report')
-  if (old && old.parentNode) old.parentNode.removeChild(old)
-  const wrap = document.createElement('div')
-  wrap.id = 'mdt-report'
-  wrap.setAttribute('style', 'position:fixed;left:20px;top:20px;right:20px;' +
-    'bottom:20px;z-index:2147483647;background:#111;border:2px solid #39F;' +
-    'padding:8px;display:flex;flex-direction:column')
-  const ta = document.createElement('textarea')
-  ta.setAttribute('style', 'flex:1;width:100%;background:#000;color:#3F6;' +
-    'font:12px monospace;border:0;padding:6px')
-  ta.value = text
-  const btn = document.createElement('button')
-  btn.textContent = 'Close'
-  btn.setAttribute('style', 'margin-top:6px;padding:4px 12px;align-self:flex-end')
-  btn.addEventListener('click', () => {
-    if (wrap.parentNode) wrap.parentNode.removeChild(wrap)
-  })
-  wrap.appendChild(ta)
-  wrap.appendChild(btn)
-  document.body.appendChild(wrap)
-  ta.focus()
-  ta.select()
-}
-
-function watchReportKey() {
-  document.addEventListener('keydown', (ev) => {
-    if (!ev.ctrlKey || !ev.shiftKey) return
-    if ((ev.key || '').toLowerCase() !== 'm') return
-    ev.preventDefault()
-    showReport(mugshotReport())
-  }, true)
-}
-
-function mugImg() {
-  const byId = document.getElementById('mugshotPreviewImage')
-  if (byId) return byId
-  const hosts = ['#mugshotPreview', '#modalPicture', '.modal.show', '.modal']
-  for (const h of hosts) {
-    const host = document.querySelector(h)
-    if (!host) continue
-    for (const im of host.querySelectorAll('img')) {
-      const src = im.getAttribute('src') || ''
-      if (src) return im
-    }
-  }
-  return null
-}
-
-function clearVanillaCropper(img) {
-  if (CROP_OFF) return
-  for (const box of document.querySelectorAll('.cropper-container')) {
-    const host = box.parentNode
-    if (host) host.removeChild(box)
-  }
-  if (img) img.classList.remove('cropper-hidden')
-  hideExtraMugshots(img)
-}
-
-function hideExtraMugshots(img) {
-  if (CROP_OFF) return
-  if (!img) return
-  const host = img.closest('#modalPicture') || img.closest('.modal') ||
-    img.closest('#mugshotPreview')
-  if (!host) return
-  for (const other of host.querySelectorAll('img, canvas')) {
-    if (other === img) continue
-    if (other.closest('.mdt-crop-wrap')) continue
-    if (other.closest('.note-editor')) continue
-    other.setAttribute('data-mdt-dupshot', '1')
-    other.style.setProperty('display', 'none', 'important')
-  }
-  for (const box of host.querySelectorAll('.mdt-crop-wrap')) {
-    if (box.contains(img)) continue
-    box.setAttribute('data-mdt-dupshot', '1')
-    box.style.setProperty('display', 'none', 'important')
-  }
-}
-
-function currentCropper() {
-  const img = mugImg()
-  return img && img.mdtCropper ? img.mdtCropper : null
-}
-
-function destroyCropper() {
-  const inst = currentCropper()
-  if (inst) inst.destroy()
-}
-
-function applyCropToInput() {
-  if (CROP_OFF) return
-  const f = cropFileNow()
-  if (!f) return
-  const inputs = document.querySelectorAll('#fileMugshot, #modalPicture input[type="file"]')
-  for (const inp of inputs) {
-    try {
-      const dt = new DataTransfer()
-      dt.items.add(f)
-      inp.files = dt.files
-    } catch (_) {
-    }
-  }
-}
-
 function hideNarrativeLabel() {
+  if (themeNow() === 'off') {
+    document.querySelectorAll('[data-mdt-nolabel]').forEach((el) => { el.style.removeProperty('display'); el.removeAttribute('data-mdt-nolabel') })
+    return
+  }
   const list = document.querySelectorAll('.card-text, h1, h2, h3, h4, h5, label')
   for (const el of list) {
     if (el.getAttribute('data-mdt-nolabel') === '1') continue
@@ -6553,107 +7499,6 @@ function hideNarrativeLabel() {
     el.setAttribute('data-mdt-nolabel', '1')
     el.style.setProperty('display', 'none', 'important')
   }
-}
-
-function startCropper() {
-  if (CROP_OFF) return
-  installCropShim()
-  const img = mugImg()
-  if (!img || !img.getAttribute('src')) return
-  if (img.mdtCropper) {
-    img.mdtCropper.reset()
-    return
-  }
-  clearVanillaCropper(img)
-  const opts = {
-    aspectRatio: 1,
-    viewMode: 1,
-    autoCropArea: 0.8,
-    background: false,
-    responsive: true,
-    checkOrientation: false,
-    preview: 'off'
-  }
-  try {
-    new MdtCropper(img, opts)
-  } catch (_) {
-  }
-}
-
-function previewMugshot(file) {
-  if (CROP_OFF) return
-  const img = mugImg()
-  if (!img || !file) return
-  installCropShim()
-  const rd = new FileReader()
-  rd.onload = () => {
-    img.setAttribute('src', String(rd.result))
-    img.classList.remove('cropper-hidden')
-    img.style.setProperty('display', 'block', 'important')
-    img.style.setProperty('visibility', 'visible', 'important')
-    img.style.setProperty('opacity', '1', 'important')
-    img.style.setProperty('max-width', '100%', 'important')
-    img.style.setProperty('max-height', '440px', 'important')
-    setTimeout(startCropper, 250)
-    setTimeout(revealMugshot, 900)
-    setTimeout(enableUpload, 300)
-    setTimeout(enableUpload, 1200)
-  }
-  try {
-    rd.readAsDataURL(file)
-  } catch (_) {
-  }
-}
-
-function revealMugshot() {
-  if (CROP_OFF) return
-  const img = mugImg()
-  if (!img) return
-  img.classList.remove('cropper-hidden')
-  img.style.setProperty('display', 'block', 'important')
-  img.style.setProperty('margin', '0 auto', 'important')
-  img.style.setProperty('max-width', '100%', 'important')
-  img.style.setProperty('max-height', '440px', 'important')
-}
-
-function watchMugshot() {
-  watchReportKey()
-  if (CROP_OFF) return
-  installCropShim()
-  installUploadHook()
-  for (const ms of [0, 300, 900, 2000, 4000]) setTimeout(installCropShim, ms)
-  const onPick = (ev) => {
-    const t = ev.target
-    if (!t || !t.files || !t.files.length) return
-    const isMug = t.id === 'fileMugshot' ||
-      (t.type === 'file' && !!t.closest('#modalPicture'))
-    if (!isMug) return
-    const file = t.files[0]
-    previewMugshot(file)
-    setTimeout(startCropper, 500)
-    setTimeout(startCropper, 1200)
-    setTimeout(startCropper, 2400)
-    setTimeout(revealMugshot, 2800)
-  }
-  document.addEventListener('change', onPick, true)
-  document.addEventListener('input', onPick, true)
-  document.addEventListener('click', (ev) => {
-    const t = ev.target
-    if (!t || !t.closest) return
-    if (t.closest('#uploadMugshot')) {
-      applyCropToInput()
-      enableUpload()
-    }
-    if (t.closest('[data-target="#modalPicture"], [href="#modalPicture"]')) {
-      installCropShim()
-      for (const ms of [200, 700, 1600]) setTimeout(startCropper, ms)
-    }
-  }, true)
-  document.addEventListener('hidden.bs.modal', (ev) => {
-    const t = ev && ev.target
-    if (!t || !t.querySelector) return
-    if (t.id === 'modalPicture' || t.querySelector('#mugshotPreviewImage')) destroyCropper()
-  }, true)
 }
 
 function inCodeView(el) {
@@ -6674,6 +7519,10 @@ function hideOneTextarea(el) {
 }
 
 function hideSourceTextareas() {
+  if (themeNow() === 'off') {
+    document.querySelectorAll('[data-mdt-src-hidden]').forEach((el) => { el.style.removeProperty('display'); el.removeAttribute('data-mdt-src-hidden') })
+    return
+  }
   const sel = [
     'textarea.summernote',
     '.note-editor + textarea',
@@ -6703,9 +7552,10 @@ function scheduleSourceTextareaFix() {
 
 function watchSourceTextareas() {
   hideSourceTextareas()
-  for (const ms of [300, 900, 2000, 4000]) setTimeout(hideSourceTextareas, ms)
   try {
-    const ob = new MutationObserver(scheduleSourceTextareaFix)
+    const ob = new MutationObserver((records) => {
+      if (records.some((record) => Array.from(record.addedNodes).concat(Array.from(record.removedNodes)).some((node) => node.nodeType === 1 && (node.matches('textarea, .note-editor, .note-frame') || node.querySelector('textarea, .note-editor, .note-frame'))))) scheduleSourceTextareaFix()
+    })
     ob.observe(document.documentElement, { childList: true, subtree: true })
   } catch (_) {
   }
@@ -6716,10 +7566,108 @@ let gripStartX = 0
 let gripStartY = 0
 let gripW = 0
 let gripH = 0
+let gripFrame = 0
+let gripSize = null
+
+function gripStyle(dlg, node, properties) {
+  if (!node) return
+  if (!dlg.mdtGripStyle) dlg.mdtGripStyle = []
+  for (const [prop, value] of Object.entries(properties)) {
+    if (!dlg.mdtGripStyle.some(([savedNode, savedProp]) => savedNode === node && savedProp === prop)) dlg.mdtGripStyle.push([node, prop, node.style.getPropertyValue(prop), node.style.getPropertyPriority(prop)])
+    if (node.style.getPropertyValue(prop) !== value || node.style.getPropertyPriority(prop) !== 'important') node.style.setProperty(prop, value, 'important')
+  }
+}
+
+function fitSizedModal(dlg) {
+  if (!dlg || !dlg.hasAttribute('data-mdt-sized')) return
+  const box = dlg.querySelector('.modal-content')
+  gripStyle(dlg, box, {display:'flex', 'flex-direction':'column', 'min-height':'0', 'max-height':'none'})
+  gripStyle(dlg, box && box.querySelector(':scope > .modal-body'), {flex:'1 1 0px', height:'auto', 'min-height':'0', 'max-height':'none'})
+}
+
+function restoreModalMax(dlg) {
+  const state = dlg && dlg.mdtMaxState
+  if (!state) return
+  state.styles.forEach(([node, prop, value, priority]) => {
+    if (value) node.style.setProperty(prop, value, priority)
+    else node.style.removeProperty(prop)
+  })
+  if (state.sized === null) dlg.removeAttribute('data-mdt-sized')
+  else dlg.setAttribute('data-mdt-sized', state.sized)
+  dlg.mdtGripStyle = state.grip
+  dlg.removeAttribute('data-mdt-maximized')
+  delete dlg.mdtMaxState
+  const button = dlg.querySelector('.mdt-maximize')
+  if (button) { button.title = 'Maximize'; button.setAttribute('aria-label', 'Maximize'); button.setAttribute('aria-pressed', 'false') }
+}
+
+function toggleModalMax(dlg) {
+  if (!dlg || themeNow() === 'off' || !isRecordMaxTarget(dlg)) return
+  if (dlg.mdtMaxState) { restoreModalMax(dlg); return }
+  endModalDrag()
+  endGrip()
+  const box = dlg.querySelector('.modal-content')
+  const body = box && box.querySelector(':scope > .modal-body')
+  if (!box || !body) return
+  const properties = [
+    [dlg.closest('.modal'), {'scrollbar-gutter':'auto'}],
+    [dlg, {position:'fixed',left:'0',top:'0',margin:'0',padding:'0',width:'100vw',height:'100vh','max-width':'none','min-height':'0',transform:'none','box-sizing':'border-box'}],
+    [box, {width:'100%',height:'100%',display:'flex','flex-direction':'column','min-height':'0','max-height':'none','box-sizing':'border-box'}],
+    [body, {flex:'1 1 0px',height:'auto','min-height':'0','max-height':'none'}]
+  ]
+  dlg.mdtMaxState = {geometry:{left:dlg.querySelector('.modal-header').getBoundingClientRect().left,top:dlg.querySelector('.modal-header').getBoundingClientRect().top,width:dlg.getBoundingClientRect().width,height:box.getBoundingClientRect().height},sized:dlg.getAttribute('data-mdt-sized'),grip:dlg.mdtGripStyle && dlg.mdtGripStyle.slice(),styles:properties.flatMap(([node, props])=>Object.keys(props).map(prop=>[node,prop,node.style.getPropertyValue(prop),node.style.getPropertyPriority(prop)]))}
+  dlg.setAttribute('data-mdt-sized','1')
+  dlg.setAttribute('data-mdt-maximized','1')
+  properties.forEach(([node,props])=>gripStyle(dlg,node,props))
+  const button = dlg.querySelector('.mdt-maximize')
+  if (button) { button.title = 'Restore'; button.setAttribute('aria-label', 'Restore'); button.setAttribute('aria-pressed', 'true') }
+  raiseModal(dlg.closest('.modal'))
+}
+
+function paintGrip() {
+  gripFrame = 0
+  if (!gripBox || !gripSize) return
+  const dlg = gripBox
+  const head = dlg.querySelector('.modal-header') || dlg.querySelector('.modal-content')
+  const at = (dlg.getAttribute('data-mdt-offset') || '0,0').split(',').map(Number)
+  gripStyle(dlg, dlg, {width:gripSize.width+'px', 'max-width':gripSize.width+'px'})
+  dlg.setAttribute('data-mdt-sized', '1')
+  gripStyle(dlg, dlg.querySelector('.modal-content'), {height:gripSize.height+'px'})
+  fitSizedModal(dlg)
+  const settled = head.getBoundingClientRect()
+  const x = at[0] + gripPointer.left - settled.left
+  const y = at[1] + gripPointer.top - settled.top
+  if (!dlg.mdtDragTransform) dlg.mdtDragTransform = [dlg.style.getPropertyValue('transform'), dlg.style.getPropertyPriority('transform')]
+  dlg.style.setProperty('transform', 'translate3d('+x+'px,'+y+'px,0)', 'important')
+  dlg.setAttribute('data-mdt-offset', x+','+y)
+}
+
+function isRecordMaxTarget(dlg) {
+  return !!dlg && /^view\s+record\b/i.test(flatText(dlg.querySelector('.modal-title')))
+}
 
 function addGrips() {
+  if (themeNow() === 'off') return
   const list = document.querySelectorAll('.modal.show .modal-content, .modal.in .modal-content')
   for (const box of list) {
+    const head = box.querySelector(':scope > .modal-header')
+    if (!isRecordMaxTarget(box.closest('.modal-dialog'))) {
+      restoreModalMax(box.closest('.modal-dialog'))
+      head?.querySelectorAll('.mdt-maximize,.mdt-minimize').forEach(n=>n.remove())
+    }
+    if(head && isRecordMaxTarget(box.closest('.modal-dialog')) && !head.querySelector('.mdt-minimize')) {
+      const b=document.createElement('button');b.type='button';b.className='mdt-minimize';b.title='Minimize';b.setAttribute('aria-label','Minimize');head.appendChild(b)
+    }
+    if (head && isRecordMaxTarget(box.closest('.modal-dialog')) && !head.querySelector('.mdt-maximize')) {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'mdt-maximize'
+      const maximized=box.closest('.modal-dialog').hasAttribute('data-mdt-maximized')
+      button.title = maximized?'Restore':'Maximize'
+      button.setAttribute('aria-label',button.title)
+      button.setAttribute('aria-pressed',String(maximized))
+      head.appendChild(button)
+    }
     if (box.querySelector('.mdt-grip')) continue
     const g = document.createElement('div')
     g.className = 'mdt-grip'
@@ -6729,55 +7677,88 @@ function addGrips() {
   }
 }
 
+let gripPointer = null
+let gripClickUntil = 0
+let gripReleasePoint = null
+
 function startGrip(e) {
+  if (themeNow() === 'off' || e.button !== 0) return
   const g = e.target && e.target.closest ? e.target.closest('.mdt-grip') : null
   if (!g) return
   const dlg = g.closest('.modal-dialog')
-  if (!dlg) return
+  if (!dlg || dlg.hasAttribute('data-mdt-maximized')) return
   const r = dlg.getBoundingClientRect()
+  const box = dlg.querySelector('.modal-content')
+  const header = (dlg.querySelector('.modal-header') || box).getBoundingClientRect()
   gripBox = dlg
+  gripPointer = { node: g, id: e.pointerId, left:header.left, top:header.top, frameLeft:r.left, frameTop:box.getBoundingClientRect().top }
+  gripSize = null
+  g.setAttribute('data-mdt-resizing', '1')
   gripStartX = e.clientX
   gripStartY = e.clientY
   gripW = r.width
-  gripH = r.height
+  gripH = box.getBoundingClientRect().height
+  g.setPointerCapture(e.pointerId)
   e.preventDefault()
   e.stopImmediatePropagation()
 }
 
 function moveGrip(e) {
-  if (!gripBox) return
-  const w = Math.max(320, gripW + (e.clientX - gripStartX))
-  const h = Math.max(220, gripH + (e.clientY - gripStartY))
-  gripBox.style.setProperty('width', w + 'px', 'important')
-  gripBox.style.setProperty('max-width', w + 'px', 'important')
-  gripBox.setAttribute('data-mdt-sized', '1')
-  const body = gripBox.querySelector('.modal-body')
-  if (body) {
-    body.style.setProperty('max-height', Math.max(140, h - 108) + 'px', 'important')
-    body.style.setProperty('overflow-y', 'auto', 'important')
-  }
+  if (!gripBox || !gripPointer || e.pointerId !== gripPointer.id) return
+  const minW = Math.min(320, innerWidth)
+  const minH = Math.min(220, innerHeight)
+  const w = Math.min(Math.max(minW, gripW + e.clientX - gripStartX), Math.max(minW, innerWidth - gripPointer.frameLeft))
+  const h = Math.min(Math.max(minH, gripH + e.clientY - gripStartY), Math.max(minH, innerHeight - gripPointer.frameTop))
+  gripSize = {width:w, height:h}
+  if (!gripFrame) gripFrame = requestAnimationFrame(paintGrip)
   e.preventDefault()
   e.stopImmediatePropagation()
 }
 
-function endGrip() {
+function endGrip(e) {
+  if (!gripBox) return
+  if (gripFrame) cancelAnimationFrame(gripFrame)
+  paintGrip()
+  gripClickUntil = Date.now() + 400
+  gripReleasePoint = e && Number.isFinite(e.clientX) ? { x: e.clientX, y: e.clientY } : null
+  if (gripPointer) {
+    gripPointer.node.removeAttribute('data-mdt-resizing')
+    if (gripPointer.node.hasPointerCapture(gripPointer.id)) gripPointer.node.releasePointerCapture(gripPointer.id)
+  }
   gripBox = null
+  gripPointer = null
+  gripSize = null
+  if (pinned.length) schedulePickerScan()
+  if (deferredSkinPass) scheduleScrollerFix()
+  if (e && e.stopImmediatePropagation) {
+    e.preventDefault()
+    e.stopImmediatePropagation()
+  }
 }
 
 function clearGripSize(dlg) {
-  if (!dlg) return
-  dlg.style.removeProperty('width')
-  dlg.style.removeProperty('max-width')
+  restoreModalMax(dlg)
+  if (!dlg || !dlg.mdtGripStyle) return
+  const saved = dlg.mdtGripStyle
+  saved.forEach(([node, prop, value, priority]) => {
+    if (value) node.style.setProperty(prop, value, priority)
+    else node.style.removeProperty(prop)
+  })
   dlg.removeAttribute('data-mdt-sized')
-  const body = dlg.querySelector('.modal-body')
-  if (body) {
-    body.style.removeProperty('max-height')
-    body.style.removeProperty('overflow-y')
-  }
+  delete dlg.mdtGripStyle
 }
 
 const pinned = []
 const raised = []
+const pickerObserved = new Set()
+const pickerResizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(()=>{if(pinned.length) schedulePickerScan()}) : null
+function observePickerBounds() {
+  if (!pickerResizeObserver) return
+  const wanted = new Set()
+  pinned.forEach(menu=>{const host=menu.parentElement;for(const n of [host?.querySelector(':scope > button'),host?.closest('.modal-body')])if(n)wanted.add(n)})
+  pickerObserved.forEach(n=>{if(!wanted.has(n)){pickerResizeObserver.unobserve(n);pickerObserved.delete(n)}})
+  wanted.forEach(n=>{if(!pickerObserved.has(n)){pickerObserved.add(n);pickerResizeObserver.observe(n)}})
+}
 
 function raiseChain(menu) {
   let n = menu.parentElement
@@ -6828,7 +7809,7 @@ function pinOrigin(el) {
 function isPickerMenu(menu) {
   const host = menu && menu.parentElement
   if (!host || !host.classList) return false
-  if (!host.classList.contains('bootstrap-select')) return false
+  if (!host.classList.contains('bootstrap-select') && !(host.closest('.card-license') && host.matches('.btn-group, .dropdown, .dropup'))) return false
   if (menu.closest && (menu.closest('.note-toolbar') || menu.closest('.note-editor'))) return false
   return true
 }
@@ -6841,16 +7822,27 @@ function pinMenu(menu) {
   if (!r.width && !r.height) return
   const origin = pinOrigin(menu)
   const o = origin ? origin.getBoundingClientRect() : null
-  const vh = window.innerHeight
-  const vw = window.innerWidth
-  const below = vh - r.bottom - 8
-  const above = r.top - 8
-  const up = below < 180 && above > below
-  const h = Math.min(340, Math.max(140, up ? above : below))
-  const w = Math.max(260, Math.min(520, r.width))
-  let left = r.left
-  if (left + w > vw - 6) left = Math.max(6, vw - w - 6)
-  const top = up ? r.top - h : r.bottom
+  const body = host.closest('.modal-body')
+  const bodyRect = body && body.getBoundingClientRect()
+  const bounds = {top:Math.max(4, bodyRect ? bodyRect.top+4 : 4),bottom:Math.min(innerHeight-4, bodyRect ? bodyRect.bottom-4 : innerHeight-4),left:Math.max(4,bodyRect ? bodyRect.left+4 : 4),right:Math.min(innerWidth-4,bodyRect ? bodyRect.right-4 : innerWidth-4)}
+  const select = host.querySelector('select')
+  const geometry = select ? [innerWidth,innerHeight,r.width,r.height,bodyRect && bodyRect.width,bodyRect && bodyRect.height].join(':') : [r.left,r.top,r.width,r.height,o && o.left,o && o.top,bounds.top,bounds.bottom,bounds.left,bounds.right,menu.offsetHeight].join(':')
+  if (menu.dataset.mdtPin === '1' && menu.mdtPinGeometry === geometry) return
+  const above = r.top-bounds.top, below = bounds.bottom-r.bottom
+  const up = select ? above>below : below<menu.offsetHeight&&above>below
+  const isSelect = host.classList.contains('bootstrap-select')
+  const width = Math.min(isSelect ? r.width : menu.offsetWidth, bounds.right-bounds.left)
+  const left = Math.max(bounds.left, Math.min(r.left, bounds.right-width))
+  if (isSelect) {
+    if (!menu.mdtPinWidth) menu.mdtPinWidth = ['width','min-width','max-width'].map(key=>[key,menu.style.getPropertyValue(key),menu.style.getPropertyPriority(key)])
+    menu.style.setProperty('width', width+'px', 'important')
+    menu.style.setProperty('min-width', width+'px', 'important')
+    menu.style.setProperty('max-width', width+'px', 'important')
+  }
+  if (select) select.dispatchEvent(new CustomEvent('mdt:picker-fit',{bubbles:true,detail:JSON.stringify({padding:[bounds.top,innerWidth-bounds.right,innerHeight-bounds.bottom,bounds.left],limit:Math.max(1,Math.min(420,up?above:below)),up})}))
+  const h = menu.offsetHeight
+  const top = Math.max(bounds.top, Math.min(up ? r.top-h : r.bottom, bounds.bottom-h))
+  menu.mdtPinGeometry = geometry
   const s = menu.style
   s.setProperty('position', 'fixed', 'important')
   s.setProperty('left', Math.round(left - (o ? o.left : 0)) + 'px', 'important')
@@ -6868,14 +7860,26 @@ function pinMenu(menu) {
 }
 
 function unpinMenu(menu) {
+  menu.parentElement?.querySelector('select')?.dispatchEvent(new CustomEvent('mdt:picker-fit',{bubbles:true,detail:'null'}))
+  if (menu.mdtPinWidth) {menu.mdtPinWidth.forEach(([key,value,priority])=>{if(value) menu.style.setProperty(key,value,priority);else menu.style.removeProperty(key)});delete menu.mdtPinWidth}
   menu.removeAttribute('data-mdt-pin')
+  delete menu.mdtPinGeometry
   const keys = ['position', 'left', 'top', 'right', 'bottom', 'transform', 'margin', 'z-index']
   keys.forEach((k) => menu.style.removeProperty(k))
 }
 
 function scanPickers() {
-  const menus = document.querySelectorAll('.bootstrap-select.show > .dropdown-menu, .bootstrap-select.open > .dropdown-menu')
+  if (dragState || gripBox) return
+  if (themeNow() === 'off') {
+    while (pinned.length) unpinMenu(pinned.pop())
+    observePickerBounds()
+    dropChain()
+    return
+  }
+  const menus = document.querySelectorAll('.bootstrap-select.show > .dropdown-menu, .bootstrap-select.open > .dropdown-menu, .card-license .show > .dropdown-menu, .card-license .open > .dropdown-menu')
   menus.forEach((menu) => {
+    const input = menu.querySelector('.bs-searchbox input')
+    if (input && !input.getAttribute('placeholder')) input.setAttribute('placeholder', 'Search...')
     if (isPickerMenu(menu)) pinMenu(menu)
   })
   for (let i = pinned.length - 1; i >= 0; i--) {
@@ -6887,42 +7891,40 @@ function scanPickers() {
       unpinMenu(menu)
     }
   }
+  observePickerBounds()
   if (!pinned.length && raised.length) dropChain()
 }
 
+let pickerFrame = 0
+function schedulePickerScan() {
+  if (pickerFrame) return
+  pickerFrame = requestAnimationFrame(() => { pickerFrame = 0; scanPickers() })
+}
+
 function watchPickers() {
-  window.addEventListener('resize', scanPickers, true)
-  window.addEventListener('scroll', scanPickers, true)
-  setInterval(scanPickers, 120)
-}
-
-function whiteBg(c) {
-  if (!c) return false
-  const m = String(c).match(/rgba?\(([^)]+)\)/)
-  if (!m) return false
-  const v = m[1].split(',').map((x) => parseFloat(x))
-  if (v.length > 3 && !(v[3] > 0.05)) return false
-  return v[0] > 234 && v[1] > 234 && v[2] > 234
-}
-
-function cleanNoteBg() {
-  const areas = document.querySelectorAll('.note-editable')
-  areas.forEach((area) => {
-    const kids = area.querySelectorAll('*')
-    kids.forEach((el) => {
-      if (!el.style || el.getAttribute('data-mdt-nobg') === '1') return
-      let cs = null
-      try {
-        cs = getComputedStyle(el)
-      } catch (err) {
-        return
-      }
-      if (!cs || !whiteBg(cs.backgroundColor)) return
-      el.style.setProperty('background-color', 'transparent', 'important')
-      el.style.setProperty('background-image', 'none', 'important')
-      el.setAttribute('data-mdt-nobg', '1')
+  document.addEventListener('keydown',event=>{
+    if(themeNow()==='off'||!['ArrowDown','ArrowUp','Enter','Escape'].includes(event.key))return
+    const host=event.target.closest?.('.bootstrap-select.show, .bootstrap-select.open, .bs-container.show, .bs-container.open')
+    if(!host)return
+    const menu=host.querySelector('.dropdown-menu')
+    if(event.key==='Escape'&&menu){event.preventDefault();event.stopImmediatePropagation();menu.dispatchEvent(new Event('mdt:picker-dismiss',{bubbles:true}));return}
+    if(menu&&(menu.querySelector('.no-results')||!menu.querySelector('.dropdown-item:not(.disabled)'))) {event.preventDefault();event.stopImmediatePropagation()}
+    else if (menu && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) requestAnimationFrame(() => {
+      const list = menu.querySelector('div.inner'), active = menu.querySelector('li.active .dropdown-item')
+      if (!list || !active || !host.isConnected) return
+      const bounds = list.getBoundingClientRect(), row = active.getBoundingClientRect()
+      if (row.top < bounds.top) list.scrollTop += row.top - bounds.top
+      else if (row.bottom > bounds.bottom) list.scrollTop += row.bottom - bounds.bottom
     })
+  },true)
+  document.addEventListener('input', event => { if (event.target.closest?.('.bs-searchbox') && pinned.length) schedulePickerScan() }, true)
+  window.addEventListener('resize', () => { if (pinned.length) schedulePickerScan() }, {passive:true})
+  window.addEventListener('scroll', event => { if (pinned.some(menu=>!menu.parentElement?.classList.contains('bootstrap-select')) && !event.target.closest?.('.bootstrap-select')) schedulePickerScan() }, {capture:true,passive:true})
+  const observer = new MutationObserver((records) => {
+    if (records.some((record) => record.type === 'attributes' ? record.target.matches('.bootstrap-select, .card-license .btn-group, .card-license .dropdown, .card-license .dropup') : pinned.some((menu) => !menu.isConnected) || Array.from(record.addedNodes).some((node) => node.nodeType === 1 && (node.matches('.bootstrap-select, .card-license') || !record.target.closest('.bootstrap-select') && node.querySelector('.bootstrap-select, .card-license'))))) schedulePickerScan()
   })
+  observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']})
+  schedulePickerScan()
 }
 
 const IMGUR_RE = /^https?:\/\/(i\.)?imgur\.com\//i
@@ -6938,6 +7940,7 @@ function imgurAlts(url) {
 }
 
 function stepImgur(img) {
+  if (themeNow() === 'off') return
   if (img.mdtImgDone) return
   const alts = img.mdtAlts || []
   const next = (img.mdtAlt || 0) + 1
@@ -6950,6 +7953,7 @@ function stepImgur(img) {
 }
 
 function proxyImg(img) {
+  if (themeNow() === 'off') return
   if (!img || !img.getAttribute) return
   if (img.getAttribute('data-mdt-imgur') === '1') return
   const src = img.getAttribute('src') || ''
@@ -6960,138 +7964,118 @@ function proxyImg(img) {
   img.mdtAlts = alts
   img.mdtAlt = 0
   img.mdtImgDone = false
-  img.addEventListener('error', () => stepImgur(img), false)
+  img.mdtProxyError = () => stepImgur(img)
+  img.addEventListener('error', img.mdtProxyError, false)
   img.src = alts[0]
 }
 
 function fixImgur() {
+  if (themeNow() === 'off') return
   const imgs = document.querySelectorAll('img[src]')
   imgs.forEach(proxyImg)
 }
 
 function watchImgur() {
   fixImgur()
-  try {
-    const obs = new MutationObserver(() => fixImgur())
-    obs.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] })
-  } catch (err) {
-    setInterval(fixImgur, 1200)
-  }
-  setInterval(fixImgur, 2500)
-}
-
-function swatchColor(btn) {
-  const raw = btn.getAttribute('style') || ''
-  const m = raw.match(/background-color\s*:\s*([^;!]+)/i)
-  if (m) return m[1].trim()
-  const dv = btn.getAttribute('data-value') || ''
-  if (/^#/.test(dv) || /^rgb/i.test(dv)) return dv.trim()
-  const j = dv.match(/#[0-9a-fA-F]{3,8}/)
-  if (j) return j[0]
-  const bg = btn.getAttribute('data-backcolor') || btn.getAttribute('data-forecolor') || ''
-  return /^#|^rgb/i.test(bg) ? bg.trim() : ''
-}
-
-function paintSwatch(btn) {
-  const val = swatchColor(btn)
-  if (!val) return
-  if (btn.getAttribute('data-mdt-swatch') === val) return
-  btn.style.setProperty('background-color', val, 'important')
-  btn.style.setProperty('background-image', 'none', 'important')
-  btn.setAttribute('data-mdt-swatch', val)
-}
-
-function paintSwatches() {
-  if (!document.querySelector('.note-color-palette, .note-color')) return
-  const list = document.querySelectorAll('.note-color-btn, .note-color-palette button, .note-recent-color, .note-current-color-button')
-  for (let i = 0; i < list.length; i++) paintSwatch(list[i])
-}
-
-function resetVanillaCrop() {
-  const box = document.getElementById('mugshotPreview')
-  if (!box) return
-  const stale = box.querySelectorAll('.cropper-container')
-  for (let i = 0; i < stale.length; i++) stale[i].remove()
-  const img = document.getElementById('mugshotPreviewImage')
-  if (img) {
-    img.classList.remove('cropper-hidden')
-    img.removeAttribute('style')
-  }
-  const prev = box.querySelector('.mugshotPreviewCropper')
-  if (prev) prev.textContent = ''
-  box.style.removeProperty('display')
-}
-
-function watchCropReset() {
-  document.addEventListener('change', (e) => {
-    const t = e.target
-    if (!t || t.id !== 'fileMugshot') return
-    resetVanillaCrop()
-  }, true)
-  document.addEventListener('click', (e) => {
-    const t = e.target
-    if (!t || !t.closest) return
-    if (t.closest('a[data-target="#modalPicture"], [href="#modalPicture"]')) {
-      setTimeout(resetVanillaCrop, 60)
+  const observer = new MutationObserver((records) => {
+    if (themeNow() === 'off') return
+    for (const record of records) {
+      if (record.type === 'attributes') { proxyImg(record.target); continue }
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== 1) continue
+        if (node.matches('img[src]')) proxyImg(node)
+        else node.querySelectorAll('img[src]').forEach(proxyImg)
+      }
     }
-  }, true)
-}
-
-function watchSwatches() {
-  paintSwatches()
-  document.addEventListener('click', () => {
-    setTimeout(paintSwatches, 30)
-    setTimeout(paintSwatches, 220)
-  }, true)
-  setInterval(paintSwatches, 1200)
-}
-
-function watchNoteBg() {
-  document.addEventListener('input', cleanNoteBg, true)
-  document.addEventListener('paste', () => setTimeout(cleanNoteBg, 60), true)
-  setInterval(cleanNoteBg, 900)
+  })
+  observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src']})
 }
 
 function watchModalResize() {
-  document.addEventListener('mousedown', startGrip, true)
-  document.addEventListener('mousemove', moveGrip, true)
-  document.addEventListener('mouseup', endGrip, true)
+  document.addEventListener('click', (e) => {
+    const minimize = e.target.closest && e.target.closest('.mdt-minimize')
+    if(minimize) { e.preventDefault(); e.stopImmediatePropagation(); minimizeRecord(minimize.closest('.modal-dialog')); return }
+    const button = e.target.closest && e.target.closest('.mdt-maximize')
+    if (!button) return
+    e.preventDefault()
+    e.stopImmediatePropagation()
+    toggleModalMax(button.closest('.modal-dialog'))
+  }, true)
+  document.addEventListener('dblclick', (e) => {
+    const dlg = dragTarget(e.target)
+    if (!dlg || !dlg.matches('.modal-dialog') || themeNow() === 'off') return
+    e.preventDefault()
+    toggleModalMax(dlg)
+  }, true)
+  document.addEventListener('pointerdown', startGrip, true)
+  document.addEventListener('pointermove', moveGrip, true)
+  document.addEventListener('pointerup', endGrip, true)
+  document.addEventListener('pointercancel', endGrip, true)
+  window.addEventListener('blur', endGrip)
+  document.addEventListener('click', (e) => {
+    if (Date.now() > gripClickUntil) return
+    const releasedHere = gripReleasePoint && Math.abs(e.clientX - gripReleasePoint.x) < 2 && Math.abs(e.clientY - gripReleasePoint.y) < 2
+    if (!releasedHere && !(e.target.closest && e.target.closest('.mdt-grip'))) return
+    gripClickUntil = 0
+    e.preventDefault()
+    e.stopImmediatePropagation()
+  }, true)
   document.addEventListener('shown.bs.modal', addGrips, true)
   document.addEventListener('hidden.bs.modal', (e) => {
     if (!e || !e.target || !e.target.querySelector) return
     clearGripSize(e.target.querySelector('.modal-dialog'))
   }, true)
-  setInterval(addGrips, 1500)
+  addGrips()
 }
 
 function watchModalDrag() {
+  watchReportReuse()
   watchModalResize()
   watchPickers()
-  watchNoteBg()
   watchImgur()
-  watchSwatches()
-  watchCropReset()
-  document.addEventListener('mousedown', startModalDrag, true)
-  document.addEventListener('mousemove', moveModalDrag, true)
-  document.addEventListener('mouseup', endModalDrag, true)
-  document.addEventListener('hidden.bs.modal', (e) => {
-    if (!e || !e.target || !e.target.querySelector) return
-    resetModalDrag(e.target.querySelector('.modal-dialog'))
-    if (e.target.style) e.target.style.removeProperty('z-index')
-    keepStackOpen()
+  installWorkspace()
+  document.addEventListener('mdt:modal-lifecycle', syncWorkspace)
+  document.addEventListener('pointerdown', (e) => {
+    if (e.target.closest) raiseModal(e.target.closest('.modal'))
+    startModalDrag(e)
   }, true)
-  document.addEventListener('show.bs.modal', (e) => {
-    if (!e || !e.target || !e.target.querySelector) return
-    resetModalDrag(e.target.querySelector('.modal-dialog'))
-    stackModal(e.target)
-  }, true)
+  document.addEventListener('pointermove', moveModalDrag, true)
+  document.addEventListener('pointerup', endModalDrag, true)
+  document.addEventListener('pointercancel', endModalDrag, true)
+  window.addEventListener('blur', endModalDrag)
+  const observer = new MutationObserver((records) => {
+    if (records.some(r=>(r.target.nodeType===1?r.target:r.target.parentElement)?.closest('.modal-header'))) addGrips()
+    const sized = new Set()
+    records.forEach((record) => {
+      const node = record.target
+      if (node.matches && node.matches('.modal-content, .modal-body, .modal-dialog')) {
+        const dlg = node.closest('.modal-dialog[data-mdt-sized]')
+        if (dlg) sized.add(dlg)
+      }
+    })
+    sized.forEach(fitSizedModal)
+    if (!records.some((record) => record.type === 'childList' ? Array.from(record.addedNodes).concat(Array.from(record.removedNodes)).some((node) => node.nodeType === 1 && (node.matches('.modal, .modal-backdrop') || node.querySelector('.modal, .modal-backdrop'))) : record.target.matches('.modal'))) return
+    records.forEach((record) => {
+      const node = record.target
+      if (node.matches && node.matches('.modal') && (!node.matches('.show, .in') || !node.getClientRects().length)) {
+        reportSnapshots.delete(node)
+        const box = node.querySelector('.modal-dialog')
+        resetModalDrag(box)
+        clearGripSize(box)
+      }
+    })
+    syncWorkspace()
+    addGrips()
+    document.querySelectorAll('.modal.show, .modal.in').forEach((node) => { if (!modalLayers.has(node)) raiseModal(node) })
+  })
+  observer.observe(document.documentElement, {subtree:true, childList:true, attributes:true, attributeFilter:['class','style']})
 }
 
 ipcRenderer.on('mdt:set-drag', (_e, value) => {
   dragEnabled = !!value
   applyDragFlag()
   if (!dragEnabled) {
-    for (const box of document.querySelectorAll('[data-mdt-moved="1"]')) {
+    for (const box of document.querySelectorAll('[data-mdt-moved="1"], [data-mdt-offset]')) {
       resetModalDrag(box)
     }
   }
@@ -7099,7 +8083,7 @@ ipcRenderer.on('mdt:set-drag', (_e, value) => {
 
 ipcRenderer.on('mdt:set-skin', (_e, value) => {
   skinSynced = true
-  if (typeof value === 'boolean') applyTheme(value ? 'light' : 'off')
+  if (typeof value === 'boolean') applyTheme(value ? 'p1' : 'off')
   else applyTheme(String(value))
 })
 
@@ -7194,6 +8178,15 @@ function reportPageInfo() {
 
     info.subject = text('h3.characterDetailsName')
 
+    const stats = document.querySelectorAll('.card-stats')
+    for (let i = 0; i < stats.length; i++) {
+      const sm = String(stats[i].textContent || '').replace(/\s+/g, ' ').match(/([\d,]+)\s*Posted APBs/i)
+      if (sm) {
+        info.apbs = parseInt(sm[1].replace(/,/g, ''), 10) || 0
+        break
+      }
+    }
+
     ipcRenderer.sendToHost('mdt:page-info', info)
   } catch (_) {
   }
@@ -7230,11 +8223,45 @@ function setSearchNodeHidden(el, hidden) {
   el.style.removeProperty('display')
 }
 
+function markLookupControls() {
+  if (!document.body) return
+  const fields = new Set()
+  const actions = new Set()
+  if (themeNow() !== 'off') {
+    document.querySelectorAll('input[placeholder], input[aria-label], input#character, input#plate').forEach((input) => {
+      const label = input.getAttribute('placeholder') || input.getAttribute('aria-label') || ''
+      if (!/^(character|plate)$/.test(input.id) && !/^\s*search (person|vehicle|plate|name)\s*$/i.test(label)) return
+      if (input.closest('.modal, .note-editor, [contenteditable="true"]')) return
+      fields.add(input)
+    })
+    fields.forEach((input) => {
+      let node = input
+      for (let level = 0; node && node !== document.body && level < 3; level++, node = node.parentElement) {
+        const sibling = node.nextElementSibling
+        if (!sibling || fields.has(sibling) || sibling.querySelector('input, textarea, select')) continue
+        const action = sibling.matches('button, a, [role="button"], input[type="submit"], i.fa-search, i[class*="search"]') ? sibling : sibling.querySelector('.input-group-append > button, .input-group-btn > button, button:has(.fa-search), a:has(.fa-search), i.fa-search')
+        const clickable = action && (action.closest('button, a, [role="button"]') || action)
+        if (clickable && !clickable.contains(input)) { actions.add(clickable); break }
+      }
+      const form = input.closest('form')
+      if (form && Array.from(fields).filter((field) => form.contains(field)).length === 1) {
+        const submit = form.querySelector('button[type="submit"], button:not([type]), input[type="submit"]')
+        if (submit) actions.add(submit)
+      }
+    })
+  }
+  for (const [attribute, nodes] of [['data-mdt-lookup-field',fields], ['data-mdt-lookup-action',actions]]) {
+    document.querySelectorAll('[' + attribute + ']').forEach((node) => { if (!nodes.has(node)) node.removeAttribute(attribute) })
+    nodes.forEach((node) => { if (!node.hasAttribute(attribute)) node.setAttribute(attribute,'1') })
+  }
+}
+
 function applySearchInputs() {
   if (!document.body) return
+  markLookupControls()
   if (!searchHidden || themeNow() === 'off') {
     document.querySelectorAll('[data-mdt-search-gone="1"]').forEach((el) => setSearchNodeHidden(el, false))
-    if (!searchHidden) return
+    if (!searchHidden || themeNow() === 'off') return
   }
   const inputs = document.querySelectorAll('input[placeholder], input[name], input[aria-label]')
   const limit = inputs.length > 200 ? 200 : inputs.length
@@ -7272,9 +8299,33 @@ if (document.readyState === 'loading') {
   watchPenalLinks()
 }
 
-const VANILLA_DIALOG_RE = /add arrest report/i
+const VANILLA_DIALOG_RE = /add arrest report|(?:file|add|submit|edit)\s+(?:(?:arrest|search|electronic surveillance|financial services)\s+)?warrant/i
+
+function markWarrantFields(modal, enabled) {
+  if (!enabled) {
+    modal.querySelectorAll('[data-mdt-warrant-suspect], [data-mdt-warrant-situation], [data-mdt-warrant-entry]').forEach((node) => {
+      node.removeAttribute('data-mdt-warrant-suspect')
+      node.removeAttribute('data-mdt-warrant-situation')
+      node.removeAttribute('data-mdt-warrant-entry')
+    })
+    return
+  }
+  modal.querySelectorAll('input[id^="suspectName"]').forEach((input) => {
+    const section = input.closest('.form-group')
+    if (section) section.dataset.mdtWarrantSuspect = '1'
+  })
+  modal.querySelectorAll('input[id$="WarrantDate"]').forEach((input) => {
+    const row = input.closest('.form-row')
+    if (row) row.dataset.mdtWarrantSituation = '1'
+  })
+  modal.querySelectorAll('.chargeSelect, textarea[class*="evidence"]').forEach((input) => {
+    const row = input.closest('.form-group.row')
+    if (row) row.dataset.mdtWarrantEntry = input.tagName === 'TEXTAREA' || row.querySelector('textarea') ? 'evidence' : 'charge'
+  })
+}
 
 function exemptDialogs() {
+  markPaperDocuments()
   const modals = document.querySelectorAll('.modal')
   const live = themeNow() !== 'off'
   for (let i = 0; i < modals.length; i++) {
@@ -7283,9 +8334,21 @@ function exemptDialogs() {
     const head = m.querySelector('.modal-title') || m.querySelector('.modal-header')
     const label = flatText(head)
     const wanted = live && !!label && label.length < 120 && VANILLA_DIALOG_RE.test(label)
+    if (wanted && /warrant/i.test(label)) m.dataset.mdtNativeForm = '1'
+    else delete m.dataset.mdtNativeForm
+    markWarrantFields(m, m.dataset.mdtNativeForm === '1')
     if (wanted) {
       if (m.dataset.mdtVanilla === '1') continue
       m.dataset.mdtVanilla = '1'
+      {
+        m.querySelectorAll('[data-mdt-crow], [data-mdt-ccell], [data-mdt-cbtn], [data-mdt-chost]').forEach((el) => {
+          delete el.dataset.mdtCrow
+          delete el.dataset.mdtCcell
+          delete el.dataset.mdtCbtn
+          delete el.dataset.mdtChost
+          CROW_PROPS.forEach((key) => el.style.removeProperty(key))
+        })
+      }
       m.querySelectorAll('[data-mdt-row="1"]').forEach((el) => {
         if (!el.style || !el.dataset) return
         delete el.dataset.mdtRow

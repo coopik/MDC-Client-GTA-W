@@ -1,0 +1,665 @@
+<div class="modal fade" id="modalAddArrestWarrant" tabindex="-1" role="dialog"
+            aria-labelledby="modalAddArrestWarrant" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">File Arrest Warrant</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="fas fa-fw fa-times text-danger"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body modal-scroll">
+                        <div class="row">
+                            <div class="col-3">
+                                <div class="form-group">
+                                    <h6 class="d-block text-center">Confidential Level</h6>
+                                    <input type="text" id="arrestWarrantLevel" value="0" hidden>
+                                    <div class="btn-group d-block text-center">
+                                        <button type="button" class="btn btn-danger px-5 dropdown-toggle"
+                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                            id="arrestWarrantLevelText">General Warrant</button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item mb-1 px-3" href="#" value="0"
+                                                name="arrestWarrantLevelOption">
+                                                General Warrant
+                                            </a>
+                                                                                                                                                                            </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3">
+                                <div class="form-group" id="arrestWarrantSealedElement" style="display: none;">
+                                    <h6 class="d-block text-center" class="badge badge-warning"
+                                        data-toggle="tooltip-hover" data-placement="top" data-html="true"
+                                        title="Sealed Warrants may only be accessible by members of your department if they have the correct confidentiality level.">
+                                        Seal Warrant <i class="fas fa-fw fa-question-circle ml-1"></i></h6>
+                                    <input type="text" id="arrestWarrantSealed" value="0" hidden>
+                                    <div class="btn-group d-block text-center">
+                                        <button type="button" class="btn btn-warning px-5 dropdown-toggle"
+                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                            id="arrestWarrantSealedText">Sealed Warrant</button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item mb-1 px-3" href="#" value="0"
+                                                name="arrestWarrantSealedOption">
+                                                Sealed Warrant
+                                            </a>
+                                            <a class="dropdown-item mb-1 px-3" href="#" value="1"
+                                                name="arrestWarrantSealedOption">
+                                                Unsealed Warrant
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Suspect Details</h6>
+                            <div class="col-auto mx-auto">
+                                <div class="card card-profile-avatar">
+                                    <div class="card-img" id="charPicture" style="display:none;"><img class="personPhotograph mx-auto" src="/seal.svg">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group mb-3 col-4">
+                                <input type="hidden" id="suspectID" name="suspectID" value="0">
+                                <input type="text" class="form-control" placeholder="Suspect Name"
+                                    id="suspectNameArrest" name="suspectNameArrest" required>
+                            </div>
+                            <div class="input-group mb-3 col-4">
+                                <input type="text" class="form-control" placeholder="Alias(es) - Leave Blank for N/A"
+                                    id="suspectAliasArrest" name="suspectAliasArrest">
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-4">
+                                    <div class="input-group">
+                                        <select class="custom-select" id="suspectEthnicityArrest"
+                                            name="suspectEthnicityArrest" aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-4">
+                                    <div class="input-group">
+                                        <select class="custom-select" id="suspectGenderArrest" name="suspectGenderArrest"
+                                            required="required" aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Situational Details &amp; Narrative</h6>
+                            <div class="form-row">
+                                <div class="form-group col-2">
+                                    <label>Date</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-calendar"></i></span>
+                                        </div>
+                                        <input class="form-control " type="text" id="arrestWarrantDate"
+                                            name="arrestWarrantDate" value="17/Oct/2026"
+                                            placeholder="DD/MMM/YYYY">
+                                    </div>
+                                </div>
+                                <div class="form-group col-2">
+                                    <label>Time</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-clock"></i></span>
+                                        </div>
+                                        <input class="form-control " type="text" id="arrestWarrantTime"
+                                            name="arrestWarrantTime" value="18:09" placeholder="00:00">
+                                    </div>
+                                </div>
+                                <div class="form-group col-4">
+                                    <label>Location</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-map"></i></span>
+                                        </div>
+                                        <input class="form-control " type="text" id="arrestWarrantLocation"
+                                            name="arrestWarrantLocation" value="" placeholder="Location">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <p>
+                                <button class="btn btn-primary" type="button" data-toggle="collapse"
+                                    data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                    Narrative Guide
+                                </button>
+                            </p>
+                            <div class="collapse" id="collapseExample"><p>Fixture narrative guide.</p></div><textarea type="text" id="arrestWarrantNarrative" class="form-control" placeholder="Narrative"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Charges</h6>
+                            <div class="input-group-addon">
+                                <button class="btn btn-warning addCharge" type="button"
+                                    style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                    <i class="mr-1 fas fa-fw fa-plus-square"></i>Charge</button>
+                            </div>
+
+                            <div id="chargesCopy" style="display:none;">
+                                <div class="form-group row col-12">
+                                    <div class="input-group mb-3 col-7">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-gavel"></i></span>
+                                        </div>
+                                        <select id="charge[]" name="charge[]" class="form-control chargeSelect"
+                                            required="required" data-live-search="true" data-style="btn-charge"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                    <div class="input-group mb-3 col-3">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-ellipsis-v"></i></span>
+                                        </div>
+                                        <select id="class[]" name="class[]" class="form-control chargeSelect"
+                                            required="required" data-style="btn-charge"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger remove_button" type="button">
+                                            <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group-addon chargeWrapper">
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Evidence</h6>
+                            <div class="input-group-addon">
+                                <button class="btn btn-info addEvidenceArrest" type="button"
+                                    style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                    <i class="mr-1 fas fa-fw fa-plus-square"></i>Evidence</button>
+                            </div>
+
+                            <div id="evidenceCopyArrest" style="display:none;">
+                                <div class="form-group row col-12">
+                                    <div class="input-group mb-3 col-11">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-search"></i></span>
+                                        </div>
+                                        <textarea placeholder="Evidence" id="evidence[]" name="evidence[]" class="form-control chargeSelect evidence"
+                                            required="required" data-live-search="true" data-style="btn-charge"></textarea>
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger remove_button" type="button">
+                                            <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group-addon evidenceWrapperArrest">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" id="addWarrant">
+                            <i class="fas fa-fw fa-plus mr-1"></i>Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+<div class="modal fade" id="modalAddSearchWarrant" tabindex="-1" role="dialog"
+            aria-labelledby="modalAddSearchWarrant" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">File Search Warrant</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="fas fa-fw fa-times text-danger"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body modal-scroll">
+                        <div class="col-3">
+                            <div class="form-group">
+                                <h6 class="d-block text-center">Confidential Level</h6>
+                                <input type="text" id="searchWarrantLevel" value="0" hidden>
+                                <div class="btn-group d-block text-center">
+                                    <button type="button" class="btn btn-danger px-5 dropdown-toggle"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                        id="searchWarrantLevelText">General Warrant</button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item mb-1 px-3" href="#" value="0"
+                                            name="searchWarrantLevelOption">
+                                            General Warrant
+                                        </a>
+                                                                                                                                                            </div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-muted" style="font-size: 12px;"><i
+                                class="fas fa-fw fa-question-circle mr-1 ml-3 mb-3"></i> Search Warrants are automatically sealed and restricted to the filing department.</span>
+
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Suspect Details</h6>
+                            <div class="col-auto mx-auto">
+                                <div class="card card-profile-avatar">
+                                    <div class="card-img" id="charPictureSearch" style="display:none;"><img class="personPhotograph mx-auto" src="/seal.svg">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group mb-3 col-4">
+                                <input type="hidden" id="suspectIDSearch" name="suspectIDSearch" value="0">
+                                <input type="text" class="form-control" placeholder="Suspect Name"
+                                    id="suspectNameSearch" name="suspectNameSearch" required>
+                            </div>
+                            <div class="input-group mb-3 col-4">
+                                <input type="text" class="form-control" placeholder="Alias(es) - Leave Blank for N/A"
+                                    id="suspectAliasSearch" name="suspectAliasSearch">
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-4">
+                                    <div class="input-group">
+                                        <select class="custom-select" id="suspectEthnicitySearch"
+                                            name="suspectEthnicitySearch" aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-4">
+                                    <div class="input-group">
+                                        <select class="custom-select" id="suspectGenderSearch" name="suspectGenderSearch"
+                                            required="required" aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Requested Properties and Narrative</h6>
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label>Residences</label>
+                                    <div class="swResidences">
+
+                                    </div>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label>Vehicles</label>
+                                    <div class="swVehicles">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form_row">
+                                <div class="form-group col 6">
+                                    <label>Other Property</label>
+                                    <div class="input-group-addon propertyWrapper">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group-addon">
+                                <button class="btn btn-warning addProperty" type="button"
+                                    style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                    <i class="mr-1 fas fa-fw fa-plus-square"></i>Other Property</button>
+                            </div>
+
+                            <div id="propertyCopy" style="display:none;">
+                                <div class="form-group row col-12">
+                                    <div class="input-group mb-3 col-11">
+                                        <input placeholder="Enter Other Property" name="swProperty[]"
+                                            class="form-control chargeSelect" required="required" data-live-search="true"
+                                            data-style="btn-charge" />
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger remove_button" type="button">
+                                            <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group-addon">
+                                <button class="btn btn-warning addEswProperty" type="button"
+                                    style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                    <i class="mr-1 fas fa-fw fa-plus-square"></i>Other</button>
+                            </div>
+
+                            <div id="eswPropertyCopy" style="display:none;">
+                                <div class="form-group row col-12">
+                                    <div class="input-group mb-3 col-11">
+                                        <input placeholder="Enter Other Property" name="swProperty[]"
+                                            class="form-control chargeSelect" required="required" data-live-search="true"
+                                            data-style="btn-charge" />
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger remove_button" type="button">
+                                            <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>warrant.Reason for request</h6>
+                            <textarea type="text" id="searchWarrantNarrative" class="form-control" placeholder="warrant.Reason for request"></textarea>
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Evidence</h6>
+                            <div class="input-group-addon">
+                                <button class="btn btn-info addEvidenceSearch" type="button"
+                                    style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                    <i class="mr-1 fas fa-fw fa-plus-square"></i>Evidence</button>
+                            </div>
+
+                            <div id="evidenceCopySearch" style="display:none;">
+                                <div class="form-group row col-12">
+                                    <div class="input-group mb-3 col-11">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-search"></i></span>
+                                        </div>
+                                        <textarea placeholder="Evidence" name="searchEvidence[]" class="form-control chargeSelect evidenceSearch"
+                                            required="required" data-live-search="true" data-style="btn-charge"></textarea>
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger remove_button" type="button">
+                                            <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group-addon evidenceWrapperSearch">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" id="addSearchWarrant">
+                            <i class="fas fa-fw fa-plus mr-1"></i>Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+<div class="modal fade" id="modalAddElectronicWarrant" tabindex="-1" role="dialog"
+            aria-labelledby="modalAddElectronicWarrant" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">File Electronic Surveillance Warrant</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="fas fa-fw fa-times text-danger"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body modal-scroll">
+                        <div class="col-3">
+                            <div class="form-group">
+                                <h6 class="d-block text-center">Confidential Level</h6>
+                                <input type="text" id="eswWarrantLevel" value="0" hidden>
+                                <div class="btn-group d-block text-center">
+                                    <button type="button" class="btn btn-danger px-5 dropdown-toggle"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                        id="eswWarrantLevelText">General Warrant</button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item mb-1 px-3" href="#" value="0"
+                                            name="eswWarrantLevelOption">
+                                            General Warrant
+                                        </a>
+                                                                                                                                                            </div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-muted" style="font-size: 12px;"><i
+                                class="fas fa-fw fa-question-circle mr-1 ml-3 mb-3"></i> Electronic Surveillance Warrants are automatically sealed and restricted to the filing department.</span>
+
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Suspect Details</h6>
+                            <div class="col-auto mx-auto">
+                                <div class="card card-profile-avatar">
+                                    <div class="card-img" id="charPictureEsw" style="display:none;"><img class="personPhotograph mx-auto" src="/seal.svg">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group mb-3 col-4">
+                                <input type="hidden" id="suspectIDEsw" name="suspectIDEsw" value="0">
+                                <input type="text" class="form-control" placeholder="Suspect Name"
+                                    id="suspectNameEsw" name="suspectNameEsw" required>
+                            </div>
+                            <div class="input-group mb-3 col-4">
+                                <input type="text" class="form-control" placeholder="Alias(es) - Leave Blank for N/A"
+                                    id="suspectAliasEsw" name="suspectAliasEsw">
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-4">
+                                    <div class="input-group">
+                                        <select class="custom-select" id="suspectEthnicityEsw" name="suspectEthnicityEsw"
+                                            aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-4">
+                                    <div class="input-group">
+                                        <select class="custom-select" id="suspectGenderEsw" name="suspectGenderEsw"
+                                            required="required" aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Requested Devices and Narrative</h6>
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label>Devices</label>
+                                    <div class="eswDevices">
+
+                                    </div>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label>Properties</label>
+                                    <div class="eswProperties">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form_row">
+                                <div class="form-group col 6">
+                                    <label>Other Property/Devices</label>
+                                    <div class="input-group-addon eswPropertyWrapper">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group-addon">
+                                <button class="btn btn-warning addEswProperty" type="button"
+                                    style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                    <i class="mr-1 fas fa-fw fa-plus-square"></i>Other</button>
+                            </div>
+
+                            <div id="eswPropertyCopy" style="display:none;">
+                                <div class="form-group row col-12">
+                                    <div class="input-group mb-3 col-11">
+                                        <input placeholder="Enter Other Property" name="swProperty[]"
+                                            class="form-control chargeSelect" required="required" data-live-search="true"
+                                            data-style="btn-charge" />
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger remove_button" type="button">
+                                            <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>warrant.Reason for request</h6>
+                            <textarea type="text" id="eswWarrantNarrative" class="form-control"
+                                placeholder="Write reasons for why a electronic surveillance warrant is being requested."></textarea>
+                            <h6>Reason for Properties Request</h6>
+                            <textarea type="text" id="eswWarrantNarrative2" class="form-control"
+                                placeholder="Write reasons for why an electronic listening warrant is being requested, and why for this specific property. (Leave Blank if N/A)"></textarea>
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <h6 class="d-block text-center">Evidence</h6>
+                            <div class="input-group-addon">
+                                <button class="btn btn-info addEvidenceESW" type="button"
+                                    style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                    <i class="mr-1 fas fa-fw fa-plus-square"></i>Evidence</button>
+                            </div>
+
+                            <div id="evidenceCopyESW" style="display:none;">
+                                <div class="form-group row col-12">
+                                    <div class="input-group mb-3 col-11">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-fw fa-search"></i></span>
+                                        </div>
+                                        <textarea placeholder="Evidence" name="eswEvidence[]" class="form-control chargeSelect evidenceESW"
+                                            required="required" data-live-search="true" data-style="btn-charge"></textarea>
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger remove_button" type="button">
+                                            <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group-addon evidenceWrapperESW">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" id="addEswWarrant">
+                            <i class="fas fa-fw fa-plus mr-1"></i>Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+<div class="modal fade" id="modalAddFinancialWarrant" tabindex="-1" role="dialog"
+                aria-labelledby="modalAddFinancialWarrant" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">File Financial Services Warrant</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="fas fa-fw fa-times text-danger"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body modal-scroll">
+                            <div class="col-3">
+                                <div class="form-group">
+                                    <h6 class="d-block text-center">Confidential Level</h6>
+                                    <input type="text" id="fswWarrantLevel" value="0" hidden>
+                                    <div class="btn-group d-block text-center">
+                                        <button type="button" class="btn btn-danger px-5 dropdown-toggle"
+                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                            id="fswWarrantLevelText">General Warrant</button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item mb-1 px-3" href="#" value="0"
+                                                name="fswWarrantLevelOption">
+                                                General Warrant
+                                            </a>
+                                                                                                                                                                            </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-muted" style="font-size: 12px;"><i
+                                    class="fas fa-fw fa-question-circle mr-1 ml-3 mb-3"></i>
+                                Financial Services Warrants are automatically sealed and restricted to the filing department.</span>
+
+                            <div class="form-group">
+                                <h6 class="d-block text-center">Suspect Details</h6>
+                                <div class="col-auto mx-auto">
+                                    <div class="card card-profile-avatar">
+                                        <div class="card-img" id="charPictureFsw" style="display:none;"><img class="personPhotograph mx-auto" src="/seal.svg"></div>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-3 col-4">
+                                    <input type="hidden" id="suspectIDFsw" name="suspectIDFsw" value="0">
+                                    <input type="text" class="form-control" placeholder="Suspect Name"
+                                        id="suspectNameFsw" name="suspectNameFsw" required>
+                                </div>
+                                <div class="input-group mb-3 col-4">
+                                    <input type="text" class="form-control" placeholder="Alias(es) - Leave Blank for N/A"
+                                        id="suspectAliasFsw" name="suspectAliasFsw">
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-4">
+                                        <div class="input-group">
+                                            <select class="custom-select" id="suspectEthnicityFsw"
+                                                name="suspectEthnicityFsw" aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-4">
+                                        <div class="input-group">
+                                            <select class="custom-select" id="suspectGenderFsw" name="suspectGenderFsw"
+                                                required="required" aria-required="true"><option value="" disabled selected>Choose</option><option value="fixture">Fixture option</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="form-group">
+                                <h6 class="d-block text-center">Warranted Citations / Narrative</h6>
+                                <div class="form_row">
+                                    <div class="form-group col 6">
+                                        <label>Warranted Citations</label>
+                                        <div class="input-group-addon fswCitationWrapper">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group-addon">
+                                    <button class="btn btn-warning addFswCitation" type="button"
+                                        style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                        <i class="mr-1 fas fa-fw fa-plus-square"></i>Citation</button>
+                                </div>
+
+                                <div id="fswCitationCopy" style="display:none;">
+                                    <div class="form-group row col-12">
+                                        <div class="input-group mb-3 col-11">
+                                            <input placeholder="Infraction Report for #XXXX" name="fswCitation[]"
+                                                class="form-control chargeSelect" required="required"
+                                                data-live-search="true" data-style="btn-charge" />
+                                        </div>
+                                        <div class="col-1">
+                                            <button class="btn btn-danger remove_button" type="button">
+                                                <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h6>warrant.Reason for request</h6>
+                                <textarea type="text" id="fswWarrantNarrative" class="form-control" placeholder="warrant.Narrative Reasons Text"></textarea>
+                            </div>
+                            <hr>
+                            <div class="form-group">
+                                <h6 class="d-block text-center">Evidence</h6>
+                                <div class="input-group-addon">
+                                    <button class="btn btn-info addEvidenceFSW" type="button"
+                                        style="display: block;margin-left: auto;margin-right: auto;width: 15%;">
+                                        <i class="mr-1 fas fa-fw fa-plus-square"></i>Evidence</button>
+                                </div>
+
+                                <div id="evidenceCopyFSW" style="display:none;">
+                                    <div class="form-group row col-12">
+                                        <div class="input-group mb-3 col-11">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i
+                                                        class="fas fa-fw fa-search"></i></span>
+                                            </div>
+                                            <textarea placeholder="Evidence" name="fswEvidence[]" class="form-control chargeSelect evidenceFSW"
+                                                required="required" data-live-search="true" data-style="btn-charge"></textarea>
+                                        </div>
+                                        <div class="col-1">
+                                            <button class="btn btn-danger remove_button" type="button">
+                                                <i class="fas fa-fw fa-minus-square m-0"></i> </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="input-group-addon evidenceWrapperFSW">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal" id="addFswWarrant">
+                                <i class="fas fa-fw fa-plus mr-1"></i>Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>

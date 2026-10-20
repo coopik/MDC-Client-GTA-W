@@ -1,0 +1,58 @@
+<div class="modal fade" id="modalViewRecord" tabindex="-1" role="dialog" aria-labelledby="modalViewRecord"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title w-100 text-center font-weight-bold mt-0" id="modalAddRecord">View Record -
+                        #<span id="viewRecordID"></span> - <span id="viewRecordSuspectName"></span>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="fas fa-fw fa-times text-danger"></i>
+                        </button>
+                    </h3>
+                </div>
+                <div class="modal-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <b>index.CreatedBy</b>: <span id="viewRecordCreatedByText">index.FnameLname</span>
+                        </div>
+                        <div class="col-4" id="viewRecordEditedBy">
+                            <b>Edited by</b>: <span id="viewRecordEditedByText">index.FnameLname</span>
+                        </div>
+                        <div class="col-4" id="viewRecordHiddenBy">
+                            <b>Hidden by</b>: <span id="viewRecordHiddenByText">index.FnameLname</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <b>Type</b>: <span
+                                id="viewRecordType">Type</span>
+                        </div>
+                        <div class="col-3">
+                            <b>Status</b>: <span
+                                id="viewRecordStatus">Status</span>
+                        </div>
+                        <div class="col-3">
+                            <b>Criminal Points</b>: <span id="viewRecordCriminalPoints">#</span>
+                        </div>
+                        <div class="col-3">
+                            <b>index.ConfidentialLevel</b>: <span id="viewRecordLevel">index.ConfidentialLevel</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="mb-0">Remark</h6>
+                            <span id="viewRecordRemark">Remark</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="mb-0">index.Report</h6>
+                            <span id="viewRecordReport">index.Report</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

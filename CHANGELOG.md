@@ -1,5 +1,301 @@
 # Changelog
 
+## 1.1.2 - 2026-10-20
+
+- Use each Aero palette's glass hover and pressed states for page-tab close controls, keeping the X readable.
+- Match Aero LAPD's minimized-record dock to its blue nav and page tabs, with light text, distinct active/hover states, matching close controls and a slightly lighter record-color strip. Other dock palettes and behavior are retained.
+- Protect icon font declarations from generic skin font shorthands, including generated glyphs. Restore Incident add-person/trash icons and give shared create-page actions compact button faces and consistent label-chip spacing.
+- Suppress Perfect Scrollbar's added rails within bootstrap-select menus so the existing themed native inner-list scrollbar is the sole visible scrollbar. Keep fixed height, pinned search, wheel containment, dragging and keyboard navigation.
+- Add supplied Incident linked/person panel fixtures and the MDC's actual scrollbar plugin to release verification.
+
+## 1.1.1 - 2026-10-19
+
+- Match search-row fields and actions at 26px, with aligned baselines, fonts and borders across skins. Keep readable button colors.
+- Preserve native Material ripple opacity and circular decoration inside header buttons. File Warrant no longer becomes an opaque white block when clicked.
+- Freeze the existing selectpicker viewport at open, choose the roomier direction and show a themed native scrollbar. Scroll and filtering reuse the saved height; only reopening and actual window/popup size changes refit it. Restore native behavior and styles on close or skin removal. Resolve the owning picker rather than its nested menu UL, so wheel boundaries cannot scroll the form. Keep search pinned, keyboard highlights visible, wheel input isolated, and apply the same behavior to Charge, Addition and Class.
+- Add native Material Design/ripple coverage and repeated bidirectional-scroll checks with zero refits across all skins.
+- Contain picker wheel input in the page context beside the native picker, including short lists and list boundaries after navigation/export activity.
+
+## 1.1.0 - 2026-10-19
+
+- Alerts use each skin's light list highlight, dark readable text and preserved status colors; History keeps its matching highlight.
+- Long bootstrap-select menus show a themed native scrollbar; wheel input stays in the list while the plugin retains height and placement. Arrow navigation measures the highlighted row to keep it fully visible after scrolling.
+- Post Arrest badges have equal widths and spacing. Table data cells remain light in Default, wrap inside their columns and retain readable skin colors. Collapse buttons draw their minus on form pages too.
+- Copy exports white paper with loaded fonts and rasterized icons, using a separate document measured after layout. The full submission, including notes and signature, survives capture without changing the live page.
+- Summernote Video, Link and Image dialogs have properly positioned close buttons, normal fields and compact red actions; genuinely disabled actions are grey.
+- Editor toolbar buttons and dropdowns share a 26px minimum height and aligned icons/carets, including font, style and table controls.
+- Search-bar actions have clear button borders, readable text/icons and hover/pressed states in Default and Aero skins.
+
+## 1.0.26
+
+- Audit native Charge interactions in both supplied arrest and warrant forms. Restore readable 10px code badges with explicit text-fill colors and contrasting red/orange/dark/green fills. Guard Arrow/Enter navigation in empty or no-results lists to avoid the vendor's missing-position error; retain native selection, search and scrolling. Escape closes an active picker through its native handler without also closing the parent form; a later Escape keeps native form behavior.
+- Pass each popup body's usable boundaries to bootstrap-select's native windowPadding option. Use its dropup and list sizing, pin to the measured menu height, and keep menus clear of the footer. Restore native options on dismissal or skin removal; do not add menu overflow/max-height rules or extra scrollers.
+- Size selectpicker menus to their selector's width, clamp to visible space and align their left edges. Observe button/body resizing, remeasure again at resize-grip release, and remeasure filtered lists without changing native form grids or working license-menu forms.
+- Detect printed report tables by their own merged document title and field grid, independent of their parent section. Give History versions, comparisons and previews the same white serif paper, 14px values, 10px labels and 16px title as the main viewer. Exclude live editors and leave operational tables alone.
+- Dismiss shared status panels on shell/guest outside clicks, focus, Escape, window blur, menus, tools and page changes. Send a small preload signal for webview interaction; consume guest Escape only while a shell panel is open, preserving other page shortcuts.
+- Preserve original notification text-color classes and explicit color spans as safe structured text. Reuse the MDC's semantic hues and adjust lightness for at least 4.5:1 contrast on each skin's normal and hover backgrounds. Keep labels and layout unchanged; no status-word matching or remote HTML insertion.
+- Add native interaction regressions for both charge pickers, all four skins, no-results keyboard handling, selector widths/resizing, original notification hues, panel dismissal and documents under arbitrary parent sections.
+
+## 1.0.25
+
+- Apply the existing white serif paper-form styling to full-page View Record cards and read-only supplemental/document previews, including arrest, citation, infraction, impound and warrant documents. Keep editors native and raise full-page surrounding details to 13px.
+- Restore native modal body scrollbars when Material Dashboard's Perfect Scrollbar class hides overflow. Keep native height caps, resize behavior and wheel isolation; do not add a scroller or change page/webview sizing.
+- Apply compact shared control metrics inside native forms: 28px action buttons, joined 30px icon/select controls, unpainted selectpicker wrappers and contained charge removal. Preserve the arrest form's Bootstrap grid, display and positioning.
+- Repair searchable selectpicker field, placeholder, hover/selected and group-header contrast using each skin's paired colors. Keep semantic charge badges and native menu scrolling/actions.
+- Add sanitized full-page record/arrest form fixtures and Electron checks for paper scopes, readable metadata, PS modal scrolling, resize/short/narrow cases, input-group geometry and searchable-menu contrast in all four skins.
+
+## 1.0.24
+
+- Restore the v1.0.22 dock styling from the archived project: theme panel background, button-face tabs, theme text and border colors, original hover/pressed states and the 3px record-type strip on the left. Remove the navigation-gradient backgrounds, sand selection, bright bottom strips and red close hover introduced in 1.0.23.
+- Keep minimize/restore behavior, shell-owned records across navigation, reserved dock space and the page scrollbar fix unchanged.
+
+## 1.0.23
+
+- Match the record dock to Default navigation gradients and each Aero palette. Add sand/glass selection, white-on-dark captions, brighter 3px type strips and red close hover states. Highlight the most recently minimized record while keeping the existing restore/close behavior.
+- Restore the page scrollbar for Material Dashboard Perfect Scrollbar panels. The skin hid the custom rails, but its combined dialog/PS fallback lost native overflow declarations in the dialog protection pass. Give page panels a separate 8px native scrollbar fallback, retaining palette styling and reserved space. Remove the root-overflow measurement routine.
+- Keep minimized-record descriptors in the client shell per MDC page tab. Navigation, reload and skin changes retain IDs, titles, type colors, source URLs, geometry and simple scroll offsets; no old document DOM is kept across navigation. Closing a client page transfers its minimized records to a remaining page.
+- Restore live windows in place when possible. After navigation, use the current page's delegated native View Record action; fall back to the saved source page when it has no viewer. Reopening reloads saved data, reapplies geometry and scrollbar offsets, and keeps a retryable tab if opening fails.
+- Warn before minimizing a record containing editable fields. Unsaved edits cannot survive navigation. Preserve existing Escape behavior; sign-out clears all minimized records.
+- Add tests for visible scrollbars with dock/resizing across skins, cross-page native reopen, reloads, skin changes, fallback, editor warnings, retained failures and sign-out.
+
+## 1.0.22
+
+- Add a View Record-only minimize control matching maximize/restore and close in every skin. Keep other client tools and MDC dialogs close-only.
+- Add a compact, horizontally scrollable dock below the active MDC view. Reserve its space through the existing client layout and ResizeObserver, with short subject/record titles, record symbols and available type colors.
+- Keep minimized records alive with their content, scroll positions, size, position and maximize/restore state. Preserve independent records when the MDC reuses its native viewer; restore brings only the selected record forward, and each dock X closes without restoring.
+- Preserve docks when switching client pages and during same-document navigation. Clear destroyed records on document navigation or removal. Exclude minimized records from focus traps and active stacking so page Escape does not close them.
+- Add Electron regressions for matched controls, three simultaneous records, out-of-order restoration, dock closing, native reopen, scroll/geometry, maximize state, reserved space and navigation cleanup.
+
+## 1.0.21
+
+- Remove maximize controls and title-double-click maximization from every client tool, including History, Options and Keyboard Shortcuts. Keep movement, closing and existing resizing. The main Electron window retains its native controls; HTML tool dialogs no longer cover its native overlay with maximized tool chrome. There are no native secondary BrowserWindows.
+- Restrict page maximize controls and double-click behavior to View Record titles, including retained record copies. Reconcile controls when a native viewer changes title.
+- Draw a larger window-frame maximize glyph with a thick top edge and two overlapping frames for restore. Center title text and matching close/maximize controls in the header.
+- Exclude menu options from both banner painting and ancestor frame stripping. Normalize shared badge-item padding, typography, borders and vertical spacing while retaining semantic colors and native menu actions/scrolling.
+- Add native status, classification and record-type source fixtures; extend Electron checks for close-only tools and consistent badge geometry.
+
+## 1.0.20
+
+- Make lookup, About and notification client tools fixed-size with no maximize control or resize grip. Keep resizing and maximizing on the larger client tools.
+- Match popup maximize and close dimensions, alignment, spacing, corners and interaction states. Account for native close buttons nested inside the title.
+- Keep popup drag bounds at the MDC viewport edge. Retain maximize as the safe alternative to crossing into client chrome; expanding the webview would reflow the page, and moving editable popups into another renderer would break their native lifecycle.
+- Stabilize Summernote toolbar dropdown padding and caret geometry through native open/pressed states, including compact empty color dropdowns on authoring pages.
+- Use the supplied person-record source: hide the two semantic no-divider HRs in paired profile columns without layout space; constrain the nested vehicle rows whose negative margins made their bottom borders protrude. Preserve phone and other intentional dividers.
+- Add source-based person-record review fixtures and Electron MCP review mode; verify PremierOne and Aero on screen.
+
+## 1.0.19
+
+- Correct two-control client lookup rows so the field gets the available width and Run stays label-sized, aligned to the input height even at narrow window widths. Keep history and other toolbar layouts intact.
+- Apply compact button dimensions to ordinary create/edit form actions without re-enabling generic form packing. Status, Classification, Victim and linked-item actions retain their skin palette and native placement; editor toolbars, full-width controls and the protected arrest charge dialog keep their existing sizing.
+- Confirm that record title bars already reach the embedded viewport top. Keep the drag limits and add maximize/restore buttons plus title-bar double-click to MDC popups and client tools. Preserve previous geometry, native scrolling and paper styling, including after resizing and page scrolling. Restore native state on close or Original MDC, and retain movable report copies when a maximized viewer is reused.
+- Extend Electron checks for compact controls, narrow lookup rows, maximize/restore and source-based viewport measurements. Retain the released thin, contained card-divider geometry.
+
+## 1.0.18
+
+- Replace minimum-height-only popup resizing with a definite frame height and a flexible existing body. Explicitly resized MDC dialogs release the body's opening height/max-height cap, grow and shrink with the frame, and reconcile late native height writes. Keep native overflow behavior and restore exact original values and priorities on close or Original MDC.
+- Anchor resizing to the visible header so centered dialogs do not jump as their dimensions change. Refresh drag bounds from the visible title bar on every gesture, allow all viewport edges and keep the entire title bar reachable. Remove the client dialogs' hard-coded top inset.
+- Give client tools, including Name Check, Plate Check and History, matching corner resize grips and flexible bodies. Reused client windows reset their size and position.
+- Hide only empty trailing separators after the final Criminal Points fields in recognized profile details columns, including empty separator wrappers. Remove their layout space and restore them in Original MDC; retain dividers in other cards.
+- Add sanitized View Record modal source and pointer-driven resize/drag regressions across skins, including growth, shrinking, movement after resize, centered wrappers, late height writes, native restoration and client tools. Check profile separators against the exact separator-free card height and preserve the paper report styling.
+
+## 1.0.17
+
+- Enlarge the top MDC/Penal Code/DEPA/SHAFT tabs with more height, horizontal padding and larger text. Keep the icon bar below all tab rows when the strip wraps, across every skin.
+- Keep create/edit pages out of filter-strip packing and broad form geometry overrides. Restore the supplied Incident page's native label/field order, classification details, Narrative section and right-hand map. Refresh layout protection when switching skins, and preserve the arrest editor's grid and absolute controls under README rule 25.
+- Reset card/panel dividers to thin, contained lines with no negative margins, excess width, padding or painted fill, including dividers on authoring pages.
+- Synchronize menu accelerator labels with the saved keymap, including cleared, reassigned and reset shortcuts. Use nav.mp3 for navbar and law-page navigation keys, suppressing the extra click emitted by programmatically activated native links.
+- Exclude printable document roots in read-only View Record popups from skin selectors and profile/contrast helpers. Restore full-width white paper, serif text, black grid borders and consistent label/value hierarchy while keeping popup chrome themed. Preserve form structure and authored content; apply print-only unclipping and page spacing without changing screen scrolling.
+- Add sanitized Incident source markup and Electron coverage for wrapped tabs, create/edit page geometry, arrest editor protection, card dividers, paper records and printing, plus menu remapping and navigation sound routing.
+
+## 1.0.16
+
+- Center the nested Material error icon from the supplied notification source without changing Bootstrap Notify placement, timers or handles.
+- Remove decorative evidence magnifiers from warrant forms. Paint charge/class selectors as one surface, keeping native dropdown sizing and scrolling.
+- Replace style-substring descendant selectors with stable authored-color/font markers, skip native option-list content in broad skin rules and avoid repeat skin/pinning work for dropdown updates. The 350-option fixture reduced charge-list style recalculation from about 2–3 seconds to roughly 65–125 ms across custom skins.
+- Make every discovered navbar destination bindable, show assigned combinations in the top-right of its button and add Clear controls. Reassigning a default key disables the previous action instead of silently restoring it. Add configurable MDC/Penal Code/DEPA/SHAFT bindings, defaulting to Ctrl+1 through Ctrl+4.
+- Route mouse-wheel input within shown record windows through their existing scroll containers and contain scrolling at their boundaries; no scrollbar, overflow or height policy is added.
+- Remove the empty bordered tails from header-only statistics cards.
+- Apply one saved zoom factor to all MDC and law pages in 10% steps from 50% to 200%, with Ctrl+0 reset. Normalize key combinations consistently in chrome and sandboxed preloads, coalesce zoom updates per frame and observe content resizing directly. Rail resizing moves to Alt+Left/Right and Alt+Home so Ctrl+Plus/Minus always zooms.
+- Add actual notification-library fixtures, large dropdown timing checks, shortcut/zoom/wheel interaction tests and an isolated real-entry-point memory measurement tool.
+
+- Correct nested dashboard search headings, including the vehicle heading's trailing margin, and keep magnifiers centered after the site replaces their contents.
+- Keep license suspension forms visible beyond their cards and anchored to the Suspend button, with coverage for one and multiple licenses.
+- Render profile labels as plain transparent text and align paired label/value rows when jail time wraps. Keep the duration with Jail Time and the partner record with Partner.
+- Apply compact, scoped layouts to the actual arrest, search, electronic surveillance and financial services warrant forms. Align date/time/location, keep suspect controls at a consistent width, and contain dynamically added charge and evidence editors with small remove buttons.
+- Add sanitized fixtures extracted from the supplied dashboard and warrant HTML, using the site's public Material Dashboard/custom CSS and Bootstrap Select assets with real Bootstrap 4 Summernote.
+
+## 1.0.15
+
+- Add DEPA and SHAFT Act tabs beside Penal Code, using the supplied official forum topics, shared forum skins and independent search state.
+- Style Bootstrap and standalone Summernote font menus with readable theme colors, normal casing and preserved font previews across all custom skins.
+- Center lookup magnifiers across all custom skins, use responsive warrant date/time/location groups and preserve hidden editor source textareas.
+- Remove the default skin's document-wide lookup dependency. Batch contrast measurements before applying repairs and reuse background measurements within each pass to reduce repeated style recalculation.
+- Center notification exclamation marks with a vector glyph inside the badge. Restore every notification's site-selected placement and retain its original validation message, timers and handles.
+- Remove native icon translations from PatrolOne default lookup actions so the vehicle magnifier stays centered before, during and after a click.
+- Preserve authored font families and HTML font faces in Summernote, font previews and saved reports. Apply the skin's editor surface and default ink over the native dark editor face while preserving chosen text colors and highlights.
+- Preserve native warrant form geometry, including Bootstrap columns, stacked suspect fields and date/time/location groups. Exclude warrant forms from charge-row detection and generic layout overrides; keep skin colors and borders.
+- Extend Electron checks with actual Font Awesome glyphs, magnifier press/release states, unchanged native notification placement, the Summernote font menu and representative warrant form geometry across all four custom skins.
+
+## 1.0.14
+
+### Lookup controls and errors
+- Give PatrolOne default fields and placeholders consistent 12-pixel Tahoma text and 26-pixel inset faces. Match the clickable magnifier parent, constrain both actions to a 28-pixel width and keep their geometry stable before and after native click/ripple initialization.
+- Request Bootstrap Notify's body-mounted top-right stack for no-result lookup errors on custom skins. Preserve native update/close handles, timers and callbacks. Keep Original MDC and unrelated notification placement unchanged; do not override notification-container position in CSS.
+- Verify real Bootstrap Notify stacking, containment, callbacks and automatic dismissal across custom skins. Check initial-frame magnifier sizes despite different native inline widths.
+
+### Performance
+- Cache generated styles by skin. Ignore clock, editor, ripple, tile and notification-only mutations, coalesce content-driven styling and exclude the skin's own edits from its observer.
+- Replace recurring dropdown, image, source-textarea and dialog-grip scans with relevant DOM/event updates. Prevent duplicate map-search observers and reduce repeated theme/widget work in contrast repair.
+- Add a 200-row Electron CPU/metrics fixture with clock and hover workloads and include its regression checks in full verification. In the initial four-second clock comparison, script time fell from 1,305.8 ms to 6.2 ms; these are fixture measurements, not an overall application speed guarantee.
+
+## 1.0.13
+
+- Correct the overly narrow PatrolOne default lookup selectors introduced in 1.0.12. Identify Search Person/Vehicle controls by their labels and existing adjacent actions, including standalone magnifier links outside navbar/form wrappers and fields with different IDs or placeholder spacing.
+- Give matched fields a warm inset face and their existing actions visible beveled styling. Reapply to replacement controls and remove markers on other skins without replacing native handlers or markup.
+- Add coverage for both navbar forms and standalone search strips, real magnifier link handlers, dynamic replacement and stock restoration.
+
+## 1.0.12
+
+- Polish the native Search Person and Search Vehicle fields only on PatrolOne default: compact Tahoma text, inset field borders, readable placeholders, gold focus outlines and matching beveled search buttons with visible icons.
+- Show dialog resize grips only while their corner is hovered or a resize is in progress. Keep the existing hit target, pointer capture and native dialog scrolling.
+- Verify lookup styling and native submission, grip hover visibility, pointer resizing and Original MDC restoration alongside the existing Electron regressions.
+
+## 1.0.11
+
+### Floating report cleanup
+- Keep the floating workspace active until its last report closes. Ignore hidden viewers, clear their cached reports and finish the native modal lifecycle when a viewer is hidden directly by the site.
+- Track workspace backdrops through native transitions, release stale focus traps and remove leftover modal locks after all reports close. Preserve the page's original padding and native confirmation behavior.
+- Stop retained report close/Escape events from reaching native modal dismissal handlers. Limit modal observation to relevant window changes.
+
+### Recent records and editor controls
+- Scale record labels, timestamps, icons, caption, History button and spacing with the saved rail width. Wrap long labels. Dragging and focused Ctrl + / Ctrl - now resize the content as well as its column.
+- Repair editor toolbar button faces, font-name labels and icon ink across custom skins, including hover, pressed and disabled states. Preserve authored report colors, native editor fonts and color palettes.
+- Give Vehicle Map a distinct illustrated patrol-car map icon while Emergency Map keeps its location-pin map.
+
+### Validation
+- Add real pointer and wheel checks after repeated report closures in different orders across all custom skins, including moving retained copies, Escape, direct display hiding and native padding restoration.
+- Check scaled record text, metadata and icons with mouse and keyboard resizing, distinct loaded map assets and editor toolbar ink/pressed states alongside existing cropper and color-picker regressions.
+
+## 1.0.10
+
+### Reports and dragging
+- Preserve moved read-only reports when the MDC reuses its single View Record dialog for another arrest report. Keep retained reports independent with unique IDs, separate closing and existing drag/resize behavior; new reports use the native viewer and appear in front.
+- Keep editable forms and submission handlers native. Remove supplementary report viewers when Original MDC is selected.
+- Stop Bootstrap transform easing during an active drag, compensate the initial scrollbar shift and defer expensive page styling until release. Restore normal show/hide transitions afterward.
+
+### Page styling
+- Repair nested notification icon ink, including inline white glyphs, across custom skins without changing library placement or lifecycle.
+- Keep Missing Person table labels out of profile-banner styling. Use dark gloss incident/paperwork tabs with readable icons and a beige selected tab; repair the native DataTables SHOW selector and options.
+- Contain non-dialog Bootstrap row gutters, warrant tables and incident maps inside their cards without adding dialog scrollers or changing charge grids.
+- Remove the forum theme's cPost header pseudo-element that paints the gray bar across Penal Code seals.
+
+### Recent records and release tools
+- Add a draggable rail divider, keyboard width adjustment with Ctrl + / Ctrl - when focused, arrow-key adjustment on the divider, Ctrl+0 reset and saved width. Keep normal page zoom bindings elsewhere.
+- Keep rail dragging over embedded webviews reliable with a temporary input surface.
+- Add RELEASE-COMMANDS.md with explicit source-only Git commands and a Build-Inno.ps1 helper for dependency checks, UI verification, Windows x64 packaging and Inno Setup compilation.
+
+### Validation
+- Reproduce asynchronous updates to the same report viewer, preserving three separate reports and their narratives, unique IDs and independent closing.
+- Verify exact pointer tracking, restored transitions, nested notification ink, tabs, SHOW options, card containment, the real forum pseudo-element and rail mouse/keyboard resizing across skins.
+
+## 1.0.9
+
+### Window chrome and notifications
+- Match each title strip to the native Windows caption-button surface, removing the gradient seam at minimize, maximize and close.
+- Remove full-window dimming and input blocking from client tool windows. History, Options and other tools can remain open independently with unique control IDs, retained values and click-to-front behavior.
+- Replace client and MDC dialog close glyphs with centered crossed strokes, including Aero's glass close button. Improve the History filter layout at narrow window widths.
+- Restyle real MDC notifications with a colored edge, readable icon badge, stacked title/message text, padding and a centered dismiss button. Preserve library positioning, anchors and animation behavior.
+
+### Floating MDC dialogs
+- Enable background interaction after a normal MDC dialog is moved. Open different MDC dialogs together, bring them forward by clicking and close one while keeping the others and their values.
+- Release Bootstrap focus traps in the floating workspace, including newly opened dialogs, and restore native focus settings when leaving it or selecting Original MDC.
+- Optimize both client and MDC dragging with pointer capture, cached bounds and one transform update per animation frame. Handle pointer cancellation and window blur without leaving a drag active.
+- Keep native form instances and submit handlers. Use existing client pages for records that require separate full-page navigation.
+
+### Penal Code
+- Contain seals and short captions with clear spacing; convert adjacent empty decorative bars to dividers and cap image height.
+- Refine headings, tables, quotes and typography to match the selected skin. Preserve search and restore authored inline values when removing the skin.
+- Avoid rebuilding unchanged CSS and batch forum mutation work into animation frames.
+
+### Validation
+- Add actual Bootstrap 4 dialog tests for pointer dragging, background focus, independent form values, stacking, closing and Original MDC restoration.
+- Check simultaneous History/Options windows, unique IDs, notification geometry and library anchors, caption color matching, and Penal Code seal/divider spacing and filtering across all custom skins.
+
+## 1.0.8
+
+### Readability and interaction fixes
+- Repair invisible neutral text in report templates, MOTDs and incident tables against the actual skin background, including gradient headings. Keep authored chromatic colors and editor formatting intact, and restore original inline color priorities when changing skins.
+- Capture the dialog resize pointer through release, preserve the resized frame and prevent that release from dismissing the dialog. Leave modal-body scrolling to the site.
+- Normalize Ctrl+=, Ctrl+Shift++ and keypad +/- for zoom. Persist one zoom level across views, reloads and new pages.
+- Draw centered geometric plus/minus symbols over the site's changing collapse state instead of relying on font glyph alignment.
+- Guard label cleanup while the document parser has not yet created the body.
+
+### Dispatch interface
+- Rename PremierOne to PatrolOne default in menus, Options and status text while retaining the saved p1 key.
+- Use distinct illustrated icons for Online Warrants, Warrants Database and Active Warrants; add matching icons to every bottom action.
+- Move History and Alerts into the status strip and reserve the full native title-bar height, keeping them clear of Windows controls.
+- Make History open the searchable local visit log directly, with category filters, illustrated keyboard-accessible rows and clearer spacing.
+- Show real MDC alert links, timestamps, unread emphasis, loading and empty states. Opening Alerts no longer clears its unread count locally; close stale panels on page changes.
+- Replace duplicate quick navigation with a deduplicated recent records rail. Reuse already open record pages, support right-click opening and retain a full History entry point.
+- Continue the reference's compact Tahoma, warm gray, black gloss and beveled controls across the default skin; retain the matching Aero glass layouts.
+
+### Validation
+- Extend isolated Electron checks to report/MOTD/incident contrast on every custom skin, resize-release persistence without added scrollers, History filters, actual alert counts, distinct navigation/action icons and keyboard zoom across navigation.
+
+## 1.0.7
+
+### Interface
+- Match the PremierOne reference more closely with warm gray panels, compact Tahoma typography, a light window title bar, black gloss navigation and beveled bottom actions.
+- Bundle illustrated SVG navigation and shortcut icons locally, replacing the shell's remote monochrome icon font.
+- Remove the redundant toolbar row, its settings and F9 address-bar toggle. Keep File / View / Tools / Help and the Name Check / Plate Check windows and shortcuts.
+- Remove the shell's three-line account Menu button. Make the MDC officer label transparent on custom skins.
+- Add bevels and clearer pressed states to record action buttons. Center panel plus/minus controls and the new-page plus button.
+
+### Mugshots and report colors
+- Leave native Cropper.js widgets outside skin selectors instead of clearing the library's CSS with an important reset. Remove the disabled replacement cropper and delayed resets that could erase native crop controls.
+- Preserve authored inline and HTML font colors in editors and displayed reports, including inherited colors and highlights. Skip authored content during contrast repair.
+- Leave color-palette styling and swatch sizes to the editor, preserve its icon font, and remove periodic swatch/background rewriting.
+- Stop applying skin overflow and maximum-height declarations to dialogs, dropdowns and editor scrolling containers so palettes remain reachable.
+
+### Original MDC
+- Restore the stock page sidebar, search boxes, account controls and styling. Hide custom navigation and remove injected visual styles and resize grips when Original MDC is selected.
+- Keep custom layout preferences for switching back to a custom skin without applying them to the stock page.
+
+### Validation
+- Add actual Cropper.js and Summernote fixture checks for mouse dragging, resizing, repeated image selection, exported crop pixels, color-palette clicks, saved report colors and highlights, and stock-page restoration.
+- Verify name/plate checks after toolbar removal, local icon loading and centered panel controls alongside existing navigation and skin regressions.
+
+## 1.0.6
+
+### Sidebar visibility
+- Apply saved sidebar hiding at document start, using a document observer when the parser has not created the root yet, including with Original MDC.
+- Correct the reversed sidebar and search visibility values sent at dom-ready. Loading and finished pages now receive the same state.
+- Cover navigation chips, quick shortcuts, page links, back/forward, reloads, context-menu pages and site popups. GTA World popups open as new client pages.
+
+### Skins and layout
+- Keep PremierOne, Windows 7 Aero, Windows 7 Aero LAPD, Windows 7 Aero Dark and Original MDC. Remove the Classic Light, Classic Dark and LAPD Mobile choices and their dedicated shell styling.
+- Make PremierOne the default and migrate retired or unknown saved skins to it in both the shell and MDC preload. Preserve the internal light fallback palette and move navy/graphite palettes directly to their Aero skins.
+- Give all Aero skins the full-width icon navigation, left shortcut rail, status strip and bottom action bar, rendered in matching glass colors.
+- Refine navigation spacing, icons, active/pressed/focus states, panels, tables, dialog colors, scrollbars, menus and the window title bar. Keep native Windows window controls.
+- Name quick shortcuts after real MDC destinations and disable unavailable destinations. Remove the decorative green availability light. Rename Detach to Open as New Page and Create Report to Paperwork to describe their actual behavior.
+- Keep active navigation highlighting in sync with links, history navigation and page switches. Back and Forward action buttons reflect available history.
+
+### Validation
+- Extend smoke coverage to retired-skin migration, F8 order, Options, actual menu actions and consistent load-time visibility messages. Include forum-preload syntax checking and report caught startup errors.
+- Add isolated Electron fixture checks for document-start and animation-frame sidebar visibility across navigation paths, the five skins, responsive layout, forum layout and unskinned sign-in pages. These checks use a separate temporary profile and no live MDC account.
+
+## 1.0.5
+
+### New skin: PremierOne
+- Added a PremierOne skin, modelled on a dispatch terminal. Pick it under View, Tools > Options, or cycle to it with F8.
+- The MDC navigation sits in a full-width black icon bar. The active page is highlighted in sand, like the pressed button on a CAD toolbar.
+- Quick shortcuts move to a rail on the left, one row each with its icon.
+- A status strip runs under the icon bar: the signed-in officer, unread alerts, the posted APB count from the dashboard, open pages, the current status line, and the date and time.
+- An action bar along the bottom has Back, Forward, Reload, Emergency Map, Create Report (opens Paperwork Generators) and Detach (opens the current page again as its own page).
+- Inside the MDC, panel and dialog headers are black with small capitals, tables have black header rows and tighter rows, primary buttons are red, other buttons are flat grey, and links are dark red. Text areas use a monospace face.
+- Everything in the layout maps to something the MDC already has. Nothing is local-only, so there is no Enroute, Arrived or Self Initiate.
+- Penal Code tab uses the light palette under this skin.
+
 ## 1.0.4
 
 ### Mugshots

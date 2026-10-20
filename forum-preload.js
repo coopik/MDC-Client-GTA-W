@@ -1,9 +1,19 @@
 'use strict'
 
 const { ipcRenderer } = require('electron')
+function comboOf(event) {
+  const raw = event.key || ''
+  if (!raw || ['Control', 'Alt', 'Shift', 'Meta', 'OS'].includes(raw)) return ''
+  const ctrl = event.ctrlKey || event.metaKey
+  if (ctrl && !event.altKey && (raw === '+' || raw === '=' || event.code === 'NumpadAdd')) return 'Ctrl++'
+  if (ctrl && !event.altKey && (raw === '-' || event.code === 'NumpadSubtract')) return 'Ctrl+-'
+  let name = raw.length === 1 ? raw.toUpperCase() : raw.replace(/^Arrow/, '')
+  if (name === ' ') name = 'Space'
+  return (ctrl ? 'Ctrl+' : '') + (event.altKey ? 'Alt+' : '') + (event.shiftKey && (name.length > 1 || ctrl || event.altKey) ? 'Shift+' : '') + name
+}
 
 const STYLE_ID = 'mdt-penal-skin'
-const TOPIC_RE = /\/topic\/78852/
+const TOPIC_RE = /\/topic\/(?:78852|30297|62646)(?:[-/]|$)/
 
 const PALETTES = {
   light: {
@@ -21,7 +31,7 @@ const PALETTES = {
     scrollThumb: '#C8C8C8',
     highlight: '#FFF6A0'
   },
-  dark: {
+  aerodark: {
     panel: '#2B2B2B',
     panelAlt: '#333333',
     header: '#3C3C3C',
@@ -36,7 +46,7 @@ const PALETTES = {
     scrollThumb: '#4A4A4A',
     highlight: '#6B5C00'
   },
-  lapd: {
+  aerolapd: {
     panel: '#0E2360',
     panelAlt: '#13307E',
     header: '#1B3F9E',
@@ -68,10 +78,10 @@ const PALETTES = {
   }
 }
 
-PALETTES.aerolapd = Object.assign({}, PALETTES.lapd)
-PALETTES.aerodark = Object.assign({}, PALETTES.dark)
+PALETTES.p1 = Object.assign({}, PALETTES.light, {panel:'#DCDAD5', panelAlt:'#E9E7E1', field:'#F1F0EC', header:'#292929', headingInk:'#FFFFFF', border:'#9B9A94', text:'#202020', textMuted:'#45443F', link:'#224F78'})
 
-let theme = 'light'
+const SKINS = ['p1', 'aero', 'aerolapd', 'aerodark', 'off']
+let theme = 'p1'
 let paintedMode = ''
 let lastQuery = ''
 let lastSoundName = ''
@@ -99,11 +109,12 @@ function isTopicPage() {
 
 function themeNow() {
   if (!isForumHost() || !isTopicPage()) return 'off'
-  return PALETTES[theme] ? theme : 'light'
+  return SKINS.includes(theme) ? theme : 'p1'
 }
 
 function buildCss(p) {
   return `
+#elPostFeed .cPost::before { content: none !important; display: none !important; }
 header, #elSearch, #elSearchWrapper, #elUserNav, #elNotificationsBrowser,
 .ipsNavBar_primary, .ipsNavBar_secondary, #elMobileDrawer, .ipsAppMenu,
 .ipsBreadcrumb, #elFooter, #elFooterLinks, #elCopyright, .ipsPager,
@@ -132,7 +143,7 @@ header, #elSearch, #elSearchWrapper, #elUserNav, #elNotificationsBrowser,
 html, body {
   background: ${p.panel} !important;
   color: ${p.text} !important;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+  font-family: ${themeNow() === 'p1' ? 'Tahoma, "Microsoft Sans Serif", sans-serif' : '"Segoe UI", Tahoma, sans-serif'} !important;
   font-size: 12px !important;
   line-height: 16px !important;
   overflow-x: hidden !important;
@@ -153,7 +164,7 @@ body, #ipsLayout_body, #ipsLayout_contentArea, #ipsLayout_contentWrapper,
   white-space: normal !important;
 }
 body * {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+  font-family: ${themeNow() === 'p1' ? 'Tahoma, "Microsoft Sans Serif", sans-serif' : '"Segoe UI", Tahoma, sans-serif'} !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   text-shadow: none !important;
@@ -275,7 +286,7 @@ article.cPost, .ipsBox, .cPost_contentWrap {
   max-height: none !important;
   overflow: visible !important;
 }
-#elPostFeed img { max-width: 100% !important; height: auto !important; }
+#elPostFeed img { max-width: 100% !important; max-height: 160px !important; height: auto !important; object-fit: contain !important; }
 
 [data-mdt-penal-hit="1"] {
   background: ${p.highlight} !important;
@@ -302,6 +313,23 @@ article.cPost, .ipsBox, .cPost_contentWrap {
   color: ${p.text} !important;
 }
 .ipsType_richText ul, .ipsType_richText ol { padding-left: 18px !important; }
+#elPostFeed { margin: 10px !important; padding: 14px 18px !important; border-radius: 3px !important; background: ${p.field} !important; }
+#elPostFeed .ipsType_richText { line-height: 1.55 !important; }
+#elPostFeed .ipsType_richText h1, #elPostFeed .ipsType_richText h2 { padding: 8px 12px !important; margin: 14px 0 8px !important; background: ${p.header} !important; color: ${p.headingInk || p.text} !important; }
+#elPostFeed .ipsType_richText h1 *, #elPostFeed .ipsType_richText h2 *, #elPostFeed .ipsType_richText th, #elPostFeed .ipsType_richText th * { color: ${p.headingInk || p.text} !important; }
+#elPostFeed .ipsType_richText h3, #elPostFeed .ipsType_richText h4 { padding: 5px 0 !important; margin: 12px 0 6px !important; }
+#elPostFeed .ipsType_richText p { margin: 5px 0 !important; line-height: 1.55 !important; }
+#elPostFeed .ipsType_richText blockquote { padding: 10px 12px !important; margin: 8px 0 14px !important; border-left: 3px solid ${p.fieldBorder} !important; }
+#elPostFeed .ipsType_richText a:hover { text-decoration: underline !important; }
+#elPostFeed [data-mdt-penal-art] {
+  display: flow-root !important; position: static !important; float: none !important; clear: both !important;
+  height: auto !important; min-height: 0 !important; overflow: visible !important;
+  transform: none !important; margin: 20px 0 14px !important; padding: 12px !important;
+  text-align: center !important; background: transparent !important; border: 0 !important;
+}
+#elPostFeed [data-mdt-penal-art] * { position: static !important; float: none !important; transform: none !important; margin-top: 0 !important; top: auto !important; }
+#elPostFeed [data-mdt-penal-art] img { display: block !important; width: auto !important; height: auto !important; max-height: 160px !important; margin: 0 auto 10px !important; }
+#elPostFeed [data-mdt-penal-divider] { height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 16px 0 0 !important; background: transparent !important; border: 0 !important; border-top: 1px solid ${p.border} !important; }
 ::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-track { background: ${p.scrollTrack}; }
 ::-webkit-scrollbar-thumb { background: ${p.scrollThumb}; border: 1px solid ${p.border}; }
@@ -318,7 +346,7 @@ function styleEl() {
 }
 
 function applyTheme(next) {
-  if (typeof next === 'string') theme = next
+  if (typeof next === 'string') theme = SKINS.includes(next) ? next : 'p1'
   const mode = themeNow()
   const el = styleEl()
   if (mode === 'off') {
@@ -329,12 +357,30 @@ function applyTheme(next) {
   }
   if (paintedMode && paintedMode !== mode) restorePenal()
   paintedMode = mode
-  el.textContent = buildCss(PALETTES[mode])
+  const css = buildCss(PALETTES[mode])
+  if (el.textContent !== css) el.textContent = css
   if (!el.parentNode && document.head) document.head.appendChild(el)
   else if (!el.parentNode && document.documentElement) document.documentElement.appendChild(el)
+  normalizeIllustrations()
   paintText(PALETTES[mode], mode)
   hideClosedNotice()
   scrubOoc()
+}
+
+function normalizeIllustrations() {
+  document.querySelectorAll('#elPostFeed .ipsType_richText img').forEach((image) => {
+    let block = image.closest('p, figure, div')
+    if (!block || block.classList.contains('ipsType_richText')) return
+    while (block.parentElement && !block.parentElement.classList.contains('ipsType_richText')) {
+      const parent = block.parentElement
+      if (flatText(parent).length > 220 || parent.querySelectorAll('img').length !== 1 || parent.querySelector('table, blockquote, h1, h2, h3')) break
+      block = parent
+    }
+    if (flatText(block).length > 220 || block.querySelectorAll('img').length !== 1) return
+    block.setAttribute('data-mdt-penal-art', '1')
+    const previous = block.previousElementSibling
+    if (previous && !flatText(previous) && !previous.querySelector('img, input, button, a, iframe') && previous.getBoundingClientRect().height > 20) previous.setAttribute('data-mdt-penal-divider', '1')
+  })
 }
 
 function sections() {
@@ -412,6 +458,7 @@ function reportPage() {
 ipcRenderer.on('mdt:set-skin', (_e, next) => applyTheme(next))
 ipcRenderer.on('mdt:penal-filter', (_e, query) => filterPenal(query))
 
+let VIEW_KEY_COMBOS = null
 const HOTKEYS = {
   F3: 'findnext',
   F5: 'reload',
@@ -429,12 +476,18 @@ const CTRL_HOTKEYS = {
   '0': 'zoomreset'
 }
 
+ipcRenderer.on('mdt:set-keys', (_event, payload) => {
+  if (payload && payload.combos) VIEW_KEY_COMBOS = payload.combos
+})
+
 window.addEventListener('keydown', (e) => {
   if (!e || e.defaultPrevented) return
   let action = ''
-  if (e.ctrlKey || e.metaKey) {
-    if (e.altKey || e.shiftKey) return
-    action = CTRL_HOTKEYS[String(e.key || '').toLowerCase()] || ''
+  if (VIEW_KEY_COMBOS) action = VIEW_KEY_COMBOS[comboOf(e)] || ''
+  else if (e.ctrlKey || e.metaKey) {
+    const key = e.code === 'NumpadAdd' || e.key === '=' ? '+' : e.code === 'NumpadSubtract' ? '-' : String(e.key || '').toLowerCase()
+    if (e.altKey || (e.shiftKey && key !== '+')) return
+    action = CTRL_HOTKEYS[key] || ''
   } else if (!e.altKey && !e.ctrlKey) {
     action = HOTKEYS[e.key] || ''
   }
@@ -460,8 +513,10 @@ if (document.readyState === 'loading') {
 }
 
 if (typeof MutationObserver === 'function') {
+  let pending = 0
   const observer = new MutationObserver(() => {
-    applyTheme()
+    if (pending) return
+    pending = requestAnimationFrame(() => { pending = 0; applyTheme() })
   })
   const start = () => {
     if (document.body) observer.observe(document.body, { childList: true, subtree: true })
@@ -546,7 +601,7 @@ function paintText(p, mode) {
   const header = document.querySelector('.ipsPageHeader')
   if (feed) roots.push(feed)
   if (header) roots.push(header)
-  const dark = mode !== 'light'
+  const dark = mode === 'aerodark' || mode === 'aerolapd'
   roots.forEach((root) => {
     const nodes = root.querySelectorAll('*')
     const limit = nodes.length > 8000 ? 8000 : nodes.length
@@ -557,7 +612,10 @@ function paintText(p, mode) {
       const tag = el.tagName
       if (tag === 'IMG' || tag === 'I' || tag === 'SVG' || tag === 'svg') continue
       el.dataset.mdtInk = '1'
-      el.style.setProperty('color', tag === 'A' ? p.link : p.text, 'important')
+      el.mdtPenalStyle = ['color','background-color','border-color'].map((prop) => [prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)])
+      const heading = el.closest('h1,h2,th')
+      el.style.setProperty('color', tag === 'A' ? p.link : heading && p.headingInk ? p.headingInk : p.text, 'important')
+      if (heading && p.headingInk) continue
       let bg = null
       try {
         bg = parseRgb(getComputedStyle(el).backgroundColor)
@@ -609,6 +667,7 @@ function hideClosedNotice() {
 }
 
 function restorePenal() {
+  document.querySelectorAll('[data-mdt-penal-art], [data-mdt-penal-divider]').forEach((node) => { node.removeAttribute('data-mdt-penal-art'); node.removeAttribute('data-mdt-penal-divider') })
   document.querySelectorAll('[data-mdt-ooc="1"]').forEach((el) => {
     if (!el.dataset) return
     if (el.dataset.mdtOocRaw !== undefined) el.innerHTML = el.dataset.mdtOocRaw
@@ -619,7 +678,10 @@ function restorePenal() {
   document.querySelectorAll('[data-mdt-ink="1"]').forEach((el) => {
     if (!el.style || !el.dataset) return
     delete el.dataset.mdtInk
-    el.style.removeProperty('color')
+    if (el.mdtPenalStyle) {
+      el.mdtPenalStyle.forEach(([prop,value,priority]) => { if (value) el.style.setProperty(prop,value,priority); else el.style.removeProperty(prop) })
+      delete el.mdtPenalStyle
+    } else el.style.removeProperty('color')
   })
   document.querySelectorAll('[data-mdt-gone="1"]').forEach((el) => {
     if (!el.style || !el.dataset) return
@@ -629,7 +691,6 @@ function restorePenal() {
   document.querySelectorAll('[data-mdt-bg="1"]').forEach((el) => {
     if (!el.style || !el.dataset) return
     delete el.dataset.mdtBg
-    el.style.removeProperty('background-color')
-    el.style.removeProperty('border-color')
+    if (el.mdtPenalStyle) el.mdtPenalStyle.filter(([prop]) => prop !== 'color').forEach(([prop,value,priority]) => { if (value) el.style.setProperty(prop,value,priority); else el.style.removeProperty(prop) })
   })
 }

@@ -12,10 +12,7 @@ const code = fs.readFileSync(path.join(root, 'renderer', 'renderer.js'), 'utf8')
 const ids = new Set()
 for (const m of html.matchAll(/\sid="([^"]+)"/g)) ids.add(m[1])
 
-const countClass = (cls) => {
-  const re = new RegExp('class="[^"]*\\b' + cls + '\\b[^"]*"', 'g')
-  return (html.match(re) || []).length
-}
+const countClass = (cls) => [...html.matchAll(/class="([^"]*)"/g)].filter((m) => m[1].split(/\s+/).includes(cls)).length
 
 const MENU_COUNT = countClass('menu')
 const MENU_ITEM_COUNT = countClass('menu-item')
@@ -65,7 +62,7 @@ function makeNode(desc) {
     },
     getAttribute(name) { return this.attrs && this.attrs[name] !== undefined ? this.attrs[name] : null },
     setAttribute(name, v) { this.attrs = this.attrs || {}; this.attrs[name] = v },
-    querySelector() { return makeNode('') },
+    querySelector(selector) { const match = /^\[data-dialog-id="([^"]+)"\]$/.exec(selector); return match ? nodes.get(match[1]) || null : makeNode('') },
     querySelectorAll() { return [] },
     canGoBack: () => false,
     canGoForward: () => false
@@ -144,6 +141,7 @@ const sandbox = {
   Array
 }
 sandbox.window = sandbox
+sandbox.mdtInput = require('../input-keys')
 sandbox.addEventListener = () => {}
 sandbox.removeEventListener = () => {}
 sandbox.Event = function Event(type) { this.type = type }
@@ -159,11 +157,13 @@ sandbox.mdt = {
 
 const failures = []
 const warnings = []
+const realError = console.error
+console.error = (...a) => failures.push(a.join(' '))
 const realWarn = console.warn
 console.warn = (...a) => warnings.push(a.join(' '))
 
 try {
-  vm.runInNewContext(code, sandbox, { filename: 'renderer.js' })
+  vm.runInNewContext(code + '\nglobalThis.shellTest = { view, cycleTheme, setTheme, wirePage, showOptions, actions }', sandbox, { filename: 'renderer.js' })
 } catch (err) {
   failures.push('renderer.js threw at load: ' + (err && err.stack ? err.stack : err))
 }
@@ -191,6 +191,47 @@ if (menuNodes.length) {
   ;(documentListeners.click || []).forEach((fn) => fn({}))
   if (menuNodes[0].classList.contains('open')) failures.push('clicking elsewhere did not close the menu')
 }
+
+try {
+  const api = sandbox.shellTest
+  if (api.view.theme !== 'p1' || store['mdc.theme'] !== 'p1') failures.push('PatrolOne default is not the persisted default')
+  const order = ['aero', 'aerolapd', 'aerodark', 'off', 'p1']
+  for (const expected of order) {
+    api.cycleTheme()
+    if (api.view.theme !== expected) failures.push('unexpected F8 cycle: ' + api.view.theme)
+  }
+  api.showOptions()
+  const options = document.getElementById('dialog-body').innerHTML
+  const themes = [...options.matchAll(/name="opt-theme" value="([^"]+)"/g)].map((m) => m[1])
+  if (themes.join(',') !== 'p1,aero,aerolapd,aerodark,off') failures.push('Options contains the wrong skins: ' + themes)
+  for (const m of html.matchAll(/data-action="([^"]+)"/g)) {
+    if (typeof api.actions[m[1]] !== 'function') failures.push('unknown menu action: ' + m[1])
+  }
+  for (const shown of [false, true]) {
+    api.view.navBar = false
+    api.view.sidebar = shown
+    const guest = makeNode('guest')
+    const sent = []
+    guest.send = (channel, value) => sent.push([channel, value])
+    api.wirePage(guest, { id: 'test' })
+    guest.dispatch('dom-ready')
+    guest.dispatch('did-stop-loading')
+    const sidebar = sent.filter(([channel]) => channel === 'mdt:set-sidebar')
+    if (sidebar.length !== 2 || sidebar.some(([, hidden]) => hidden !== !shown)) failures.push('sidebar changes polarity during navigation')
+  }
+  for (const saved of ['light', 'dark', 'lapd', 'invalid', 'aero', 'off']) {
+    store['mdc.theme'] = saved
+    const fresh = Object.assign({}, sandbox)
+    fresh.window = fresh
+    vm.runInNewContext(code + '\nglobalThis.bootTheme = view.theme', fresh)
+    const expected = saved === 'aero' || saved === 'off' ? saved : 'p1'
+    if (fresh.bootTheme !== expected || store['mdc.theme'] !== expected) failures.push('saved skin migration failed: ' + saved)
+  }
+} catch (err) {
+  failures.push('regression checks threw: ' + err.stack)
+}
+
+console.error = realError
 
 if (warnings.length) {
   console.log('warnings from renderer.js:')
