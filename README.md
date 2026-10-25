@@ -1,13 +1,14 @@
 # PatrolOne Mobile Client
 
-Version 1.1.2.
+Version 1.1.3.
 
 A plain desktop shell around the real GTA World Web MDC
 (<https://mdc.gta.world/>). The site itself loads in an embedded browser view;
 the surrounding menu bar, navigation and status strip are ordinary HTML.
 PatrolOne default follows a dispatch-terminal reference: warm gray panels, compact
 Tahoma text, illustrated desktop icons, black gloss headers and beveled
-action buttons. The three Aero variants retain their glass palettes.
+action buttons. PatrolOne Dark keeps that layout with charcoal panels, light text
+and warm highlights. The three Aero variants retain their glass palettes.
 
 The code carries no comments by design. Everything worth explaining lives here,
 including the list of mistakes at the bottom that must not be repeated. Release
@@ -47,8 +48,8 @@ Right-click opens things as a new page: a navigation chip such as Emergency Map,
 a recent record in the left rail, or any link on the page itself, such as a person's record or a
 warrant. Left-click still navigates the page you are on.
 
-Each entry is named after what it holds — its navigation entry, or the record
-number — rather than the site's own page title, which is "Mobile Data Computer"
+Each entry is named after what it holds â€” its navigation entry, or the record
+number â€” rather than the site's own page title, which is "Mobile Data Computer"
 on nearly every screen.
 
 ### History
@@ -185,13 +186,14 @@ out completely.
 | Skin | Notes |
 | --- | --- |
 | PatrolOne default | Dispatch terminal layout: black icon bar, recent records rail, status strip, bottom action bar, black panel headers and red buttons |
+| PatrolOne Dark | The Default layout with charcoal surfaces, light text, warm selection highlights and dark fields; printed documents keep their white paper style |
 | Windows 7 Aero | The same dispatch layout in light glass, with rounded panels, blue focus glows and a matching window frame |
 | Windows 7 Aero LAPD | The same dispatch layout in patrol navy glass |
 | Windows 7 Aero Dark | The same dispatch layout in graphite glass |
 | Original MDC | No styling at all; the site as it ships |
 
 Switch from View, from Tools > Options, or press F8 to cycle through PatrolOne default,
-Aero, Aero LAPD, Aero Dark and Original MDC. Saved Classic Light, Classic Dark,
+PatrolOne Dark, Aero, Aero LAPD, Aero Dark and Original MDC. Saved Classic Light, Classic Dark,
 LAPD Mobile or unknown skin names migrate to PatrolOne default on launch. **Sign-in pages are
 never skinned** - the skin only applies on `mdc.gta.world`, so the UCP login and
 the Google sign-in screen render completely stock.
@@ -233,7 +235,7 @@ known field ID or button element. Magnifiers mark their clickable parent and
 keep the same 28-pixel width before and after clicks; the fields and their
 placeholders share 12-pixel Tahoma text. New controls are marked by the parser
 mutation observer before painting. Centering and stable action sizing apply to all
-four custom skins; the warm inset palette belongs to PatrolOne default. Original
+five custom skins; the warm inset palette belongs to PatrolOne default. Original
 MDC removes the markers. Existing search handlers and markup remain in place.
 
 ### Recent records and alerts
@@ -412,7 +414,7 @@ MDC pages, so a key pressed while the page has focus does the same thing as one
 pressed on the client chrome. Keyboard combinations use the same normalization
 in chrome, MDC and law pages, including modifier combinations and numeric keypad
 plus/minus. Sandboxed preloads receive the complete binding map without requiring
-local modules or disabling their sandbox. Escape is deliberately not remappable — it always closes the find bar,
+local modules or disabling their sandbox. Escape is deliberately not remappable â€” it always closes the find bar,
 then a dialog, then stops a loading page.
 
 Ctrl+N and Ctrl+L open small **Name Check** and **Plate Check** windows: type,
@@ -429,7 +431,7 @@ replaced. There is also **Open Release Page** if you would rather do it by hand.
 
 An optional check when the client starts can be switched on under
 Tools > Options > Window; it is off by default. Nothing is ever downloaded or
-installed without pressing Update, and no information about you is sent — the
+installed without pressing Update, and no information about you is sent â€” the
 check is a plain read of the public release list.
 
 For the automatic check and the Update button to be useful, releases have to be
@@ -957,3 +959,55 @@ had excluded those rails from the global cleanup rule. A dedicated picker rule
 hides the plugin rails while preserving the existing native list, its frozen
 viewport and its wheel/keyboard handling. No scroller is added or destroyed;
 Original MDC resumes its own scrollbar appearance when skin CSS is removed.
+
+
+### 1.1.3 record loading, native list rendering and PatrolOne Dark
+
+Repeated delivery of an unchanged skin now refreshes cached styles and flags
+without scanning the page again. Contrast repair walks eligible text-bearing
+elements and skips whole document, editor, picker, cropper and hidden-modal
+subtrees. Showing a modal or adding page content still schedules repairs. Native
+selectpicker measurement clones and list redraws no longer trigger unrelated
+author-style scans across the form.
+
+Long native bootstrap-select lists use its own virtual renderer from 80 options
+while a custom skin is active. Only a numeric native threshold above 80 is
+temporarily lowered; explicitly disabled virtualization is respected. The full
+option data and native filtering, selection and keyboard behavior remain intact.
+The original option is restored on dismissal or Original MDC, together with the
+existing frozen viewport. This reduces mounted rows without another scroller or
+a vendor patch. Search stays pinned and the one existing inner list scrolls.
+
+The local supplied-person-record fixture measured about 14 percent less total
+main-thread work for record loading and 34 percent less for charge-list opening
+than the 1.1.2 baseline (three samples each). These are local rendering results,
+not a guarantee about live MDC server, network or authentication delays. Run
+`npm run verify -- --profile113` for the same profiling workload; JSON metrics and
+CPU profiles go to dist/verification.
+
+PatrolOne Dark uses the p1dark setting, shares Default's compact geometry and
+applies to the shell, MDC pages and law topics. The legacy dark setting still
+migrates to Default as before. View, Options and F8 include the new skin, and it
+persists across restarts. Paper reports, document exports, authored editor text
+and external sign-in pages retain their existing exemptions. Small copied plate
+identifiers receive readable palette ink; full vehicle plate artwork is exempt.
+`npm run verify -- --release113-only` covers the new skin, dynamic contrast,
+virtualized picker input, native restoration, report surfaces and persistence.
+
+
+**1.1.3 typing correction.** Summernote updates its toolbar after both keyup and
+change. It rewrites font labels and button states even when the selection's
+formatting is identical; with the skin rules present this caused repeated
+style/layout work and characters to queue before painting. The shared page
+bridge now compares the native scalar formatting state for each toolbar target.
+It calls the native toolbar update immediately when that state changes and skips
+an identical redraw. Input, composition, selection, clipboard, history and saved
+report content are not throttled or replaced. The exact original method is
+restored on Original MDC and editor destruction. Editors initialized later use
+the same hook, including Edit Record, arrest, warrant and incident narratives.
+
+Run `npm run verify -- --typing-only` for native keyDown/char/keyUp samples in all
+five skins and Original MDC. It checks retained text, frame latency, bounded
+style recalculation, immediate bold/font updates, undo and native restoration.
+Timing JSON and CPU profiles are written to dist/verification. The version stays
+1.1.3; the replacement source ZIP includes this correction.

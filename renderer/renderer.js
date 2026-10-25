@@ -299,10 +299,11 @@ const DMV_URL = 'https://mdc.gta.world/dmv/'
 const APP_NAME = 'PatrolOne Mobile Client'
 const REPO_URL = 'https://github.com/coopik/MDC-Client-GTA-W'
 
-const SKIN_CLASSES = ['p1', 'aero', 'aerolapd', 'aerodark', 'off']
+const SKIN_CLASSES = ['p1', 'p1dark', 'aero', 'aerolapd', 'aerodark', 'off']
 
 const THEMES = {
   p1: 'PatrolOne default',
+  p1dark: 'PatrolOne Dark',
   aero: 'Windows 7 Aero',
   aerolapd: 'Windows 7 Aero LAPD',
   aerodark: 'Windows 7 Aero Dark',
@@ -524,6 +525,7 @@ const CHECKABLE = [
 
 const THEME_ITEMS = [
   { id: 'mi-theme-p1', theme: 'p1', label: 'PatrolOne default Skin', accel: 'F8' },
+  { id: 'mi-theme-p1dark', theme: 'p1dark', label: 'PatrolOne Dark Skin', accel: '' },
   { id: 'mi-theme-aero', theme: 'aero', label: 'Windows 7 Aero Skin', accel: '' },
   { id: 'mi-theme-aerolapd', theme: 'aerolapd', label: 'Windows 7 Aero LAPD Skin', accel: '' },
   { id: 'mi-theme-aerodark', theme: 'aerodark', label: 'Windows 7 Aero Dark Skin', accel: '' },
@@ -588,6 +590,7 @@ function applyView() {
   SKIN_CLASSES.forEach((name) => {
     document.body.classList.toggle('theme-' + name, view.theme === name)
   })
+  if (view.theme === 'p1dark') document.body.classList.add('theme-p1')
   if (sbTheme) sbTheme.textContent = 'Skin: ' + THEMES[view.theme]
   document.body.classList.toggle('dispatch-layout', view.theme !== 'off')
   document.body.classList.toggle('glass-layout', view.theme.startsWith('aero'))
@@ -1644,7 +1647,7 @@ function showOptions() {
 
   openDialog('Options',
     '<fieldset class="opt-group"><legend>Appearance</legend>' +
-    radio('p1') + radio('aero') +
+    radio('p1') + radio('p1dark') + radio('aero') +
     radio('aerolapd') + radio('aerodark') + radio('off') +
     '<p class="opt-note">F8 cycles through the skins. The three Windows 7 Aero ' +
     'skins give the client, the MDC and every popped-up window the glass ' +
@@ -1653,7 +1656,7 @@ function showOptions() {
     'icon navigation, recent records rail, status strip and bottom action bar. ' +
     'PatrolOne default lays the client out like a dispatch terminal: a black icon bar ' +
     'for the MDC pages, recent records on the left, a status strip and an action ' +
-    'bar along the bottom.</p>' +
+    'bar along the bottom. PatrolOne Dark keeps that layout with charcoal panels, light text and warm highlights.</p>' +
     '</fieldset>' +
     '<fieldset class="opt-group"><legend>Recent records</legend>' +
     check('quickLinks', 'Recent records rail', view.theme === 'off') +
@@ -1782,7 +1785,7 @@ function recentRecords() {
 let quickWidth = Number(localStorage.getItem('mdc.quickWidth')) || 0
 
 function scaleRailContent() {
-  const scale = quickWidth ? Math.max(.75, Math.min(1.8, quickWidth / (view.theme === 'p1' ? 140 : 164))) : 1
+  const scale = quickWidth ? Math.max(.75, Math.min(1.8, quickWidth / (view.theme.startsWith('p1') ? 140 : 164))) : 1
   document.body.style.setProperty('--rail-scale', String(scale))
 }
 
@@ -2259,6 +2262,7 @@ const actions = {
     }
   },
   themep1: () => setTheme('p1'),
+  themep1dark: () => setTheme('p1dark'),
   themeaero: () => setTheme('aero'),
   themeaerolapd: () => setTheme('aerolapd'),
   themeaerodark: () => setTheme('aerodark'),
@@ -2686,7 +2690,7 @@ boot('rail-sizing', () => {
     if (!['ArrowLeft','ArrowRight','Home'].includes(key)) return
     e.preventDefault()
     e.stopPropagation()
-    setRailWidth(key === 'Home' ? (view.theme === 'p1' ? 140 : 164) : (quickWidth || quickBar.getBoundingClientRect().width) + (key === 'ArrowLeft' ? -24 : 24))
+    setRailWidth(key === 'Home' ? (view.theme.startsWith('p1') ? 140 : 164) : (quickWidth || quickBar.getBoundingClientRect().width) + (key === 'ArrowLeft' ? -24 : 24))
   })
 })
 

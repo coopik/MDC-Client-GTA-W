@@ -12,7 +12,7 @@ npm run smoke
 git status --short
 git add -- .gitignore package.json package-lock.json main.js preload.js webview-preload.js forum-preload.js renderer tools build installer/mdc-client.iss README.md CHANGELOG.md RELEASE-COMMANDS.md
 git diff --cached --stat
-git commit -m 'Release PatrolOne Mobile Client v1.0.26'
+git commit -m 'Release PatrolOne Mobile Client v1.1.3'
 git push origin main
 ```
 
@@ -26,7 +26,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-Inno.ps1
 The helper locates Inno Setup 6 or 7, runs `npm ci`, the smoke and Electron UI
 checks, builds the Windows x64 application into `dist\win-unpacked`, then compiles
 `installer\mdc-client.iss`. It stops on a failure. The installer is written to
-`installer\Output\PatrolOne-Mobile-Client-Setup-1.0.26.exe`.
+`installer\Output\PatrolOne-Mobile-Client-Setup-1.1.3.exe`.
 
 If Inno Setup is installed elsewhere, supply its compiler path:
 

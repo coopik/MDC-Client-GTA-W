@@ -195,7 +195,7 @@ if (menuNodes.length) {
 try {
   const api = sandbox.shellTest
   if (api.view.theme !== 'p1' || store['mdc.theme'] !== 'p1') failures.push('PatrolOne default is not the persisted default')
-  const order = ['aero', 'aerolapd', 'aerodark', 'off', 'p1']
+  const order = ['p1dark', 'aero', 'aerolapd', 'aerodark', 'off', 'p1']
   for (const expected of order) {
     api.cycleTheme()
     if (api.view.theme !== expected) failures.push('unexpected F8 cycle: ' + api.view.theme)
@@ -203,7 +203,7 @@ try {
   api.showOptions()
   const options = document.getElementById('dialog-body').innerHTML
   const themes = [...options.matchAll(/name="opt-theme" value="([^"]+)"/g)].map((m) => m[1])
-  if (themes.join(',') !== 'p1,aero,aerolapd,aerodark,off') failures.push('Options contains the wrong skins: ' + themes)
+  if (themes.join(',') !== 'p1,p1dark,aero,aerolapd,aerodark,off') failures.push('Options contains the wrong skins: ' + themes)
   for (const m of html.matchAll(/data-action="([^"]+)"/g)) {
     if (typeof api.actions[m[1]] !== 'function') failures.push('unknown menu action: ' + m[1])
   }

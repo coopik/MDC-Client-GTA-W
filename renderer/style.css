@@ -2270,3 +2270,35 @@ body.theme-aerolapd .record-tab .record-restore:is(:hover,:active) { background:
 body.theme-aerolapd .record-close { border: 1px solid transparent; border-radius: 2px; }
 body.theme-aerolapd .record-close:hover { background: linear-gradient(180deg,var(--ghi),var(--g2)); border-color: var(--gfocus); box-shadow: inset 0 1px 0 #ffffff70,0 0 3px var(--gglow); }
 body.theme-aerolapd .record-close:active { background: linear-gradient(180deg,var(--g3),var(--g2)); border-color: var(--gfocus); box-shadow: inset 0 1px 3px var(--gshade); }
+
+body.theme-p1dark {
+  color-scheme: dark;
+  --panel: #222529; --panel-alt: #2C3035; --header: #34383E;
+  --border: #62666C; --border-lite: #42474E; --field: #1B1E22; --field-border: #747A82;
+  --text: #E8E7E1; --text-muted: #ADB1B7; --text-disabled: #81878F;
+  --hover: #41464E; --sel: #514833; --sel-text: #F6EAC7;
+  --btn-face: #383D44; --btn-hover: #484F58; --btn-active: #2B3036;
+  --danger: #B33232; --scroll-track: #25282D; --scroll-thumb: #747A82;
+  --cad-glass: linear-gradient(#3A3E44,#25282D);
+  --cad-nav: linear-gradient(#383C42 0%,#1D2024 48%,#101215 51%,#090A0C 100%);
+  --cad-hover: linear-gradient(#50565E,#30353C);
+  --cad-selected: linear-gradient(#D9CEA8,#BEB087);
+  --cad-rail: #292D32; --cad-line: #62666C; --cad-shadow: #0006;
+}
+body.theme-p1dark .titlebar { background: #292C30; color: var(--text); }
+body.theme-p1dark .quickbtn { border-top-color: #4B5058; border-bottom-color: #1B1E22; }
+body.theme-p1dark .quickbtn.active { color: #202020; }
+body.theme-p1dark :is(.p1act,.tbtn,.btn-sm,.btn) { background: var(--cad-glass); color: var(--text); border-color: var(--border); box-shadow: inset 0 1px 0 #ffffff12; }
+body.theme-p1dark .p1act:hover:not(:disabled) { background: linear-gradient(#514E42,#37372F); }
+body.theme-p1dark .p1act:active:not(:disabled) { background: var(--btn-active); box-shadow: inset 0 1px 3px #0006; }
+body.theme-p1dark .p1act:disabled { background: #292D32; color: var(--text-disabled); }
+body.theme-p1dark :is(#statusbar,.sb-cell) { background: #292D32; color: var(--text-muted); border-color: var(--border-lite); }
+body.theme-p1dark .record-tab { background: var(--cad-glass); box-shadow: inset 0 1px 0 #ffffff12; }
+body.theme-p1dark .record-tab.active { background: linear-gradient(#514E42,#37372F); }
+body.theme-p1dark .record-close:hover { background: var(--danger); color: #FFFFFF; }
+body.theme-p1dark :is(.pagetab,.pageadd) { background: var(--cad-glass); }
+body.theme-p1dark .pagetab.active { background: #42474E; }
+body.theme-p1dark :is(.hbtn:hover,.hbtn.active) { color: #202020; }
+body.theme-p1dark .dialog-title { background: linear-gradient(#35393F,#101215); }
+body.theme-p1dark #tabs .tab.active, body.theme-p1dark .navchip.active { color: #202020; }
+body.theme-p1dark .quickbtn.active .quicklabel small { color: #474238; }

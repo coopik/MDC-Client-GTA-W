@@ -9,11 +9,11 @@ function recordSurfaceFixture() {
     document.querySelector('.content').append(document.getElementById('history-reports'),document.getElementById('comparison'));const edit=document.createElement('div');edit.id='authored-document';edit.contentEditable='true';edit.append(source.cloneNode(true));document.body.append(edit);window.historyPaperReady=true;
   </script></body>`)
 }
-async function verifyRecordSurfaces({shell,guest,until,delay}) {
+async function verifyRecordSurfaces({shell,guest,until,delay,themes=['p1','aero','aerolapd','aerodark']}) {
  await shell(`wv.loadURL('https://mdc.gta.world/record-surfaces')`)
  await until(async()=>!(await guest()).isLoading()&&await (await guest()).executeJavaScript(`window.layoutReady===true`),'record surfaces')
  const g=await guest(),read=code=>g.executeJavaScript(code,true)
- for(const theme of ['p1','aero','aerolapd','aerodark']) {
+ for(const theme of themes) {
   await shell(`setTheme('${theme}')`);await delay(220)
   const s=await read(`(()=>{const root=document.querySelector('#full-record-source [data-mdt-paper]'),cells=[...root.querySelectorAll('th,td')];return {font:getComputedStyle(root).fontFamily,cells:cells.map(n=>{const s=getComputedStyle(n);return [s.color,s.backgroundColor,s.backgroundImage,s.fontFamily]}),metadata:parseFloat(getComputedStyle(document.querySelector('#full-record-source .card-body strong')).fontSize),preview:!!document.querySelector('#supplement-preview[data-mdt-paper]')}})()`)
   assert.ok(s.font.includes('Times New Roman')&&s.cells.every(c=>c[0]==='rgb(0, 0, 0)'&&c[1]==='rgb(255, 255, 255)'&&c[2]==='none'&&c[3].includes('Times New Roman')),theme+': full-page paper matches popup')

@@ -67,7 +67,7 @@ function protectContentCss(css) {
     if (raw.trim().startsWith('@')) return rule
     const selectors = cssSelectors(raw).map((selector) => guardSelector(selector, WIDGET_SELECTOR))
     const colors = []
-    const chromeColor = /data-notify|dataTables_length|_length|\.nav-tabs|\.nav-pills|\.note-toolbar|\.note-dropdown-menu|\.note-editor .*dropdown-menu|data-mdt-lookup/.test(raw)
+    const chromeColor = /data-notify|dataTables_length|_length|\.nav-tabs|\.nav-pills|\.note-toolbar|\.note-dropdown-menu|\.note-editor .*dropdown-menu|data-mdt-lookup|\.badge-light:has\(\[data-clipboard-target/.test(raw)
     const backgrounds = []
     const fonts = []
     const geometry = []
@@ -362,6 +362,15 @@ PALETTES.p1 = {
   infoStrong: '#1F4E79',
   primary: '#B30000'
 }
+PALETTES.p1dark = Object.assign({},PALETTES.p1,{
+  panel:'#222529',panelAlt:'#2C3035',header:'#34383E',border:'#62666C',borderLite:'#42474E',
+  field:'#1B1E22',fieldBorder:'#747A82',text:'#E8E7E1',textMuted:'#ADB1B7',hover:'#41464E',
+  sel:'#514833',selBorder:'#B6A77D',zebra:'#292D32',row:'#24282D',link:'#E4CD8A',visited:'#C6B8DC',
+  btnFace:'#383D44',btnHover:'#484F58',btnActive:'#2B3036',scrollTrack:'#25282D',scrollThumb:'#747A82',scrollThumbHover:'#969EA8',
+  chip:'#343941',chipBorder:'#62666C',highlight:'#514833',danger:'#A52A2A',dangerSoft:'#472A2D',dangerInk:'#FFACAC',
+  warning:'#D6A340',warningSoft:'#483E25',warningInk:'#F5D389',success:'#307348',successSoft:'#263E30',successInk:'#A5DBB4',
+  info:'#344A60',infoStrong:'#426C95',primary:'#A52A2A'
+})
 
 
 const GLASS_STYLE_ID = 'mdt-glass-skin'
@@ -1301,11 +1310,44 @@ html.mdt-p1 body .table td .btn:active:not(.modal *) { box-shadow: inset 0 1px 3
 `)
 }
 
+function buildPatrolDarkCss() {
+  const p=PALETTES.p1dark
+  return protectContentCss(`
+html.mdt-p1.mdt-p1dark { color-scheme: dark; }
+html.mdt-p1.mdt-p1dark body, html.mdt-p1.mdt-p1dark .wrapper, html.mdt-p1.mdt-p1dark .main-panel, html.mdt-p1.mdt-p1dark .main-panel > .content { background-color: ${p.panel} !important; color: ${p.text} !important; }
+html.mdt-p1.mdt-p1dark body :is(.card,.card-dashboard,.card-stats,.panel,.card-body,.panel-body,.modal-content,.modal-body) { background-color: ${p.panelAlt} !important; color: ${p.text} !important; border-color: ${p.border} !important; }
+html.mdt-p1.mdt-p1dark body td { background-color: ${p.row} !important; color: ${p.text} !important; border-color: ${p.borderLite} !important; }
+html.mdt-p1.mdt-p1dark body tbody tr > td { background-color: ${p.row} !important; }
+html.mdt-p1.mdt-p1dark body tbody tr:nth-child(even) > td { background-color: ${p.zebra} !important; }
+html.mdt-p1.mdt-p1dark body tbody tr:hover > td { background-color: ${p.hover} !important; }
+html.mdt-p1.mdt-p1dark body :is(.table td a,td a) { color: ${p.link} !important; }
+html.mdt-p1.mdt-p1dark body :is(.font-plate,.badge-light:has([data-clipboard-target^="#plate"])):not([data-mdt-plate]):not(:where([data-mdt-plate] *)) { color: ${p.link} !important; -webkit-text-fill-color: ${p.link} !important; background-color: ${p.chip} !important; border-color: ${p.border} !important; }
+html.mdt-p1.mdt-p1dark body :is(label,.bmd-label-floating,.control-label) { color: ${p.textMuted} !important; }
+html.mdt-p1.mdt-p1dark body :is(.form-control,input[type="text"],input[type="search"],input[type="number"],input[type="password"],input[type="email"],input[type="date"],textarea,select), html.mdt-p1.mdt-p1dark body :is(input#character,input#plate,input)[data-mdt-lookup-field="1"] { background: ${p.field} !important; color: ${p.text} !important; -webkit-text-fill-color: ${p.text} !important; border-color: ${p.fieldBorder} !important; }
+html.mdt-p1.mdt-p1dark body :is(input,textarea)::placeholder { color: ${p.textMuted} !important; -webkit-text-fill-color: ${p.textMuted} !important; opacity: 1 !important; }
+html.mdt-p1.mdt-p1dark body :is(input#character,input#plate,input)[data-mdt-lookup-field="1"]::placeholder { color: ${p.textMuted} !important; -webkit-text-fill-color: ${p.textMuted} !important; }
+html.mdt-p1.mdt-p1dark body .btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-info):not(.btn-collapse):not(.btn-actions):not(.close), html.mdt-p1.mdt-p1dark body [data-mdt-lookup-action="1"] { background: linear-gradient(#454B54,#2D3239) !important; color: ${p.text} !important; -webkit-text-fill-color: ${p.text} !important; border-color: ${p.border} !important; box-shadow: inset 0 1px 0 #ffffff18 !important; }
+html.mdt-p1.mdt-p1dark body [data-mdt-lookup-action="1"] :is(i,span,svg):not(.ripple-container):not(.ripple) { color: ${p.text} !important; -webkit-text-fill-color: ${p.text} !important; }
+html.mdt-p1.mdt-p1dark body .btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-info):not(.btn-collapse):not(.close):hover, html.mdt-p1.mdt-p1dark body [data-mdt-lookup-action="1"]:hover { background: linear-gradient(#555D68,#3B424B) !important; }
+html.mdt-p1.mdt-p1dark body :is(.btn-primary,.btn-danger) { background-color: ${p.danger} !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; }
+html.mdt-p1.mdt-p1dark body :is(.note-editable,.note-codable) { background: ${p.field} !important; color: ${p.text} !important; }
+html.mdt-p1.mdt-p1dark body :is(.modal-footer,.card-footer) { background-color: ${p.panel} !important; border-color: ${p.border} !important; }
+html.mdt-p1.mdt-p1dark body .dropdown-menu { background: ${p.panelAlt} !important; border-color: ${p.border} !important; }
+html.mdt-p1.mdt-p1dark body :is(.dropdown-item:hover,.dropdown-item:focus) { background: ${p.sel} !important; color: ${p.text} !important; }
+html.mdt-p1.mdt-p1dark body :is(.sidebar,.sidebar-wrapper) { background-color: ${p.panelAlt} !important; }
+html.mdt-p1.mdt-p1dark body :is(.sidebar .nav li.active>a,.sidebar-wrapper .nav li.active>a) { background-color: ${p.sel} !important; color: ${p.text} !important; }
+html.mdt-p1.mdt-p1dark body ::-webkit-scrollbar-track { background-color: ${p.scrollTrack} !important; }
+html.mdt-p1.mdt-p1dark body ::-webkit-scrollbar-thumb { background-color: ${p.scrollThumb} !important; border-color: ${p.border} !important; }
+html.mdt-p1.mdt-p1dark body ::-webkit-scrollbar-thumb:hover { background-color: ${p.scrollThumbHover} !important; }
+`)
+}
+
 function applyP1() {
-  const on = themeNow() === 'p1'
+  const on = themeNow() === 'p1' || themeNow() === 'p1dark'
   const host = document.head || document.documentElement
   const root = document.documentElement
   let node = document.getElementById(P1_STYLE_ID)
+  if (root && root.classList) root.classList.toggle('mdt-p1dark',themeNow()==='p1dark')
   if (!on) {
     if (root && root.classList) root.classList.remove('mdt-p1')
     if (node && node.parentNode) node.parentNode.removeChild(node)
@@ -1317,7 +1359,7 @@ function applyP1() {
     node.id = P1_STYLE_ID
     node.setAttribute('type', 'text/css')
   }
-  const css = cachedSkinCss('p1', buildP1Css)
+  const css = cachedSkinCss('p1:'+themeNow(),()=>buildP1Css()+(themeNow()==='p1dark'?buildPatrolDarkCss():''))
   if (node.textContent !== css) node.textContent = css
   if (host && node.parentNode !== host) host.appendChild(node)
   else if (host && host.lastChild !== node) host.appendChild(node)
@@ -1454,7 +1496,7 @@ function buildCss(p) {
   return protectContentCss(`
 
 :root, html, body {
-  color-scheme: ${p === PALETTES.aerodark || p === PALETTES.aerolapd ? 'dark' : 'light'} !important;
+  color-scheme: ${p === PALETTES.p1dark || p === PALETTES.aerodark || p === PALETTES.aerolapd ? 'dark' : 'light'} !important;
   --bs-body-bg: ${p.panel} !important;
   --bs-body-color: ${p.text} !important;
   --bs-card-bg: ${p.panel} !important;
@@ -4236,7 +4278,7 @@ html body .modal .modal-header .close::after, html body .modal .modal-content > 
 `)
 }
 
-const SKINS = ['p1', 'aero', 'aerolapd', 'aerodark', 'off']
+const SKINS = ['p1', 'p1dark', 'aero', 'aerolapd', 'aerodark', 'off']
 let theme = 'p1'
 
 function isMdcHost() {
@@ -6158,35 +6200,25 @@ function fixContrast() {
     if (!document.body) return
     document.querySelectorAll('.btn-collapse').forEach(syncCollapseButton)
     const off = themeNow() === 'off'
+    if (off) { restoreInk(); return }
     const backgrounds = new WeakMap()
     const repairs = []
-
-    document.body.querySelectorAll('*').forEach((el) => {
-      if (!el.style || !el.dataset) return
-
-      if (off) {
-        if (el.dataset.mdtInk !== undefined) {
-          if (el.dataset.mdtInk) el.style.setProperty('color', el.dataset.mdtInk, el.dataset.mdtInkPriority || '')
-          else el.style.removeProperty('color')
-          delete el.dataset.mdtInk
-          delete el.dataset.mdtInkPriority
-        }
-        return
-      }
-
-      if (!hasDirectText(el)) return
-      if (el.closest('[data-mdt-paper], #mugshotPreview, .cropper-container, [class^="cropper-"], [class*=" cropper-"], [class^="imgareaselect-"], .note-editor, .note-color-palette, .bootstrap-select, [contenteditable="true"]')) return
-
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {acceptNode(el) {
+      if (el.matches('script, style, noscript, [data-mdt-paper], #mugshotPreview, .cropper-container, [class^="cropper-"], [class*=" cropper-"], [class^="imgareaselect-"], .note-editor, .note-color-palette, .bootstrap-select, .bs-container, [contenteditable="true"], .modal:not(.show):not(.in)')) return NodeFilter.FILTER_REJECT
+      return el.style && el.dataset && hasDirectText(el) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+    }})
+    let el
+    while ((el = walker.nextNode())) {
       const col = parseRgb(getComputedStyle(el).color)
-      if (!col || col.a < 0.1) return
-      if (Math.max(col.r, col.g, col.b) - Math.min(col.r, col.g, col.b) > 28 && el.closest(AUTHOR_COLOR_SELECTOR)) return
+      if (!col || col.a < 0.1) continue
+      if (Math.max(col.r, col.g, col.b) - Math.min(col.r, col.g, col.b) > 28 && el.closest(AUTHOR_COLOR_SELECTOR)) continue
 
       const inkL = luminance(col)
       const bgL = backgroundLuminance(el, backgrounds)
-      if (Math.abs(inkL - bgL) > 0.34) return
+      if (Math.abs(inkL - bgL) > 0.34) continue
 
       repairs.push([el, bgL > 0.5 ? '#202020' : '#FFFFFF'])
-    })
+    }
     repairs.forEach(([el, color]) => {
       if (el.dataset.mdtInk === undefined) {
         el.dataset.mdtInk = el.style.getPropertyValue('color') || ''
@@ -6409,9 +6441,12 @@ function earlyBoot() {
   return true
 }
 
+let appliedTheme = null
 function applyTheme(next) {
   const prev = theme
   theme = SKINS.includes(next) ? next : 'p1'
+  if (appliedTheme === theme && document.body) { applyFormFlag(); keepLast(); applyGlass(); applyP1(); uncloak(); return }
+  if (document.body) appliedTheme = theme
   if (prev !== theme) resetPaintedState()
   applyFormFlag()
   keepLast()
@@ -6488,7 +6523,7 @@ function watchStyles() {
           if (record.type === 'childList') Array.from(record.addedNodes).filter((node) => node.nodeType === 1).forEach(markAuthorStyles)
         }
         if (target.closest('#navbarDropdownNotifications, .notification-count, .notification-unread')) alerts = true
-        if (target.closest('script, style, .note-editor, .bootstrap-select, [contenteditable="true"], [data-notify], .ripple-container, .ripple, .leaflet-pane, [data-mdt-emote]') || clockOnlyChange(record)) continue
+        if (target.closest('script, style, .note-editor, .bootstrap-select, .bs-container, [contenteditable="true"], [data-notify], .ripple-container, .ripple, .leaflet-pane, [data-mdt-emote]') || clockOnlyChange(record)) continue
         if (record.type !== 'attributes' && target.closest('[data-mdt-profile-column]')) { profile = true; continue }
         if (record.type === 'attributes') {
           if (record.attributeName === 'style') { if (themeNow() !== 'off') markAuthorStyle(target); continue }
@@ -6508,6 +6543,7 @@ function watchStyles() {
         for (const node of Array.from(record.addedNodes).concat(Array.from(record.removedNodes))) {
           if (node.nodeType === 3) { if (node.textContent.trim()) content = true; continue }
           if (node.nodeType !== 1) continue
+          if (node.matches('script, .mdt-grip, .bootstrap-select, .bs-container, .note-editor, [data-mdt-emote], [data-notify], .ripple-container, .ripple')) continue
           if (themeNow() !== 'off') markAuthorStyles(node)
           if (node.matches('style, link')) { if (!node.id.startsWith('mdt-') && node.isConnected) restyle = true; continue }
           if (node.matches('script, .mdt-grip, [data-mdt-emote], [data-notify], .ripple-container, .ripple')) continue
@@ -7160,6 +7196,51 @@ function bootstrapWorkspace() {
     const picker=window.jQuery&&window.jQuery(event.target).data('this')
     if(picker)picker.$button.trigger('click.bs.dropdown.data-api').trigger('focus')
   })
+  const editorToolbars = new Map()
+  let editorSkinActive = null
+  function tuneEditorToolbar(note) {
+    const jq = window.jQuery, context = jq && jq(note).data('summernote'), buttons = context && context.modules && context.modules.buttons
+    if (!buttons || typeof buttons.updateCurrentStyle !== 'function' || editorToolbars.has(buttons) || !document.documentElement.matches('.mdt-p1,.mdt-aero')) return
+    const native = buttons.updateCurrentStyle, states = new WeakMap()
+    buttons.updateCurrentStyle = function(container) {
+      const target = (container || this.$toolbar)?.[0]
+      if (!target || !target.isConnected || !document.documentElement.matches('.mdt-p1,.mdt-aero')) return native.apply(this,arguments)
+      const style = this.context.invoke('editor.currentStyle')
+      const key = JSON.stringify(Object.keys(style).sort().filter(name=>['string','number','boolean'].includes(typeof style[name])||Array.isArray(style[name])&&style[name].every(value=>typeof value==='string')).map(name=>[name,style[name]]))
+      if (states.get(target) === key) return
+      const result = native.apply(this,arguments)
+      states.set(target,key)
+      return result
+    }
+    editorToolbars.set(buttons,native)
+  }
+  function syncEditorToolbars() {
+    const active = document.documentElement.matches('.mdt-p1,.mdt-aero')
+    if (active === editorSkinActive) return
+    editorSkinActive = active
+    if (active) document.querySelectorAll('textarea,.summernote').forEach(tuneEditorToolbar)
+    else { editorToolbars.forEach((native,buttons)=>{buttons.updateCurrentStyle=native});editorToolbars.clear() }
+  }
+  const editorSkinObserver = new MutationObserver(syncEditorToolbars)
+  editorSkinObserver.observe(document.documentElement,{attributes:true,attributeFilter:['class']})
+  function tunePickerRows(event) {
+    if (!document.documentElement.matches('.mdt-p1,.mdt-aero') || event.type === 'keydown' && !['ArrowDown','ArrowUp','Enter',' '].includes(event.key)) return
+    const button = event.target.closest?.('.bootstrap-select > button.dropdown-toggle')
+    const jq = window.jQuery, picker = button && jq && jq(button.parentElement.querySelector('select')).data('selectpicker')
+    if (!picker || Object.hasOwn(picker,'mdtVirtualScroll') || !picker.options || !picker.selectpicker) return
+    const size = picker.options.virtualScroll, rows = picker.selectpicker.main.data
+    if (typeof size !== 'number' || size <= 80 || rows.length < 80) return
+    picker.mdtVirtualScroll = size
+    picker.options.virtualScroll = 80
+  }
+  function restorePickerRows(picker, refresh) {
+    if (!picker || !Object.hasOwn(picker,'mdtVirtualScroll')) return
+    picker.options.virtualScroll = picker.mdtVirtualScroll
+    delete picker.mdtVirtualScroll
+    if (refresh) picker.setSize()
+  }
+  document.addEventListener('click',tunePickerRows,true)
+  document.addEventListener('keydown',tunePickerRows,true)
   window.addEventListener('wheel', event => {
     if (event.ctrlKey) return
     const menu = event.target.closest?.('.dropdown-menu')
@@ -7197,13 +7278,15 @@ function bootstrapWorkspace() {
     try { fit = JSON.parse(event.detail) } catch (_) { return }
     let state = picker.mdtFixedMenu
     if (fit === null) {
-      if (!state) return
+      if (!state) { restorePickerRows(picker,false); return }
       picker.setMenuSize = state.native
       picker.options.windowPadding = state.padding
       state.styles.forEach(([node, values])=>values.forEach(([key,value,priority])=>{if(value)node.style.setProperty(key,value,priority);else node.style.removeProperty(key)}))
       picker.$menuInner[0].removeAttribute('data-mdt-picker-list')
       delete picker.mdtFixedMenu
-      if (picker.$newElement.hasClass('show') || picker.$newElement.hasClass('open')) picker.setMenuSize()
+      const open = picker.$newElement.hasClass('show') || picker.$newElement.hasClass('open')
+      if (Object.hasOwn(picker,'mdtVirtualScroll')) restorePickerRows(picker,open)
+      else if (open) picker.setMenuSize()
       return
     }
     if (!fit || !Array.isArray(fit.padding) || fit.padding.length!==4 || !fit.padding.every(Number.isFinite) || !Number.isFinite(fit.limit)) return
@@ -7232,7 +7315,13 @@ function bootstrapWorkspace() {
     sync()
   }
   function wire() {
-    if (window.jQuery) window.jQuery(document).on('show.bs.modal.mdtWorkspace shown.bs.modal.mdtWorkspace hidden.bs.modal.mdtWorkspace', lifecycle)
+    if (window.jQuery) {
+      window.jQuery(document).on('show.bs.modal.mdtWorkspace shown.bs.modal.mdtWorkspace hidden.bs.modal.mdtWorkspace', lifecycle)
+      window.jQuery(document).on('summernote.init.mdtToolbar',event=>tuneEditorToolbar(event.target))
+      window.jQuery(document).on('summernote.destroy.mdtToolbar',event=>{editorToolbars.forEach((native,buttons)=>{if(buttons.context?.$note?.[0]===event.target){buttons.updateCurrentStyle=native;editorToolbars.delete(buttons)}});setTimeout(()=>tuneEditorToolbar(event.target),0)})
+      syncEditorToolbars()
+      window.jQuery(document).on('hidden.bs.select.mdtRows',event=>restorePickerRows(window.jQuery(event.target).data('selectpicker'),false))
+    }
     else ['show.bs.modal','shown.bs.modal','hidden.bs.modal'].forEach((name) => document.addEventListener(name,lifecycle))
     sync()
   }

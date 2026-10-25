@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.3 - 2026-10-25
+
+- Add PatrolOne Dark to View, Options and F8, with charcoal panels, dark fields, light text and warm highlights across the shell, MDC and law topics. Preserve white paper documents, authored editor content and native sign-in pages.
+- Fix sluggish narrative typing in Edit Record and other Summernote editors. Skip toolbar rewrites when the native formatting state is unchanged, update immediately when formatting changes, and restore the original method in Original MDC. Native typing, selection and undo remain in control. Add native-key typing latency checks across every skin.
+- Avoid repeated full-page styling when the selected skin has not changed. Skip protected widget and hidden dialog subtrees during contrast repair while retaining repair of newly opened dialogs and dynamic page content.
+- Reduce charge-list opening work with bootstrap-select's native virtual renderer from 80 options. Preserve filtering, keyboard selection, fixed list height, pinned search and the single scrollbar; restore native options on dismissal or Original MDC.
+- Add repeatable isolated record/dropdown CPU profiles and focused Dark regression checks. Local fixture medians showed about 14 percent less record-loading main-thread work and 34 percent less charge-opening work; backend and network latency are outside these measurements.
+
 ## 1.1.2 - 2026-10-20
 
 - Use each Aero palette's glass hover and pressed states for page-tab close controls, keeping the X readable.

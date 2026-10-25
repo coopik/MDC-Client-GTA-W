@@ -22,6 +22,7 @@ const {verifyPickerInteractions,verifyStatusPanels}=require('./picker-interactio
 const {verifyRelease110}=require('./release110-fixture')
 const {release111Fixture,verifyRelease111}=require('./release111-fixture')
 const {release112Fixture,verifyRelease112}=require('./release112-fixture')
+const {recordPerformanceFixture,darkThemeFixture,profileRelease113,verifyRelease113,verifyEditorTyping}=require('./release113-fixture')
 const root = path.resolve(__dirname, '..')
 const output = path.join(root, 'dist', 'verification')
 app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'patrolone-verify-')))
@@ -118,6 +119,8 @@ app.whenReady().then(async () => {
     if (/^\/(incident|apb|warrant|report|arrest|custom)\/(create|edit)\/layout-fixture$/.test(url.pathname)) return new Response(authoringFixture(url.pathname.split('/')[1]), {headers:{'content-type':'text/html; charset=utf-8'}})
     if (url.pathname === '/release111') return new Response(release111Fixture(),{headers:{'content-type':'text/html; charset=utf-8'}})
     if (url.pathname === '/incident/create/release112') return new Response(release112Fixture(),{headers:{'content-type':'text/html; charset=utf-8'}})
+    if (url.pathname === '/record/perf113') return new Response(recordPerformanceFixture(),{headers:{'content-type':'text/html; charset=utf-8'}})
+    if (url.pathname === '/record/dark113') return new Response(darkThemeFixture(),{headers:{'content-type':'text/html; charset=utf-8'}})
     if (url.pathname === '/post-arrest') return new Response(siteSourceFixture(true),{headers:{'content-type':'text/html; charset=utf-8'}})
     if (url.pathname === '/record-surfaces') return new Response(recordSurfaceFixture(),{headers:{'content-type':'text/html; charset=utf-8'}})
     if (url.pathname === '/document-layout') return new Response(documentFixture(), {headers:{'content-type':'text/html; charset=utf-8'}})
@@ -152,7 +155,7 @@ app.whenReady().then(async () => {
   if (process.argv.includes('--review-fixes')) {
     await shell(`setTheme('p1');wv.loadURL('https://mdc.gta.world/review-fixes')`)
     console.log('REVIEW READY')
-    while(!(await shell('window.finishReview===true'))) await delay(500)
+    while(!(await shell('window.finishReview===true'))) {if(await shell('window.reviewWake===true')){win.restore();win.show();win.setAlwaysOnTop(true);win.focus();await shell('window.reviewWake=false')}await delay(500)}
     return
   }
   if (process.argv.includes('--popups-only')) {
@@ -165,6 +168,9 @@ app.whenReady().then(async () => {
   if(process.argv.includes('--keys-only')) {checks+=await verifyInteractions({shell,guest,until,delay,win,output,webContents});assert.deepEqual(errors,[]);console.log('KEYS PASSED: '+checks+' checks');return}
   if(process.argv.includes('--release111-only')) {if(process.argv.includes('--after110'))checks+=await verifyRelease110({shell,guest,until,delay,win,output});checks+=await verifyRelease111({shell,guest,until,delay,win,output});assert.deepEqual(errors,[]);console.log('RELEASE 1.1.1 PASSED: '+checks+' checks');return}
   if(process.argv.includes('--release112-only')) {checks+=await verifyRelease112({shell,guest,until,delay,win,output});assert.deepEqual(errors,[]);console.log('RELEASE 1.1.2 PASSED: '+checks+' checks');return}
+  if(process.argv.includes('--typing-only')){checks+=await verifyEditorTyping({shell,guest,until,delay,output,baseline:process.argv.includes('--baseline')});assert.deepEqual(errors,[]);console.log('EDITOR TYPING PASSED: '+checks+' checks');return}
+  if(process.argv.includes('--profile113')){checks+=await profileRelease113({shell,guest,until,delay,output,label:process.argv.includes('--baseline')?'before':'after'});assert.deepEqual(errors,[]);return}
+  if(process.argv.includes('--release113-only')){checks+=await verifyRelease113({shell,guest,until,delay,win,output});assert.deepEqual(errors,[]);console.log('RELEASE 1.1.3 PASSED: '+checks+' checks');return}
   if(process.argv.includes('--release110-only')) {checks+=await verifyRelease110({shell,guest,until,delay,win,output});assert.deepEqual(errors,[]);console.log('RELEASE 1.1.0 PASSED: '+checks+' checks');return}
   if(process.argv.includes('--status-panels-only')) {checks+=await verifyStatusPanels({shell,guest,until,delay,win,output});assert.deepEqual(errors,[]);console.log('STATUS PANELS PASSED: '+checks+' checks');return}
   if(process.argv.includes('--modal-forms-only')) {checks+=await verifyModalForms({shell,guest,until,delay,win,output,colors:process.argv.includes('--colors')});assert.deepEqual(errors,[]);console.log('MODAL FORMS PASSED: '+checks+' checks');return}
@@ -248,7 +254,7 @@ app.whenReady().then(async () => {
   await shell(`setTheme('p1'); view.sidebar = false; savePref('sidebar', false); view.navBar = true; applyView()`)
   await navigate(`wv.loadURL('https://mdc.gta.world/dmv')`, 'hidden preference restored')
   assert.equal(await shell(`document.querySelector('.navchip.active').textContent`), 'DMV Database')
-  for (const theme of ['p1', 'aero', 'aerolapd', 'aerodark', 'off']) {
+  for (const theme of ['p1', 'p1dark', 'aero', 'aerolapd', 'aerodark', 'off']) {
     await shell(`setTheme('${theme}')`)
     await delay(150)
     const layout = await shell(`(() => {
@@ -268,7 +274,7 @@ app.whenReady().then(async () => {
       assert.equal(layout.actions.display, 'flex', theme + ': action bar')
       const palette = await (await guest()).executeJavaScript(`({ header:getComputedStyle(document.querySelector('.card-header')).backgroundImage, scheme:getComputedStyle(document.documentElement).colorScheme })`)
       assert.ok(palette.header.includes('gradient'), theme + ': panel header')
-      assert.equal(palette.scheme, theme === 'aerodark' || theme === 'aerolapd' ? 'dark' : 'light', theme + ': native field palette')
+      assert.equal(palette.scheme, theme === 'p1dark' || theme === 'aerodark' || theme === 'aerolapd' ? 'dark' : 'light', theme + ': native field palette')
       assert.ok(!palette.header.includes('undefined'), theme + ': valid palette')
       assert.ok(await shell(`Array.from(document.querySelectorAll('#p1-actions img')).length === 6 && Array.from(document.querySelectorAll('#p1-actions img')).every((n) => n.complete && n.naturalWidth > 0)`), theme + ': bottom action icons')
       assert.equal(await shell(`new Set(Array.from(document.querySelectorAll('.navchip')).filter((n) => /Online Warrants|Warrants Database|Active Warrants/.test(n.textContent)).map((n) => n.querySelector('img').src)).size`),3,theme + ': distinct warrant icons')
@@ -298,7 +304,7 @@ app.whenReady().then(async () => {
       await g.executeJavaScript(`document.querySelector('.modal').classList.remove('show')`)
     }
     await shell(`actions.options()`)
-    assert.equal(await shell(`document.querySelectorAll('input[name="opt-theme"]').length`), 5)
+    assert.equal(await shell(`document.querySelectorAll('input[name="opt-theme"]').length`), 6)
     assert.equal(await shell(`document.querySelector('#dialog-body').textContent.includes('undefined')`), false)
     await shell(`closeDialog()`)
     win.webContents.invalidate()
@@ -389,6 +395,8 @@ app.whenReady().then(async () => {
   checks+=await verifyRelease110({shell,guest,until,delay,win,output})
   checks+=await verifyRelease111({shell,guest,until,delay,win,output})
   checks+=await verifyRelease112({shell,guest,until,delay,win,output})
+  checks+=await verifyRelease113({shell,guest,until,delay,win,output})
+  checks+=await verifyEditorTyping({shell,guest,until,delay,output})
   assert.deepEqual(errors, [], 'release renderer/preload errors')
   console.log('ELECTRON VERIFICATION PASSED: ' + checks + ' checks; screenshots: ' + output)
 }).then(() => { win.destroy(); app.quit() }).catch((err) => {

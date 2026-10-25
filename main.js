@@ -458,6 +458,7 @@ ipcMain.handle('app:setWindowTheme', (event, theme) => {
   if (!mainWindow || event.sender !== mainWindow.webContents) return
   const frames = {
     p1: ['#E2E2E2', '#222222'],
+    p1dark: ['#292C30', '#E8E7E1'],
     aero: ['#C3DBEF', '#10222E'],
     aerolapd: ['#193D88', '#FFFFFF'],
     aerodark: ['#303030', '#F0F0F0'],

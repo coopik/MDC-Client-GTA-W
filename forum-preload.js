@@ -79,8 +79,9 @@ const PALETTES = {
 }
 
 PALETTES.p1 = Object.assign({}, PALETTES.light, {panel:'#DCDAD5', panelAlt:'#E9E7E1', field:'#F1F0EC', header:'#292929', headingInk:'#FFFFFF', border:'#9B9A94', text:'#202020', textMuted:'#45443F', link:'#224F78'})
+PALETTES.p1dark = Object.assign({}, PALETTES.aerodark, {panel:'#222529',panelAlt:'#2C3035',field:'#1B1E22',header:'#141619',headingInk:'#F2F0E8',border:'#62666C',text:'#E8E7E1',textMuted:'#ADB1B7',link:'#E4CD8A',zebra:'#292D32',scrollTrack:'#25282D',scrollThumb:'#747A82',highlight:'#514833'})
 
-const SKINS = ['p1', 'aero', 'aerolapd', 'aerodark', 'off']
+const SKINS = ['p1', 'p1dark', 'aero', 'aerolapd', 'aerodark', 'off']
 let theme = 'p1'
 let paintedMode = ''
 let lastQuery = ''
@@ -143,7 +144,7 @@ header, #elSearch, #elSearchWrapper, #elUserNav, #elNotificationsBrowser,
 html, body {
   background: ${p.panel} !important;
   color: ${p.text} !important;
-  font-family: ${themeNow() === 'p1' ? 'Tahoma, "Microsoft Sans Serif", sans-serif' : '"Segoe UI", Tahoma, sans-serif'} !important;
+  font-family: ${themeNow().startsWith('p1') ? 'Tahoma, "Microsoft Sans Serif", sans-serif' : '"Segoe UI", Tahoma, sans-serif'} !important;
   font-size: 12px !important;
   line-height: 16px !important;
   overflow-x: hidden !important;
@@ -164,7 +165,7 @@ body, #ipsLayout_body, #ipsLayout_contentArea, #ipsLayout_contentWrapper,
   white-space: normal !important;
 }
 body * {
-  font-family: ${themeNow() === 'p1' ? 'Tahoma, "Microsoft Sans Serif", sans-serif' : '"Segoe UI", Tahoma, sans-serif'} !important;
+  font-family: ${themeNow().startsWith('p1') ? 'Tahoma, "Microsoft Sans Serif", sans-serif' : '"Segoe UI", Tahoma, sans-serif'} !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   text-shadow: none !important;
@@ -601,7 +602,7 @@ function paintText(p, mode) {
   const header = document.querySelector('.ipsPageHeader')
   if (feed) roots.push(feed)
   if (header) roots.push(header)
-  const dark = mode === 'aerodark' || mode === 'aerolapd'
+  const dark = mode === 'p1dark' || mode === 'aerodark' || mode === 'aerolapd'
   roots.forEach((root) => {
     const nodes = root.querySelectorAll('*')
     const limit = nodes.length > 8000 ? 8000 : nodes.length

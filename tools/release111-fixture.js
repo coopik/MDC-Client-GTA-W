@@ -21,8 +21,9 @@ async function verifyRelease111({shell,guest,until,delay,win,output}) {
   await read(`document.querySelector('#fixture-file-warrant .dropdown-toggle').scrollIntoView({block:'center'});void 0`);await delay(150)
   const point=await read(`(()=>{let r=document.querySelector('#fixture-file-warrant .dropdown-toggle').getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)}})()`)
   g.focus();g.sendInputEvent({type:'mouseMove',...point});g.sendInputEvent({type:'mouseDown',...point,button:'left',clickCount:1});await delay(300)
-  const ripple=await read(`(()=>{let b=document.querySelector('#fixture-file-warrant .dropdown-toggle'),n=b.querySelector('.ripple-decorator');return {opacity:n&&getComputedStyle(n).opacity,bg:getComputedStyle(b).backgroundColor,ink:getComputedStyle(b).color}})()`)
-  assert.ok(ripple.opacity!==null&&Number(ripple.opacity)<=.11&&ripple.bg!=='rgb(255, 255, 255)'&&ripple.ink==='rgb(255, 255, 255)',theme+' real Material ripple preserves red button '+JSON.stringify(ripple));checks++
+  const ripple=await read(`(()=>{let b=document.querySelector('#fixture-file-warrant .dropdown-toggle'),n=b.querySelector('.ripple-decorator'),s=getComputedStyle(b);return {opacity:n&&getComputedStyle(n).opacity,bg:s.backgroundColor,image:s.backgroundImage,ink:s.color}})()`)
+  const surface=(ripple.image.match(/rgba?\([^)]+\)/)||[ripple.bg])[0],lum=value=>{const c=value.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>(v/=255)<=.04045?v/12.92:((v+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722},contrast=(Math.max(lum(surface),lum(ripple.ink))+.05)/(Math.min(lum(surface),lum(ripple.ink))+.05)
+  assert.ok(ripple.opacity!==null&&Number(ripple.opacity)<=.11&&contrast>=4.5,theme+' real Material ripple preserves readable palette button '+JSON.stringify(ripple));checks++
   g.sendInputEvent({type:'mouseUp',...point,button:'left',clickCount:1});await delay(250)
   assert.ok(await read(`document.querySelector('#fixture-file-warrant .dropdown-toggle').getAttribute('aria-expanded')==='true'`),theme+' File Warrant opens');checks++
   fs.writeFileSync(path.join(output,theme+'-111-file-warrant.png'),(await g.capturePage()).toPNG())
